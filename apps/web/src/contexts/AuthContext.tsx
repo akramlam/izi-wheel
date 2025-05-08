@@ -58,6 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Verify token by making a request to a protected endpoint
         const response = await apiClient.get('/auth/me');
         setUser(response.data.user);
+        if (response.data.user?.companyId) {
+          localStorage.setItem('companyId', response.data.user.companyId);
+        } else {
+          localStorage.removeItem('companyId');
+        }
       } catch (error) {
         console.error('Token validation error:', error);
         // Token is invalid, clear it
@@ -81,6 +86,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
+      // Store companyId in localStorage for API calls
+      if (user.companyId) {
+        localStorage.setItem('companyId', user.companyId);
+      } else {
+        localStorage.removeItem('companyId');
+      }
 
       // Redirect to dashboard
       navigate('/dashboard');
@@ -98,6 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     navigate('/login');
+    // Remove companyId from localStorage on logout
+    localStorage.removeItem('companyId');
   };
 
   return (
