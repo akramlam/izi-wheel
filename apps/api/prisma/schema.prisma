@@ -60,6 +60,7 @@ model Play {
   prizeId   String?    @unique
   prize     Prize?
   result    PlayResult
+  lead      Json?      // Store lead data (name, email, phone, birthDate)
 }
 
 model Prize {
