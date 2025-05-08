@@ -1,0 +1,22 @@
+{
+  "name": "iziwheel",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter=@iziwheel/* run dev",
+    "build": "pnpm --filter=@iziwheel/* run build",
+    "lint": "pnpm --filter=@iziwheel/* run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:init": "pnpm --filter=@iziwheel/api run db:init"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1"
+  }
+}

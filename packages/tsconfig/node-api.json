@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node API",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "outDir": "dist",
+    "sourceMap": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.test.ts"]
+} 

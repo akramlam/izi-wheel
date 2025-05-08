@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  plan      Plan     @default(BASIC)
+  maxWheels Int      @default(1)
+  wheels    Wheel[]
+  admins    User[]
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      Role
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model Wheel {
+  id         String    @id @default(uuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String
+  mode       WheelMode
+  formSchema Json
+  isActive   Boolean   @default(false)
+  slots      Slot[]
+  plays      Play[]
+}
+
+model Slot {
+  id          String   @id @default(uuid())
+  wheelId     String
+  wheel       Wheel    @relation(fields: [wheelId], references: [id], onDelete: Cascade)
+  label       String
+  probability Int
+  prizeCode   String
+}
+
+model Play {
+  id        String     @id @default(uuid())
+  wheelId   String
+  wheel     Wheel      @relation(fields: [wheelId], references: [id], onDelete: Cascade)
+  ip        String
+  createdAt DateTime   @default(now())
+  prizeId   String?    @unique
+  prize     Prize?
+  result    PlayResult
+}
+
+model Prize {
+  id         String    @id @default(uuid())
+  playId     String    @unique
+  play       Play      @relation(fields: [playId], references: [id], onDelete: Cascade)
+  pin        String
+  redeemedAt DateTime?
+  qrLink     String
+}
+
+enum Role {
+  SUPER
+  ADMIN
+  SUB
+}
+
+enum WheelMode {
+  ALL_WIN
+  RANDOM_WIN
+}
+
+enum PlayResult {
+  WIN
+  LOSE
+}
+
+enum Plan {
+  BASIC
+  PREMIUM
+} 
