@@ -23,13 +23,15 @@ model Company {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   password  String
   role      Role
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  company   Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model Wheel {
@@ -62,6 +64,7 @@ model Play {
   prizeId   String?    @unique
   prize     Prize?
   result    PlayResult
+  lead      Json?      // Store lead data (name, email, phone, birthDate)
 }
 
 model Prize {
