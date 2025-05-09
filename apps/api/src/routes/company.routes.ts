@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
+import { authMiddleware, roleGuard, companyGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import wheelRoutes from './wheel.routes';
+import userRoutes from './user.routes';
+
 import { 
   getCompanyStatistics, 
   getAllCompanies, 
@@ -17,10 +19,17 @@ const router: Router = Router();
 router.use(authMiddleware);
 
 // Nest wheel routes under company
-router.use('/:companyId/wheels', wheelRoutes);
+router.use('/:companyId/wheels', companyGuard, wheelRoutes);
+
+// Nest user routes under company
+router.use('/:cid/users', companyGuard, userRoutes);
 
 // Register statistics endpoint
+router.get('/:companyId/statistics', companyGuard, getCompanyStatistics);
+=======
+// Register statistics endpoint
 router.get('/:companyId/statistics', getCompanyStatistics);
+
 
 // Register all companies endpoint (SUPER only)
 router.get('/', roleGuard([Role.SUPER]), getAllCompanies);
