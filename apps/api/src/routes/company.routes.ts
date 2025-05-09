@@ -1,15 +1,14 @@
 import { Router } from 'express';
-import { authMiddleware, roleGuard, companyGuard } from '../middlewares/auth.middleware';
+import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import wheelRoutes from './wheel.routes';
-import userRoutes from './user.routes';
 import { 
+  getCompanyStatistics, 
   getAllCompanies, 
   updateCompany,
   createCompany,
   deleteCompany
 } from '../controllers/company.controller';
-import { getCompanyStatistics } from '../controllers/play.controller';
 
 // Add type annotation for router
 const router: Router = Router();
@@ -18,13 +17,10 @@ const router: Router = Router();
 router.use(authMiddleware);
 
 // Nest wheel routes under company
-router.use('/:companyId/wheels', companyGuard, wheelRoutes);
-
-// Nest user routes under company
-router.use('/:cid/users', companyGuard, userRoutes);
+router.use('/:companyId/wheels', wheelRoutes);
 
 // Register statistics endpoint
-router.get('/:companyId/statistics', companyGuard, getCompanyStatistics);
+router.get('/:companyId/statistics', getCompanyStatistics);
 
 // Register all companies endpoint (SUPER only)
 router.get('/', roleGuard([Role.SUPER]), getAllCompanies);

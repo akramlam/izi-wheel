@@ -13,7 +13,7 @@ import playRoutes from './routes/play.routes';
 dotenv.config();
 
 // Create Express app
-const app = express();
+export const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -53,13 +53,15 @@ app.use(notFoundHandler);
 // Global error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-}); 
+// Start server only if this file is run directly
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+  
+  // Handle graceful shutdown
+  process.on('SIGINT', async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+} 

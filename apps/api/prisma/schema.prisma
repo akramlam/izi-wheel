@@ -12,22 +12,26 @@ datasource db {
 
 model Company {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   plan      Plan     @default(BASIC)
   maxWheels Int      @default(1)
   wheels    Wheel[]
   admins    User[]
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
   createdAt DateTime @default(now())
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   password  String
   role      Role
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  company   Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model Wheel {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
-import { BarChart } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,74 +28,51 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalWheels: 0,
-    activeWheels: 0,
-    totalPlays: 0,
-    totalPrizes: 0,
-    recentPlays: [] as any[],
-  });
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchStats = async () => {
       try {
-        // In a real app, we would have a dedicated endpoint for dashboard data
-        // For now, we'll simulate with wheel data
-        const { data } = await api.getWheels();
-        const wheels = data.wheels || [];
-        
-        // Calculate stats
-        const activeWheels = wheels.filter((wheel: any) => wheel.isActive).length;
-        const totalPlays = wheels.reduce((sum: number, wheel: any) => sum + (wheel._count?.plays || 0), 0);
-
-        setStats({
-          totalWheels: wheels.length,
-          activeWheels,
-          totalPlays,
-          totalPrizes: Math.floor(totalPlays * 0.4), // Simulated for demo
-          recentPlays: [], // We would fetch this from a real endpoint
-        });
+        const companyId = user?.companyId;
+        if (!companyId) return;
+        const { data } = await api.getCompanyStatistics(companyId, { range: '7d' });
+        setStats(data);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Error fetching dashboard stats:', error);
       } finally {
         setIsLoading(false);
       }
     };
+    fetchStats();
+  }, [user]);
 
-    fetchDashboardData();
-  }, []);
-
-  // Sample chart data
-  const chartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Plays',
-        data: [65, 59, 80, 81, 56, 55, 40],
-        backgroundColor: 'rgba(79, 70, 229, 0.6)',
-        borderColor: 'rgba(79, 70, 229, 1)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Prizes Won',
-        data: [28, 22, 40, 30, 26, 20, 15],
-        backgroundColor: 'rgba(139, 92, 246, 0.6)',
-        borderColor: 'rgba(139, 92, 246, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
+  const chartData = stats
+    ? {
+        labels: stats.playsByDay.map((d: any) => d.date),
+        datasets: [
+          {
+            label: 'Plays',
+            data: stats.playsByDay.map((d: any) => d.count),
+            backgroundColor: 'rgba(79, 70, 229, 0.6)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1,
+          },
+          {
+            label: 'Prizes Won',
+            data: stats.prizesByDay.map((d: any) => d.count),
+            backgroundColor: 'rgba(139, 92, 246, 0.6)',
+            borderColor: 'rgba(139, 92, 246, 1)',
+            borderWidth: 1,
+          },
+        ],
+      }
+    : { labels: [], datasets: [] };
 
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Weekly Activity',
-      },
+      legend: { position: 'top' as const },
+      title: { display: true, text: 'Weekly Activity' },
     },
   };
 
@@ -103,6 +80,14 @@ const Dashboard = () => {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex h-full items-center justify-center text-gray-500">
+        No data available.
       </div>
     );
   }
@@ -156,7 +141,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm text-violet-600">
-            <span className="font-medium">Last 30 days</span>
+            <span className="font-medium">Last 7 days</span>
           </div>
         </div>
 
@@ -171,7 +156,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="mt-4 flex items-center text-sm text-indigo-600">
-            <span className="font-medium">40% conversion rate</span>
+            <span className="font-medium">{stats.totalPlays ? ((stats.totalPrizes / stats.totalPlays) * 100).toFixed(1) : 0}% conversion rate</span>
           </div>
         </div>
 
@@ -200,10 +185,9 @@ const Dashboard = () => {
         <div className="rounded-lg bg-white p-6 shadow lg:col-span-3">
           <h2 className="mb-4 text-lg font-medium text-gray-900">Performance Overview</h2>
           <div className="h-80">
-            <BarChart options={chartOptions} data={chartData} />
+            <Bar options={chartOptions} data={chartData} />
           </div>
         </div>
-
         {/* Recent activity */}
         <div className="rounded-lg bg-white p-6 shadow lg:col-span-2">
           <div className="flex items-center justify-between">
@@ -215,47 +199,24 @@ const Dashboard = () => {
               View all
             </button>
           </div>
-          <div className="mt-6 flow-root">
-            <ul className="-my-5 divide-y divide-gray-200">
-              {stats.recentPlays.length > 0 ? (
-                stats.recentPlays.map((play, index) => (
-                  <li key={index} className="py-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-xs font-medium text-indigo-600">
-                            {play.wheelName?.charAt(0) || 'W'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-900">
-                          {play.wheelName || 'Wheel Campaign'}
-                        </p>
-                        <p className="truncate text-sm text-gray-500">
-                          {play.result === 'WIN' ? 'Prize won' : 'No prize'} • {play.createdAt}
-                        </p>
-                      </div>
-                      <div>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                            play.result === 'WIN'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {play.result}
-                        </span>
-                      </div>
+          <div className="mt-4 space-y-4">
+            {stats.recentPlays && stats.recentPlays.length > 0 ? (
+              stats.recentPlays.map((play: any) => (
+                <div key={play.id} className="rounded-md bg-gray-50 p-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{play.wheel?.name || 'Wheel'}</div>
+                      <div className="text-xs text-gray-500">{new Date(play.createdAt).toLocaleString()}</div>
                     </div>
-                  </li>
-                ))
-              ) : (
-                <div className="py-10 text-center">
-                  <p className="text-gray-500">No recent activity</p>
+                    <div className={`rounded-full px-3 py-1 text-xs font-semibold ${play.result === 'WIN' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>
+                      {play.result}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </ul>
+              ))
+            ) : (
+              <div className="text-gray-500">No recent activity</div>
+            )}
           </div>
         </div>
       </div>
