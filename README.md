@@ -106,4 +106,79 @@ pnpm dev
 - Play history tracking for analytics
 - Probability-based random slot selection
 - Support for both ALL_WIN and RANDOM_WIN wheel modes
-- Comprehensive unit tests 
+- Comprehensive unit tests
+
+### Milestone 6: ✅ Company Management
+- Company creation and soft deletion (SUPER admin only)
+- Validation for unique company names, plan types, and wheel limits
+- Prevention of company deletion when active wheels exist
+- Unit tests for company operations
+
+### Milestone 7: ✅ User Management
+- User invitation system with temporary password generation
+- Email notifications for new user invitations via SMTP.com
+- User role management within companies (ADMIN, SUB)
+- User listing and soft deletion
+- Email uniqueness validation per company
+- Unit tests for user management
+
+### Milestone 8: ✅ Integrations
+- SMTP.com integration for transactional emails
+- Cloudinary integration for asset storage
+- Mocked integrations for testing
+- Unit tests for integrations
+
+### Milestone 9: ✅ Leads & Analytics
+- Lead capture during wheel plays (name, email, phone, birthDate)
+- JSON and CSV export of leads data (PREMIUM plan only)
+- Date range filtering for analytics
+- Enhanced statistics with date filtering
+- Unit tests for leads and analytics features
+
+### Milestone 10: ✅ Super Admin Console
+- Plan management for companies (BASIC, PREMIUM)
+- Maximum wheels limit configuration
+- Automatic feature restriction based on plan type
+- Unit tests for super admin operations
+
+## API Endpoints
+
+### Authentication
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
+
+### Companies
+- `GET /companies` - List all companies (SUPER)
+- `POST /companies` - Create a company (SUPER)
+- `PUT /companies/:companyId` - Update a company (SUPER)
+- `DELETE /companies/:id` - Soft delete a company (SUPER)
+- `PATCH /companies/:id/plan` - Update company plan and maxWheels (SUPER)
+- `GET /companies/:companyId/statistics` - Get company statistics (ADMIN+)
+
+### Users
+- `GET /companies/:cid/users` - List company users (ADMIN+)
+- `POST /companies/:cid/users` - Invite a new user (ADMIN)
+- `PUT /companies/:cid/users/:uid` - Update user role or status (ADMIN)
+- `DELETE /companies/:cid/users/:uid` - Soft delete a user (ADMIN)
+
+### Wheels
+- `GET /companies/:companyId/wheels` - List wheels for a company (ADMIN+)
+- `GET /companies/:companyId/wheels/:wheelId` - Get a specific wheel (ADMIN+)
+- `POST /companies/:companyId/wheels` - Create a wheel (ADMIN+)
+- `PUT /companies/:companyId/wheels/:wheelId` - Update a wheel (ADMIN+)
+- `DELETE /companies/:companyId/wheels/:wheelId` - Delete a wheel (ADMIN+)
+- `GET /companies/:companyId/wheels/:wheelId/leads` - Get wheel leads in JSON (ADMIN+, PREMIUM)
+- `GET /companies/:companyId/wheels/:wheelId/leads.csv` - Get wheel leads in CSV (ADMIN+, PREMIUM)
+
+### Slots
+- `GET /companies/:companyId/wheels/:wheelId/slots` - List slots for a wheel (ADMIN+)
+- `GET /companies/:companyId/wheels/:wheelId/slots/:slotId` - Get a specific slot (ADMIN+)
+- `POST /companies/:companyId/wheels/:wheelId/slots` - Create a slot (ADMIN+)
+- `PUT /companies/:companyId/wheels/:wheelId/slots/:slotId` - Update a slot (ADMIN+)
+- `DELETE /companies/:companyId/wheels/:wheelId/slots/:slotId` - Delete a slot (ADMIN+)
+- `POST /companies/:companyId/wheels/:wheelId/slots/bulk` - Bulk update slots (ADMIN+)
+
+### Play & Prizes
+- `POST /companies/:companyId/wheels/:wheelId/play` - Spin the wheel (Public)
+- `PUT /plays/:playId/redeem` - Redeem a prize (Public)
+- `GET /plays/:playId` - Get play details (Public) 
