@@ -1,10 +1,84 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
+import { subDays, format } from 'date-fns';
 import { Plan } from '@prisma/client';
 
-/**
- * Get all companies (SUPER admin only)
- */
+export const getCompanyStatistics = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    // Total wheels and active wheels
+    const wheels = await prisma.wheel.findMany({
+      where: { companyId },
+      select: { id: true, isActive: true },
+    });
+    const totalWheels = wheels.length;
+    const activeWheels = wheels.filter(w => w.isActive).length;
+
+    // Total plays and prizes
+    const totalPlays = await prisma.play.count({
+      where: { wheel: { companyId } },
+    });
+    const totalPrizes = await prisma.prize.count({
+      where: { play: { wheel: { companyId } } },
+    });
+
+    // Plays by day (last 7 days)
+    const playsByDay = await Promise.all(
+      Array.from({ length: 7 }).map(async (_, i) => {
+        const day = subDays(new Date(), 6 - i);
+        const start = new Date(day.setHours(0, 0, 0, 0));
+        const end = new Date(day.setHours(23, 59, 59, 999));
+        const count = await prisma.play.count({
+          where: {
+            wheel: { companyId },
+            createdAt: { gte: start, lte: end },
+          },
+        });
+        return { date: format(start, 'yyyy-MM-dd'), count };
+      })
+    );
+
+    // Prizes by day (last 7 days)
+    const prizesByDay = await Promise.all(
+      Array.from({ length: 7 }).map(async (_, i) => {
+        const day = subDays(new Date(), 6 - i);
+        const start = new Date(day.setHours(0, 0, 0, 0));
+        const end = new Date(day.setHours(23, 59, 59, 999));
+        const count = await prisma.prize.count({
+          where: {
+            play: { wheel: { companyId }, createdAt: { gte: start, lte: end } },
+          },
+        });
+        return { date: format(start, 'yyyy-MM-dd'), count };
+      })
+    );
+
+    // Recent plays (last 10)
+    const recentPlays = await prisma.play.findMany({
+      where: { wheel: { companyId } },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: {
+        wheel: { select: { name: true } },
+        prize: true,
+      },
+    });
+
+    res.json({
+      totalWheels,
+      activeWheels,
+      totalPlays,
+      totalPrizes,
+      playsByDay,
+      prizesByDay,
+      recentPlays,
+    });
+  } catch (error) {
+    console.error('Company statistics error:', error);
+    res.status(500).json({ error: 'Failed to fetch company statistics' });
+  }
+};
+
 export const getAllCompanies = async (req: Request, res: Response) => {
   try {
     const companies = await prisma.company.findMany({
@@ -17,9 +91,6 @@ export const getAllCompanies = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Update a company's name or active status
- */
 export const updateCompany = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
@@ -42,9 +113,6 @@ export const updateCompany = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Create a new company (SUPER admin only)
- */
 export const createCompany = async (req: Request, res: Response) => {
   try {
     const { name, plan, maxWheels, isActive } = req.body;
@@ -88,9 +156,6 @@ export const createCompany = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Soft delete a company (SUPER admin only)
- */
 export const deleteCompany = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -125,52 +190,5 @@ export const deleteCompany = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Delete company error:', error);
     res.status(500).json({ error: 'Failed to delete company' });
-  }
-};
-
-/**
- * Update a company's plan and maxWheels (SUPER admin only)
- */
-export const updateCompanyPlan = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { plan, maxWheels } = req.body;
-    
-    // Validate the plan value if provided
-    if (plan && !Object.values(Plan).includes(plan)) {
-      return res.status(400).json({ 
-        error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
-      });
-    }
-
-    // Validate maxWheels if provided
-    if (maxWheels !== undefined && maxWheels < 1) {
-      return res.status(400).json({ 
-        error: 'maxWheels must be at least 1' 
-      });
-    }
-    
-    // Check if company exists
-    const existingCompany = await prisma.company.findUnique({
-      where: { id }
-    });
-    
-    if (!existingCompany) {
-      return res.status(404).json({ error: 'Company not found' });
-    }
-    
-    // Update the company
-    const updatedCompany = await prisma.company.update({
-      where: { id },
-      data: {
-        ...(plan && { plan }),
-        ...(maxWheels !== undefined ? { maxWheels } : {})
-      }
-    });
-    
-    res.json({ company: updatedCompany });
-  } catch (error) {
-    console.error('Update company plan error:', error);
-    res.status(500).json({ error: 'Failed to update company plan' });
   }
 }; 
