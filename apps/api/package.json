@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "nodemon --exec \"ts-node --transpile-only\" src/index.ts",
+    "test": "jest",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest",
     "migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:init": "node initialize-db.js",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "stop-backend": "Stop-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess -Force"
   },
   "dependencies": {
     "@iziwheel/common-types": "workspace:*",
@@ -19,7 +20,8 @@
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
-
+    "csv-writer": "^1.6.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
@@ -58,3 +60,4 @@
     "seed": "ts-node prisma/seed.ts"
   }
 }
+
