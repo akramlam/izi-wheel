@@ -31,4 +31,11 @@ router.post(
  */
 router.get('/profile', authMiddleware, getProfile);
 
+/**
+ * @route   GET /auth/me
+ * @desc    Get current user profile (alias for /auth/profile)
+ * @access  Private
+ */
+router.get('/me', authMiddleware, getProfile);
+
 export default router; 
