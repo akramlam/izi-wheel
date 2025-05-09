@@ -3,6 +3,7 @@ import { authMiddleware, roleGuard, companyGuard } from '../middlewares/auth.mid
 import { Role } from '@prisma/client';
 import wheelRoutes from './wheel.routes';
 import userRoutes from './user.routes';
+
 import { 
   getCompanyStatistics, 
   getAllCompanies, 
@@ -25,6 +26,10 @@ router.use('/:cid/users', companyGuard, userRoutes);
 
 // Register statistics endpoint
 router.get('/:companyId/statistics', companyGuard, getCompanyStatistics);
+=======
+// Register statistics endpoint
+router.get('/:companyId/statistics', getCompanyStatistics);
+
 
 // Register all companies endpoint (SUPER only)
 router.get('/', roleGuard([Role.SUPER]), getAllCompanies);
