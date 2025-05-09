@@ -3,12 +3,20 @@ import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
 import { checkRateLimit, getRateLimitKey, getRateLimitTTL } from '../utils/redis';
-import { PlayResult, WheelMode } from '@prisma/client';
+import { PlayResult, WheelMode, Plan } from '@prisma/client';
 import crypto from 'crypto';
+import { createObjectCsvStringifier } from 'csv-writer';
+import { subDays } from 'date-fns';
 
 // Validation schema for play request
 const playSchema = z.object({
   playerInfo: z.record(z.any()).optional(),
+  lead: z.object({
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+    phone: z.string().optional(),
+    birthDate: z.string().optional()
+  }).optional()
 });
 
 /**
@@ -70,6 +78,7 @@ export const spinWheel = async (req: Request, res: Response) => {
     
     // Validate request body
     const validatedData = playSchema.parse(req.body);
+    const { lead } = validatedData;
     
     // Find the wheel and its slots
     const wheel = await prisma.wheel.findUnique({
@@ -143,6 +152,7 @@ export const spinWheel = async (req: Request, res: Response) => {
           wheelId,
           ip,
           result,
+          lead: lead || undefined
         },
       });
       
@@ -300,5 +310,322 @@ export const getPlayHistory = async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ error: 'An unexpected error occurred' });
     }
+  }
+};
+
+/**
+ * Get leads for a wheel (JSON format)
+ */
+export const getWheelLeads = async (req: Request, res: Response) => {
+  try {
+    const { wid } = req.params;
+    const { from, to } = req.query;
+    
+    // Check if user's company has PREMIUM plan
+    const wheel = await prisma.wheel.findUnique({
+      where: { id: wid },
+      include: {
+        company: {
+          select: {
+            plan: true
+          }
+        }
+      }
+    });
+    
+    if (!wheel) {
+      return res.status(404).json({ error: 'Wheel not found' });
+    }
+    
+    // Check if company has PREMIUM plan
+    if (wheel.company.plan !== Plan.PREMIUM) {
+      return res.status(402).json({ 
+        error: 'This feature requires a PREMIUM plan' 
+      });
+    }
+    
+    // Build date filter if date range is provided
+    const dateFilter = {};
+    if (from || to) {
+      dateFilter['createdAt'] = {};
+      
+      if (from) {
+        dateFilter['createdAt']['gte'] = new Date(from as string);
+      }
+      
+      if (to) {
+        dateFilter['createdAt']['lte'] = new Date(to as string);
+      }
+    }
+    
+    // Get all plays with leads for this wheel
+    const plays = await prisma.play.findMany({
+      where: {
+        wheelId: wid,
+        lead: { not: null },
+        ...dateFilter
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        lead: true,
+        result: true,
+        prize: {
+          select: {
+            redeemedAt: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    res.json({ leads: plays });
+  } catch (error) {
+    console.error('Get wheel leads error:', error);
+    res.status(500).json({ error: 'Failed to fetch wheel leads' });
+  }
+};
+
+/**
+ * Get leads for a wheel (CSV format)
+ */
+export const getWheelLeadsCsv = async (req: Request, res: Response) => {
+  try {
+    const { wid } = req.params;
+    const { from, to } = req.query;
+    
+    // Check if user's company has PREMIUM plan
+    const wheel = await prisma.wheel.findUnique({
+      where: { id: wid },
+      include: {
+        company: {
+          select: {
+            plan: true,
+            name: true
+          }
+        }
+      }
+    });
+    
+    if (!wheel) {
+      return res.status(404).json({ error: 'Wheel not found' });
+    }
+    
+    // Check if company has PREMIUM plan
+    if (wheel.company.plan !== Plan.PREMIUM) {
+      return res.status(402).json({ 
+        error: 'This feature requires a PREMIUM plan' 
+      });
+    }
+    
+    // Build date filter if date range is provided
+    const dateFilter = {};
+    if (from || to) {
+      dateFilter['createdAt'] = {};
+      
+      if (from) {
+        dateFilter['createdAt']['gte'] = new Date(from as string);
+      }
+      
+      if (to) {
+        dateFilter['createdAt']['lte'] = new Date(to as string);
+      }
+    }
+    
+    // Get all plays with leads for this wheel
+    const plays = await prisma.play.findMany({
+      where: {
+        wheelId: wid,
+        lead: { not: null },
+        ...dateFilter
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        lead: true,
+        result: true,
+        prize: {
+          select: {
+            redeemedAt: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    // Format data for CSV
+    const records = plays.map(play => {
+      const lead = play.lead as any;
+      return {
+        id: play.id,
+        date: play.createdAt.toISOString(),
+        name: lead?.name || '',
+        email: lead?.email || '',
+        phone: lead?.phone || '',
+        birthDate: lead?.birthDate || '',
+        result: play.result,
+        redeemed: play.prize?.redeemedAt ? 'Yes' : 'No'
+      };
+    });
+    
+    // Create CSV
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'id', title: 'ID' },
+        { id: 'date', title: 'Date' },
+        { id: 'name', title: 'Name' },
+        { id: 'email', title: 'Email' },
+        { id: 'phone', title: 'Phone' },
+        { id: 'birthDate', title: 'Birth Date' },
+        { id: 'result', title: 'Result' },
+        { id: 'redeemed', title: 'Prize Redeemed' }
+      ]
+    });
+    
+    const csvString = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records);
+    
+    // Set response headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="leads-${wheel.company.name}-${new Date().toISOString().split('T')[0]}.csv"`);
+    
+    res.send(csvString);
+  } catch (error) {
+    console.error('Get wheel leads CSV error:', error);
+    res.status(500).json({ error: 'Failed to generate leads CSV' });
+  }
+};
+
+/**
+ * Update the company statistics function to support date filtering
+ */
+export const getCompanyStatistics = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    const { from, to } = req.query;
+    
+    // Parse date range if provided
+    let fromDate = subDays(new Date(), 6); // Default to last 7 days
+    let toDate = new Date();
+    
+    if (from) {
+      fromDate = new Date(from as string);
+    }
+    
+    if (to) {
+      toDate = new Date(to as string);
+    }
+    
+    // Total wheels and active wheels
+    const wheels = await prisma.wheel.findMany({
+      where: { companyId },
+      select: { id: true, isActive: true },
+    });
+    const totalWheels = wheels.length;
+    const activeWheels = wheels.filter(w => w.isActive).length;
+
+    // Total plays and prizes with date filter
+    const totalPlays = await prisma.play.count({
+      where: { 
+        wheel: { companyId },
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
+        }
+      },
+    });
+    
+    const totalPrizes = await prisma.prize.count({
+      where: { 
+        play: { 
+          wheel: { companyId },
+          createdAt: { 
+            gte: fromDate,
+            lte: toDate
+          }
+        } 
+      },
+    });
+
+    // Plays by day with date filter
+    const playsByDay = await prisma.play.groupBy({
+      by: ['createdAt'],
+      where: {
+        wheel: { companyId },
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
+        }
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Format the grouped data
+    const formattedPlaysByDay = playsByDay.map(day => ({
+      date: day.createdAt.toISOString().split('T')[0],
+      count: day._count.id
+    }));
+
+    // Prizes by day with date filter
+    const prizesByDay = await prisma.prize.groupBy({
+      by: ['createdAt'],
+      where: {
+        play: { 
+          wheel: { companyId },
+          createdAt: { 
+            gte: fromDate,
+            lte: toDate
+          }
+        }
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    // Format the grouped data
+    const formattedPrizesByDay = prizesByDay.map(day => ({
+      date: day.createdAt.toISOString().split('T')[0],
+      count: day._count.id
+    }));
+
+    // Recent plays (last 10)
+    const recentPlays = await prisma.play.findMany({
+      where: { 
+        wheel: { companyId },
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: {
+        wheel: { select: { name: true } },
+        prize: true,
+      },
+    });
+
+    res.json({
+      totalWheels,
+      activeWheels,
+      totalPlays,
+      totalPrizes,
+      playsByDay: formattedPlaysByDay,
+      prizesByDay: formattedPrizesByDay,
+      recentPlays,
+      dateRange: {
+        from: fromDate.toISOString(),
+        to: toDate.toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Company statistics error:', error);
+    res.status(500).json({ error: 'Failed to fetch company statistics' });
   }
 }; 

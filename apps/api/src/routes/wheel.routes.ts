@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as wheelController from '../controllers/wheel.controller';
 import * as slotController from '../controllers/slot.controller';
+import * as playController from '../controllers/play.controller';
 import { authMiddleware, roleGuard, companyGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import playRoutes from './play.routes';
@@ -52,6 +53,21 @@ router.put('/:wheelId', roleGuard([Role.ADMIN, Role.SUPER]), wheelController.upd
  * @access  Private (ADMIN, SUPER)
  */
 router.delete('/:wheelId', roleGuard([Role.ADMIN, Role.SUPER]), wheelController.deleteWheel);
+
+// Leads routes
+/**
+ * @route   GET /companies/:companyId/wheels/:wheelId/leads
+ * @desc    Get all leads for a wheel (JSON format)
+ * @access  Private (ADMIN, SUPER) - PREMIUM plan only
+ */
+router.get('/:wheelId/leads', roleGuard([Role.ADMIN, Role.SUPER]), playController.getWheelLeads);
+
+/**
+ * @route   GET /companies/:companyId/wheels/:wheelId/leads.csv
+ * @desc    Get all leads for a wheel (CSV format)
+ * @access  Private (ADMIN, SUPER) - PREMIUM plan only
+ */
+router.get('/:wheelId/leads.csv', roleGuard([Role.ADMIN, Role.SUPER]), playController.getWheelLeadsCsv);
 
 // Slot routes
 /**
