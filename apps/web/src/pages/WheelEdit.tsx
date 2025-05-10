@@ -58,11 +58,11 @@ const WheelEdit = () => {
 
       setWheel(wheelData);
     } catch (error) {
-      console.error('Error fetching wheel data:', error);
+      console.error('Erreur de chargement des données de la roue:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load wheel data. Please try again.',
+        title: 'Erreur',
+        description: 'Impossible de charger les données de la roue. Veuillez réessayer.',
       });
     } finally {
       setIsLoading(false);
@@ -124,8 +124,8 @@ const WheelEdit = () => {
     if (wheel.slots.length < 2) {
       toast({
         variant: 'destructive',
-        title: 'Validation Error',
-        description: 'You need at least 2 slots on the wheel.',
+        title: 'Erreur de validation',
+        description: 'Vous devez avoir au moins 2 cases sur la roue.',
       });
       return false;
     }
@@ -134,8 +134,8 @@ const WheelEdit = () => {
     if (totalProbability !== 100) {
       toast({
         variant: 'destructive',
-        title: 'Validation Error',
-        description: `Total probability must equal 100%. Current total: ${totalProbability}%`,
+        title: 'Erreur de validation',
+        description: `La somme des probabilités doit être égale à 100%. Total actuel : ${totalProbability}%`,
       });
       return false;
     }
@@ -185,17 +185,17 @@ const WheelEdit = () => {
       
       toast({
         variant: 'success',
-        title: 'Success',
-        description: `Wheel ${isNew ? 'created' : 'updated'} successfully!`,
+        title: 'Succès',
+        description: `La roue ${isNew ? 'créée' : 'mise à jour'} avec succès!`,
       });
       
       navigate('/wheels');
     } catch (error) {
-      console.error('Error saving wheel:', error);
+      console.error('Erreur de sauvegarde de la roue:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: `Failed to ${isNew ? 'create' : 'update'} wheel. Please try again.`,
+        title: 'Erreur',
+        description: `Impossible de ${isNew ? 'créer' : 'mettre à jour'} la roue. Veuillez réessayer.`,
       });
     } finally {
       setIsSaving(false);
@@ -219,21 +219,19 @@ const WheelEdit = () => {
           className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-indigo-600"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
-          Back to Wheels
+          Retour aux roues
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isNew ? 'Create New Wheel' : `Edit Wheel: ${wheel.name}`}
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">{isNew ? 'Créer une nouvelle roue' : 'Modifier la roue'}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Wheel info card */}
         <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Wheel Information</h2>
+          <h2 className="mb-4 text-lg font-medium text-gray-900">Informations sur la roue</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <div className="col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700">
-                Wheel Name
+                Nom de la roue
               </label>
               <input
                 type="text"
@@ -241,14 +239,14 @@ const WheelEdit = () => {
                 value={wheel.name}
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Summer Promotion"
+                placeholder="Promotion d'été"
                 required
               />
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
-                Wheel Mode
+                Mode de la roue
               </label>
               <select
                 name="mode"
@@ -256,14 +254,14 @@ const WheelEdit = () => {
                 onChange={handleChange}
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="RANDOM_WIN">Random Win</option>
-                <option value="ALL_WIN">All Win</option>
+                <option value="RANDOM_WIN">Gain aléatoire</option>
+                <option value="ALL_WIN">Gagnant à tous les coups</option>
               </select>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
-                Status
+                Statut
               </label>
               <div className="mt-2 flex items-center">
                 <input
@@ -273,7 +271,7 @@ const WheelEdit = () => {
                   onChange={handleChange}
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="ml-2 text-sm text-gray-700">Active</span>
+                <span className="ml-2 text-sm text-gray-700">Actif</span>
               </div>
             </div>
           </div>
@@ -281,9 +279,9 @@ const WheelEdit = () => {
 
         {/* Form fields card */}
         <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Lead Form Fields</h2>
+          <h2 className="mb-4 text-lg font-medium text-gray-900">Champs du formulaire participant</h2>
           <p className="mb-4 text-sm text-gray-600">
-            Select which fields to collect from users before they spin the wheel
+            Sélectionnez les champs à collecter des utilisateurs avant qu'ils tournent la roue
           </p>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-center">
@@ -295,7 +293,7 @@ const WheelEdit = () => {
                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <label htmlFor="field-name" className="ml-2 text-sm text-gray-700">
-                Name
+                Nom
               </label>
             </div>
 
@@ -321,7 +319,7 @@ const WheelEdit = () => {
                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <label htmlFor="field-phone" className="ml-2 text-sm text-gray-700">
-                Phone Number
+                Téléphone
               </label>
             </div>
           </div>
@@ -330,21 +328,20 @@ const WheelEdit = () => {
         {/* Slots card */}
         <div className="rounded-lg bg-white p-6 shadow">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">Wheel Slots</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-2">Cases de la roue</h2>
             <button
               type="button"
               onClick={addSlot}
-              className="inline-flex items-center rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+              className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
-              <Plus className="mr-1 h-4 w-4" />
-              Add Slot
+              <Plus className="mr-2 h-4 w-4" /> Ajouter une case
             </button>
           </div>
           
           <div className="mb-2 text-right text-sm text-gray-500">
-            Total probability: {wheel.slots.reduce((sum, slot) => sum + slot.probability, 0)}%
+            Probabilité totale : {wheel.slots.reduce((sum, slot) => sum + slot.probability, 0)}%
             {wheel.slots.reduce((sum, slot) => sum + slot.probability, 0) !== 100 && (
-              <span className="ml-2 text-red-600">(Must equal 100%)</span>
+              <span className="ml-2 text-red-600">(Doit être égal à 100%)</span>
             )}
           </div>
 
@@ -353,15 +350,15 @@ const WheelEdit = () => {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
                 <Target className="h-6 w-6 text-indigo-600" />
               </div>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No slots</h3>
-              <p className="mt-1 text-sm text-gray-500">Add slots to your wheel to get started.</p>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune case</h3>
+              <p className="mt-1 text-sm text-gray-500">Ajoutez des cases à votre roue pour commencer.</p>
               <button
                 type="button"
                 onClick={addSlot}
                 className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
               >
                 <Plus className="mr-1 h-4 w-4" />
-                Add Slot
+                Ajouter une case
               </button>
             </div>
           ) : (
@@ -370,13 +367,13 @@ const WheelEdit = () => {
                 <thead>
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Prize Label
+                      Libellé du lot
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Prize Code
+                      Code du lot
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Probability (%)
+                      Probabilité (%)
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                       Actions
@@ -392,7 +389,7 @@ const WheelEdit = () => {
                           value={slot.label}
                           onChange={(e) => handleSlotChange(index, 'label', e.target.value)}
                           className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                          placeholder="Prize name"
+                          placeholder="Nom du lot"
                           required
                         />
                       </td>
@@ -452,7 +449,7 @@ const WheelEdit = () => {
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {isNew ? 'Create Wheel' : 'Save Changes'}
+                {isNew ? 'Créer la roue' : 'Enregistrer les modifications'}
               </>
             )}
           </button>

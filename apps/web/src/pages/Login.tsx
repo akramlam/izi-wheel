@@ -23,16 +23,13 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-600 p-6">
-      <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="bg-gradient-to-r from-indigo-500 to-violet-600 p-6 text-center text-white">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white">
-            <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center">
-              <span className="text-xl font-bold text-white">IZ</span>
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold">IZI Wheel</h2>
-          <p className="text-indigo-100">Admin Dashboard</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-500">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+        <div className="flex justify-center mb-4">
+          <img src="/logo.svg" alt="Logo IziKADO" className="h-16 w-auto drop-shadow-lg" />
+        </div>
+        <div className="flex justify-center mb-6">
+          <span className="text-lg font-semibold text-indigo-700">Admin Dashboard</span>
         </div>
 
         <div className="p-8">

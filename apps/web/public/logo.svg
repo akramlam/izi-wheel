@@ -1,0 +1,12 @@
+<svg width="160" height="50" viewBox="0 0 160 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="38" font-family="Montserrat, Arial, sans-serif" font-size="38" font-weight="bold" fill="#8B5CF6" filter="url(#shadow)">izi</text>
+  <text x="55" y="38" font-family="Montserrat, Arial, sans-serif" font-size="38" font-weight="bold" fill="#111" filter="url(#shadow)">KADO</text>
+  <circle cx="140" cy="25" r="18" fill="#fff" stroke="#111" stroke-width="4"/>
+  <circle cx="140" cy="25" r="10" fill="#8B5CF6" />
+  <circle cx="140" cy="25" r="4" fill="#111" />
+  <defs>
+    <filter id="shadow" x="0" y="0" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#888" />
+    </filter>
+  </defs>
+</svg> 

@@ -78,8 +78,8 @@ const Statistics = () => {
       if (!companyId) {
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'No company ID found. Please log in again.',
+          title: 'Erreur',
+          description: 'Aucun ID d\'entreprise trouvé. Veuillez vous reconnecter.',
         });
         return;
       }
@@ -87,11 +87,11 @@ const Statistics = () => {
       const response = await api.getCompanyStatistics(companyId, { range: dateRange });
       setStatsData(response.data);
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      console.error('Erreur lors de la récupération des statistiques:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load statistics. Please try again.',
+        title: 'Erreur',
+        description: 'Échec de la récupération des statistiques. Veuillez réessayer.',
       });
     } finally {
       setIsLoading(false);
@@ -117,7 +117,7 @@ const Statistics = () => {
       labels,
       datasets: [
         {
-          label: 'Daily Plays',
+          label: 'Jours de parties',
           data,
           borderColor: 'rgba(99, 102, 241, 1)',
           backgroundColor: 'rgba(99, 102, 241, 0.2)',
@@ -169,14 +169,14 @@ const Statistics = () => {
       labels: statsData.wheelPerformance.map(wheel => wheel.wheelName),
       datasets: [
         {
-          label: 'Plays',
+          label: 'Jours de parties',
           data: statsData.wheelPerformance.map(wheel => wheel.plays),
           backgroundColor: 'rgba(99, 102, 241, 0.7)',
           borderColor: 'rgba(99, 102, 241, 1)',
           borderWidth: 1,
         },
         {
-          label: 'Prizes Won',
+          label: 'Lots gagnés',
           data: statsData.wheelPerformance.map(wheel => wheel.prizes),
           backgroundColor: 'rgba(236, 72, 153, 0.7)',
           borderColor: 'rgba(236, 72, 153, 1)',
@@ -199,9 +199,9 @@ const Statistics = () => {
       {/* Header */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Statistics & Analytics</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Statistiques & Analyses</h1>
           <p className="mt-1 text-gray-600">
-            Track and analyze your wheel campaign performance
+            Suivez et analysez la performance de vos campagnes de roue.
           </p>
         </div>
 
@@ -215,7 +215,7 @@ const Statistics = () => {
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            7 Days
+            7 jours
           </button>
           <button
             onClick={() => setDateRange('30d')}
@@ -225,7 +225,7 @@ const Statistics = () => {
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            30 Days
+            30 jours
           </button>
           <button
             onClick={() => setDateRange('90d')}
@@ -235,7 +235,7 @@ const Statistics = () => {
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            90 Days
+            90 jours
           </button>
           <button
             onClick={() => setDateRange('all')}
@@ -245,7 +245,7 @@ const Statistics = () => {
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            All Time
+            Toute la période
           </button>
         </div>
       </div>
@@ -258,7 +258,7 @@ const Statistics = () => {
               <Calendar className="h-6 w-6 text-indigo-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Total Plays</p>
+              <p className="text-sm font-medium text-gray-500">Nombre de parties</p>
               <h3 className="text-2xl font-bold text-gray-900">
                 {statsData?.totalPlays.toLocaleString() || 0}
               </h3>
@@ -272,7 +272,7 @@ const Statistics = () => {
               <Award className="h-6 w-6 text-pink-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Prizes Awarded</p>
+              <p className="text-sm font-medium text-gray-500">Lots attribués</p>
               <h3 className="text-2xl font-bold text-gray-900">
                 {statsData?.totalPrizes.toLocaleString() || 0}
               </h3>
@@ -286,7 +286,7 @@ const Statistics = () => {
               <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Conversion Rate</p>
+              <p className="text-sm font-medium text-gray-500">Taux de conversion</p>
               <h3 className="text-2xl font-bold text-gray-900">
                 {statsData ? `${(statsData.conversionRate * 100).toFixed(1)}%` : '0%'}
               </h3>
@@ -300,7 +300,7 @@ const Statistics = () => {
               <Users className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Leads Generated</p>
+              <p className="text-sm font-medium text-gray-500">Leads générés</p>
               <h3 className="text-2xl font-bold text-gray-900">
                 {statsData?.totalPlays.toLocaleString() || 0}
               </h3>
@@ -318,7 +318,7 @@ const Statistics = () => {
             onClick={() => toggleSection('playsOverTime')}
           >
             <h2 className="text-lg font-medium text-gray-900">
-              Plays Over Time
+              Parties dans le temps
             </h2>
             <button className="text-gray-500 hover:text-gray-700">
               {expandedSection === 'playsOverTime' ? (
@@ -357,7 +357,7 @@ const Statistics = () => {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <p className="text-gray-500">No play data available for the selected period</p>
+                  <p className="text-gray-500">Aucune donnée de parties pour la période sélectionnée</p>
                 </div>
               )}
             </div>
@@ -371,7 +371,7 @@ const Statistics = () => {
             onClick={() => toggleSection('prizeDistribution')}
           >
             <h2 className="text-lg font-medium text-gray-900">
-              Prize Distribution
+              Répartition des lots
             </h2>
             <button className="text-gray-500 hover:text-gray-700">
               {expandedSection === 'prizeDistribution' ? (
@@ -400,25 +400,25 @@ const Statistics = () => {
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <p className="text-gray-500">No prize data available</p>
+                    <p className="text-gray-500">Aucune donnée de lots disponible</p>
                   </div>
                 )}
               </div>
               
               <div>
-                <h3 className="mb-3 font-medium text-gray-700">Prize Details</h3>
+                <h3 className="mb-3 font-medium text-gray-700">Détail des lots</h3>
                 <div className="overflow-hidden rounded-md border border-gray-200">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Prize
+                          Lot
                         </th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                           Code
                         </th>
                         <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
-                          Count
+                          Quantité
                         </th>
                       </tr>
                     </thead>
@@ -451,7 +451,7 @@ const Statistics = () => {
             onClick={() => toggleSection('wheelPerformance')}
           >
             <h2 className="text-lg font-medium text-gray-900">
-              Wheel Performance Comparison
+              Comparaison des performances des roues
             </h2>
             <button className="text-gray-500 hover:text-gray-700">
               {expandedSection === 'wheelPerformance' ? (
@@ -487,7 +487,7 @@ const Statistics = () => {
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <p className="text-gray-500">No wheel performance data available</p>
+                  <p className="text-gray-500">Aucune donnée de performance de roue disponible</p>
                 </div>
               )}
             </div>
