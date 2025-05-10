@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
@@ -11,12 +11,18 @@ import {
   Menu,
   X,
   ChevronDown,
+  Home,
+  User,
+  Folder,
+  CreditCard,
 } from 'lucide-react';
 
 const Layout = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const navigate = useNavigate();
+  const avatarUrl = 'https://api.dicebear.com/7.x/adventurer/svg?seed=' + (user?.email || 'user');
 
   const closeSidebar = () => {
     setSidebarOpen(false);
@@ -25,31 +31,31 @@ const Layout = () => {
   // Navigation items with role-based access control
   const navItems = [
     {
-      name: 'Dashboard',
+      name: 'Tableau de bord',
       path: '/dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />,
       allowed: ['SUPER', 'ADMIN', 'SUB'],
     },
     {
-      name: 'Wheels',
+      name: 'Roues',
       path: '/wheels',
       icon: <Target className="h-5 w-5" />,
       allowed: ['SUPER', 'ADMIN', 'SUB'],
     },
     {
-      name: 'Statistics',
+      name: 'Statistiques',
       path: '/statistics',
       icon: <BarChart3 className="h-5 w-5" />,
       allowed: ['SUPER', 'ADMIN', 'SUB'],
     },
     {
-      name: 'Companies',
+      name: 'Entreprises',
       path: '/companies',
       icon: <Building2 className="h-5 w-5" />,
       allowed: ['SUPER'],
     },
     {
-      name: 'Sub-Admins',
+      name: 'Sous-administrateurs',
       path: '/sub-admins',
       icon: <Users className="h-5 w-5" />,
       allowed: ['SUPER', 'ADMIN'],
@@ -59,6 +65,18 @@ const Layout = () => {
   const filteredNavItems = navItems.filter(item => 
     item.allowed.includes(user?.role || '')
   );
+
+  // Ajout d'un effet pour fermer le menu au clic extérieur
+  useEffect(() => {
+    if (!showAccountMenu) return;
+    function handleClick(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest('.relative')) {
+        setShowAccountMenu(false);
+      }
+    }
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, [showAccountMenu]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -78,39 +96,19 @@ const Layout = () => {
       >
         {/* Sidebar header */}
         <div className="flex h-16 items-center justify-between px-4">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-violet-500 text-center">
-              <span className="text-2xl font-bold leading-8">I</span>
-            </div>
-            <span className="ml-2 text-xl font-bold">IZI Wheel</span>
-          </div>
+          <a href="/" className="flex items-center gap-2">
+            <img
+              src="/logo.svg"
+              alt="Logo IziKADO"
+              className="h-14 w-auto drop-shadow-lg"
+            />
+          </a>
           <button 
             className="p-1 hover:bg-indigo-800 lg:hidden rounded"
-            onClick={closeSidebar}
+            onClick={() => setSidebarOpen(false)}
           >
             <X className="h-6 w-6" />
           </button>
-        </div>
-
-        {/* User info */}
-        <div className="border-b border-indigo-800 pb-4 pt-2">
-          <div className="flex items-center px-4">
-            <div className="flex-shrink-0">
-              <div className="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center">
-                <span className="text-lg font-medium">
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-            </div>
-            <div className="ml-3 overflow-hidden">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.email || 'User'}
-              </p>
-              <p className="text-xs text-indigo-300 truncate">
-                {user?.role || 'Role'}
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Navigation */}
@@ -140,7 +138,7 @@ const Layout = () => {
                 className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-indigo-100 hover:bg-indigo-800/70"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="ml-3">Logout</span>
+                <span className="ml-3">Déconnexion</span>
               </button>
             </li>
           </ul>
@@ -159,14 +157,40 @@ const Layout = () => {
               >
                 <Menu className="h-6 w-6" />
               </button>
-              <div className="flex items-center">
+              <div className="flex-1 flex justify-end items-center">
                 <div className="relative">
                   <button
-                    className="flex items-center text-sm px-3 py-2 rounded-full bg-indigo-50 text-indigo-900 hover:bg-indigo-100"
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white font-bold text-lg shadow transition-all focus:outline-none border-2 border-white hover:scale-105"
+                    title={user?.email || 'Compte'}
+                    onClick={() => setShowAccountMenu((v) => !v)}
                   >
-                    <span className="mr-1">My Company</span>
-                    <ChevronDown className="h-4 w-4" />
+                    <img src={avatarUrl} alt="avatar" className="w-9 h-9 rounded-full object-cover" />
                   </button>
+                  {showAccountMenu && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl py-6 z-50 border border-gray-100 animate-fade-in flex flex-col min-h-[480px]">
+                      <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setShowAccountMenu(false)}><X className="w-5 h-5" /></button>
+                      <div className="flex flex-col items-center px-6 pb-4">
+                        <img src={avatarUrl} alt="avatar" className="w-20 h-20 rounded-full border-4 border-white shadow mb-2" />
+                        <div className="text-lg font-bold text-gray-900">{user?.email?.split('@')[0] || 'Utilisateur'}</div>
+                        <div className="text-sm text-gray-500 mb-2">{user?.email}</div>
+                        <div className="flex gap-2 mb-2">
+                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team1" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team2" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team3" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <button className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">+</button>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col gap-1 px-4">
+                        <a href="/dashboard" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><Home className="w-5 h-5" /> Accueil</a>
+                        <a href="/profile" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><User className="w-5 h-5" /> Profil</a>
+                        <a href="/projects" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition relative"><Folder className="w-5 h-5" /> Projets <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">3</span></a>
+                        <a href="/subscription" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><CreditCard className="w-5 h-5" /> Abonnement</a>
+                      </div>
+                      <div className="mt-auto px-4 pt-4">
+                        <button onClick={logout} className="w-full text-center py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition text-lg">Déconnexion</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

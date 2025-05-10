@@ -40,8 +40,8 @@ const SubAdminManager = () => {
       if (!companyId) {
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'No company ID found. Please log in again.',
+          title: 'Erreur',
+          description: 'Aucun ID d\'entreprise trouvé. Veuillez vous reconnecter.',
         });
         return;
       }
@@ -56,8 +56,8 @@ const SubAdminManager = () => {
       console.error('Error fetching sub-admins:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load sub-administrators. Please try again.',
+        title: 'Erreur',
+        description: 'Échec du chargement des sous-administrateurs. Veuillez réessayer.',
       });
     } finally {
       setIsLoading(false);
@@ -83,8 +83,8 @@ const SubAdminManager = () => {
       if (!user?.companyId) {
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'No company ID found. Please log in again.',
+          title: 'Erreur',
+          description: 'Aucun ID d\'entreprise trouvé. Veuillez vous reconnecter.',
         });
         return;
       }
@@ -99,8 +99,8 @@ const SubAdminManager = () => {
       });
       
       toast({
-        title: 'Success',
-        description: 'Sub-administrator created successfully',
+        title: 'Succès',
+        description: 'Sous-administrateur créé avec succès',
       });
       
       setIsCreating(false);
@@ -116,8 +116,8 @@ const SubAdminManager = () => {
       console.error('Error creating sub-admin:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to create sub-administrator',
+        title: 'Erreur',
+        description: 'Échec de la création du sous-administrateur',
       });
     }
   };
@@ -131,8 +131,8 @@ const SubAdminManager = () => {
       });
       
       toast({
-        title: 'Success',
-        description: 'Sub-administrator updated successfully',
+        title: 'Succès',
+        description: 'Sous-administrateur mis à jour avec succès',
       });
       
       setIsUpdating(null);
@@ -148,8 +148,8 @@ const SubAdminManager = () => {
       console.error('Error updating sub-admin:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update sub-administrator',
+        title: 'Erreur',
+        description: 'Échec de la mise à jour du sous-administrateur',
       });
     }
   };
@@ -159,8 +159,8 @@ const SubAdminManager = () => {
       if (!formData.password || formData.password.length < 8) {
         toast({
           variant: 'destructive',
-          title: 'Validation Error',
-          description: 'Password must be at least 8 characters long',
+          title: 'Erreur de validation',
+          description: 'Le mot de passe doit comporter au moins 8 caractères',
         });
         return;
       }
@@ -170,8 +170,8 @@ const SubAdminManager = () => {
       });
       
       toast({
-        title: 'Success',
-        description: 'Password reset successfully',
+        title: 'Succès',
+        description: 'Mot de passe réinitialisé avec succès',
       });
       
       setResetPassword(null);
@@ -183,14 +183,14 @@ const SubAdminManager = () => {
       console.error('Error resetting password:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to reset password',
+        title: 'Erreur',
+        description: 'Échec de la réinitialisation du mot de passe',
       });
     }
   };
 
   const handleDeleteSubAdmin = async (subAdminId: string) => {
-    if (!window.confirm('Are you sure you want to delete this sub-administrator? This action cannot be undone.')) {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce sous-administrateur ? Cette action ne peut être annulée.')) {
       return;
     }
     
@@ -198,8 +198,8 @@ const SubAdminManager = () => {
       await api.deleteUser(subAdminId);
       
       toast({
-        title: 'Success',
-        description: 'Sub-administrator deleted successfully',
+        title: 'Succès',
+        description: 'Sous-administrateur supprimé avec succès',
       });
       
       fetchSubAdmins();
@@ -207,8 +207,8 @@ const SubAdminManager = () => {
       console.error('Error deleting sub-admin:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete sub-administrator',
+        title: 'Erreur',
+        description: 'Échec de la suppression du sous-administrateur',
       });
     }
   };
@@ -257,35 +257,35 @@ const SubAdminManager = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Sub-Administrator Management
+          Gestion des sous-administrateurs
         </h1>
         <p className="mt-2 text-gray-600">
-          Create and manage sub-administrators for your company
+          Créez et gérez les sous-administrateurs de votre entreprise
         </p>
       </div>
 
       {/* Sub-Admin Management */}
       <div className="rounded-lg bg-white p-6 shadow">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Sub-Administrators</h2>
+          <h2 className="text-lg font-medium text-gray-900">Sous-Administrateurs</h2>
           {!isCreating && (
             <button
               onClick={() => setIsCreating(true)}
               className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Sub-Admin
+              Ajouter un sous-administrateur
             </button>
           )}
         </div>
 
         {isCreating && (
           <div className="mb-6 rounded-md border border-gray-200 bg-gray-50 p-4">
-            <h3 className="mb-3 text-md font-medium text-gray-900">Create New Sub-Administrator</h3>
+            <h3 className="mb-3 text-md font-medium text-gray-900">Créer un nouveau sous-administrateur</h3>
             <form onSubmit={handleCreateSubAdmin} className="grid gap-4 md:grid-cols-2">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Name
+                  Nom
                 </label>
                 <input
                   type="text"
@@ -315,7 +315,7 @@ const SubAdminManager = () => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
+                  Mot de passe
                 </label>
                 <input
                   type="password"
@@ -339,7 +339,7 @@ const SubAdminManager = () => {
                   className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
                 <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
-                  Active
+                  Actif
                 </label>
               </div>
               
@@ -349,7 +349,7 @@ const SubAdminManager = () => {
                   className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  Create
+                  Créer
                 </button>
                 <button
                   type="button"
@@ -357,7 +357,7 @@ const SubAdminManager = () => {
                   className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Cancel
+                  Annuler
                 </button>
               </div>
             </form>
@@ -366,7 +366,7 @@ const SubAdminManager = () => {
 
         {subAdmins.length === 0 ? (
           <div className="rounded-md bg-gray-50 p-4 text-center text-gray-600">
-            No sub-administrators found. Add your first sub-admin to get started.
+            Aucun sous-administrateur trouvé. Ajoutez votre premier sous-administrateur pour commencer.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -374,16 +374,16 @@ const SubAdminManager = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Name
+                    Nom
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Email
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Status
+                    Statut
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Created On
+                    Créé le
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                     Actions
@@ -429,7 +429,7 @@ const SubAdminManager = () => {
                             onChange={handleChange}
                             className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                           />
-                          <span className="ml-2 text-sm text-gray-700">Active</span>
+                          <span className="ml-2 text-sm text-gray-700">Actif</span>
                         </div>
                       ) : (
                         <span
@@ -439,7 +439,7 @@ const SubAdminManager = () => {
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {subAdmin.isActive ? 'Active' : 'Inactive'}
+                          {subAdmin.isActive ? 'Actif' : 'Inactif'}
                         </span>
                       )}
                     </td>
@@ -469,7 +469,7 @@ const SubAdminManager = () => {
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            placeholder="New password"
+                            placeholder="Nouveau mot de passe"
                             className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             minLength={8}
                           />
@@ -491,21 +491,21 @@ const SubAdminManager = () => {
                           <button
                             onClick={() => startEditing(subAdmin)}
                             className="text-indigo-600 hover:text-indigo-900"
-                            title="Edit"
+                            title="Modifier"
                           >
                             <Pencil className="h-5 w-5" />
                           </button>
                           <button
                             onClick={() => startResetPassword(subAdmin.id)}
                             className="text-amber-600 hover:text-amber-900"
-                            title="Reset Password"
+                            title="Réinitialiser le mot de passe"
                           >
                             <RefreshCw className="h-5 w-5" />
                           </button>
                           <button
                             onClick={() => handleDeleteSubAdmin(subAdmin.id)}
                             className="text-red-600 hover:text-red-900"
-                            title="Delete"
+                            title="Supprimer"
                           >
                             <Trash2 className="h-5 w-5" />
                           </button>

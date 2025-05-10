@@ -93,9 +93,9 @@ const WheelManager = () => {
       {/* Header section */}
       <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Wheel Campaigns</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Campagnes de roues</h1>
           <p className="text-gray-600">
-            Create and manage your prize wheels.
+            Créez et gérez vos campagnes de roue à prix.
           </p>
         </div>
         {canEdit && (
@@ -104,7 +104,7 @@ const WheelManager = () => {
             className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Plus className="mr-2 h-4 w-4" />
-            New Wheel
+            Nouvelle roue
           </button>
         )}
       </div>
@@ -131,15 +131,15 @@ const WheelManager = () => {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
             <Play className="h-6 w-6 text-indigo-600" />
           </div>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">No wheels</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new wheel campaign.</p>
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">Aucune roue</h3>
+          <p className="mt-1 text-sm text-gray-500">Commencez par créer une nouvelle campagne de roue.</p>
           {canEdit && (
             <button
               onClick={handleCreateWheel}
               className="mt-6 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-              New Wheel
+              Nouvelle roue
             </button>
           )}
         </div>
@@ -150,19 +150,19 @@ const WheelManager = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Name
+                    Nom
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Mode
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Status
+                    Statut
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Slots
+                    Cases
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Plays
+                    Parties
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                     Actions
@@ -181,7 +181,7 @@ const WheelManager = () => {
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-orange-100 text-orange-800'
                       }`}>
-                        {wheel.mode === 'ALL_WIN' ? 'All Win' : 'Random Win'}
+                        {wheel.mode === 'ALL_WIN' ? 'Gagnant à tous les coups' : 'Gain aléatoire'}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -189,17 +189,17 @@ const WheelManager = () => {
                         <button 
                           onClick={() => handleToggleActive(wheel.id, wheel.isActive)}
                           className="flex items-center text-sm font-medium"
-                          title={wheel.isActive ? 'Deactivate' : 'Activate'}
+                          title={wheel.isActive ? 'Désactiver' : 'Activer'}
                         >
                           {wheel.isActive ? (
                             <>
                               <ToggleRight className="mr-1 h-5 w-5 text-green-500" />
-                              <span className="text-green-600">Active</span>
+                              <span className="text-green-600">Actif</span>
                             </>
                           ) : (
                             <>
                               <ToggleLeft className="mr-1 h-5 w-5 text-gray-400" />
-                              <span className="text-gray-500">Inactive</span>
+                              <span className="text-gray-500">Inactif</span>
                             </>
                           )}
                         </button>
@@ -209,7 +209,7 @@ const WheelManager = () => {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {wheel.isActive ? 'Active' : 'Inactive'}
+                          {wheel.isActive ? 'Actif' : 'Inactif'}
                         </span>
                       )}
                     </td>
