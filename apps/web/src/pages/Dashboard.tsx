@@ -84,138 +84,102 @@ const Dashboard = () => {
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="flex h-full items-center justify-center text-gray-500">
-        No data available.
-      </div>
-    );
-  }
+  // Valeurs par défaut si aucune statistique n'est disponible
+  const safeStats = stats || {
+    totalPlays: 0,
+    totalWheels: 0,
+    totalPrizes: 0,
+    playsByDay: [],
+    prizesByDay: [],
+    recentPlays: [],
+  };
+
+  const safeChartData = stats
+    ? chartData
+    : {
+        labels: [],
+        datasets: [
+          {
+            label: 'Plays',
+            data: [],
+            backgroundColor: 'rgba(79, 70, 229, 0.6)',
+            borderColor: 'rgba(79, 70, 229, 1)',
+            borderWidth: 1,
+          },
+          {
+            label: 'Prizes Won',
+            data: [],
+            backgroundColor: 'rgba(139, 92, 246, 0.6)',
+            borderColor: 'rgba(139, 92, 246, 1)',
+            borderWidth: 1,
+          },
+        ],
+      };
 
   return (
-    <div className="h-full overflow-y-auto">
-      {/* Welcome section */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user?.email?.split('@')[0] || 'User'}!
-          </h1>
-          <p className="text-gray-600">
-            Here's what's happening with your wheel campaigns today.
-          </p>
+    <div className="h-full overflow-y-auto bg-[#f7f8fa] p-4">
+      {/* Section bienvenue */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="bg-white rounded-2xl p-6 flex-1 shadow flex flex-col justify-center min-h-[200px]">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Bienvenue à toi 👋</h2>
+          <h3 className="text-xl font-semibold text-indigo-700 mb-2">{user?.email?.split('@')[0] || 'Utilisateur'}</h3>
+          <p className="text-gray-500 mb-4">Si vous souhaitez utiliser un passage du Lorem Ipsum, vous devez vous assurer qu'il n'y a rien.</p>
+          <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-fit">Commencer</button>
         </div>
-        <button
-          onClick={() => navigate('/wheels')}
-          className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Wheel
-        </button>
-      </div>
-
-      {/* Stats cards */}
-      <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="overflow-hidden rounded-lg bg-white p-5 shadow">
-          <div className="flex items-center">
-            <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-              <Target className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Wheels</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalWheels}</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-sm text-indigo-600">
-            <span className="font-medium">{stats.activeWheels} active</span>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg bg-white p-5 shadow">
-          <div className="flex items-center">
-            <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-              <Users className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Plays</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalPlays}</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-sm text-violet-600">
-            <span className="font-medium">Last 7 days</span>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg bg-white p-5 shadow">
-          <div className="flex items-center">
-            <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-              <Award className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Prizes Redeemed</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalPrizes}</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center text-sm text-indigo-600">
-            <span className="font-medium">{stats.totalPlays ? ((stats.totalPrizes / stats.totalPlays) * 100).toFixed(1) : 0}% conversion rate</span>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 p-5 text-white shadow">
-          <div className="flex h-full flex-col justify-between">
-            <div>
-              <p className="font-medium">Your Plan</p>
-              <p className="mt-1 text-2xl font-bold">{user?.role === 'SUPER' ? 'SUPER Admin' : 'Business'}</p>
-            </div>
-            <div className="mt-4">
-              <button
-                onClick={() => navigate('/wheels')}
-                className="flex items-center text-sm font-medium text-white"
-              >
-                <span>Manage wheels</span>
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </button>
-            </div>
-          </div>
+        <div className="flex-1 flex items-center justify-center">
+          {/* Illustration ou avatar */}
+          <img src="https://assets-v2.lottiefiles.com/a/2b2e2e3e-1162-11ee-8b1e-6b7e2e3e3e3e/2b2e2e3e-1162-11ee-8b1e-6b7e2e3e3e3e.gif" alt="Bienvenue" className="w-48 h-48 object-contain" />
         </div>
       </div>
 
-      {/* Chart and recent activity section */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
-        {/* Chart */}
-        <div className="rounded-lg bg-white p-6 shadow lg:col-span-3">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Performance Overview</h2>
-          <div className="h-80">
-            <Bar options={chartOptions} data={chartData} />
+      {/* Statistiques principales */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow flex flex-col items-start">
+          <span className="text-gray-500 text-sm mb-2">Nombre total d'utilisateurs actifs</span>
+          <span className="text-3xl font-bold text-gray-900 mb-1">{safeStats.totalPlays}</span>
+          <span className="text-green-600 text-sm font-semibold flex items-center gap-1">+2,6% <span className="text-gray-400 font-normal">les 7 derniers jours</span></span>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow flex flex-col items-start">
+          <span className="text-gray-500 text-sm mb-2">Total installé</span>
+          <span className="text-3xl font-bold text-gray-900 mb-1">{safeStats.totalWheels}</span>
+          <span className="text-green-600 text-sm font-semibold flex items-center gap-1">+0,2% <span className="text-gray-400 font-normal">les 7 derniers jours</span></span>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow flex flex-col items-start">
+          <span className="text-gray-500 text-sm mb-2">Nombre total de téléchargements</span>
+          <span className="text-3xl font-bold text-gray-900 mb-1">{safeStats.totalPrizes}</span>
+          <span className="text-red-600 text-sm font-semibold flex items-center gap-1">-0,1% <span className="text-gray-400 font-normal">les 7 derniers jours</span></span>
+        </div>
+      </div>
+
+      {/* Section graphique et activité */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Graphique */}
+        <div className="bg-white rounded-2xl p-6 shadow col-span-2">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Aperçu des performances</h2>
+          <div className="h-72">
+            <Bar options={chartOptions} data={safeChartData} />
           </div>
         </div>
-        {/* Recent activity */}
-        <div className="rounded-lg bg-white p-6 shadow lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
-            <button
-              onClick={() => navigate('/statistics')}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              View all
-            </button>
-          </div>
-          <div className="mt-4 space-y-4">
-            {stats.recentPlays && stats.recentPlays.length > 0 ? (
-              stats.recentPlays.map((play: any) => (
-                <div key={play.id} className="rounded-md bg-gray-50 p-3 shadow-sm">
+        {/* Activité récente */}
+        <div className="bg-white rounded-2xl p-6 shadow flex flex-col">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Activité récente</h2>
+          <div className="flex-1 overflow-y-auto">
+            {safeStats.recentPlays && safeStats.recentPlays.length > 0 ? (
+              safeStats.recentPlays.map((play: any) => (
+                <div key={play.id} className="rounded-md bg-gray-50 p-3 shadow-sm mb-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{play.wheel?.name || 'Wheel'}</div>
-                      <div className="text-xs text-gray-500">{new Date(play.createdAt).toLocaleString()}</div>
+                      <div className="text-sm font-medium text-gray-900">{play.wheel?.name || 'Roulette'}</div>
+                      <div className="text-xs text-gray-500">{new Date(play.createdAt).toLocaleString('fr-FR')}</div>
                     </div>
                     <div className={`rounded-full px-3 py-1 text-xs font-semibold ${play.result === 'WIN' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-700'}`}>
-                      {play.result}
+                      {play.result === 'WIN' ? 'Gagné' : 'Perdu'}
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-gray-500">No recent activity</div>
+              <div className="text-gray-500">Aucune activité récente</div>
             )}
           </div>
         </div>

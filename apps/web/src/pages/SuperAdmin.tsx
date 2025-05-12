@@ -33,8 +33,8 @@ const SuperAdmin = () => {
       console.error('Error fetching companies:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to load companies. Please try again.',
+        title: 'Erreur',
+        description: 'Échec de la récupération des entreprises. Veuillez réessayer.',
       });
     } finally {
       setIsLoading(false);
@@ -59,8 +59,8 @@ const SuperAdmin = () => {
       });
       
       toast({
-        title: 'Success',
-        description: 'Company created successfully',
+        title: 'Succès',
+        description: 'Entreprise créée avec succès',
       });
       
       setIsCreating(false);
@@ -70,8 +70,8 @@ const SuperAdmin = () => {
       console.error('Error creating company:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to create company',
+        title: 'Erreur',
+        description: 'Échec de la création de l\'entreprise',
       });
     }
   };
@@ -84,8 +84,8 @@ const SuperAdmin = () => {
       });
       
       toast({
-        title: 'Success',
-        description: 'Company updated successfully',
+        title: 'Succès',
+        description: 'Entreprise mise à jour avec succès',
       });
       
       setIsUpdating(null);
@@ -95,14 +95,14 @@ const SuperAdmin = () => {
       console.error('Error updating company:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update company',
+        title: 'Erreur',
+        description: 'Échec de la mise à jour de l\'entreprise',
       });
     }
   };
 
   const handleDeleteCompany = async (companyId: string) => {
-    if (!window.confirm('Are you sure you want to delete this company? This action cannot be undone.')) {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette entreprise? Cette action ne peut être annulée.')) {
       return;
     }
     
@@ -110,8 +110,8 @@ const SuperAdmin = () => {
       await api.deleteCompany(companyId);
       
       toast({
-        title: 'Success',
-        description: 'Company deleted successfully',
+        title: 'Succès',
+        description: 'Entreprise supprimée avec succès',
       });
       
       fetchCompanies();
@@ -119,8 +119,8 @@ const SuperAdmin = () => {
       console.error('Error deleting company:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to delete company',
+        title: 'Erreur',
+        description: 'Échec de la suppression de l\'entreprise',
       });
     }
   };
@@ -151,24 +151,24 @@ const SuperAdmin = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Super Admin Dashboard
+          Tableau de bord Super Admin
         </h1>
         <p className="mt-2 text-gray-600">
-          Manage companies and system-wide settings
+          Gérer les entreprises et les paramètres du système
         </p>
       </div>
 
       {/* Company Management */}
       <div className="rounded-lg bg-white p-6 shadow">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">Companies</h2>
+          <h2 className="text-lg font-medium text-gray-900">Entreprises</h2>
           {!isCreating && (
             <button
               onClick={() => setIsCreating(true)}
               className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Company
+              Ajouter une entreprise
             </button>
           )}
         </div>
@@ -229,7 +229,7 @@ const SuperAdmin = () => {
 
         {companies.length === 0 ? (
           <div className="rounded-md bg-gray-50 p-4 text-center text-gray-600">
-            No companies found. Create your first company to get started.
+            Aucune entreprise trouvée. Créez votre première entreprise pour commencer.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -237,16 +237,16 @@ const SuperAdmin = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Company Name
+                    Nom de l'entreprise
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Status
+                    Statut
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Admin Count
+                    Nombre d'admins
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Created On
+                    Créée le
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                     Actions
@@ -307,12 +307,14 @@ const SuperAdmin = () => {
                             className="inline-flex items-center rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
                           >
                             <Check className="h-4 w-4" />
+                            Valider
                           </button>
                           <button
                             onClick={cancelEditing}
                             className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200"
                           >
                             <X className="h-4 w-4" />
+                            Annuler
                           </button>
                         </div>
                       ) : (
@@ -322,12 +324,14 @@ const SuperAdmin = () => {
                             className="text-indigo-600 hover:text-indigo-900"
                           >
                             <Pencil className="h-5 w-5" />
+                            Modifier
                           </button>
                           <button
                             onClick={() => handleDeleteCompany(company.id)}
                             className="text-red-600 hover:text-red-900"
                           >
                             <Trash2 className="h-5 w-5" />
+                            Supprimer
                           </button>
                         </div>
                       )}
@@ -343,17 +347,17 @@ const SuperAdmin = () => {
       {/* System Stats Card */}
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium uppercase text-gray-500">Total Companies</h3>
+          <h3 className="text-sm font-medium uppercase text-gray-500">Nombre total d'entreprises</h3>
           <p className="mt-2 text-3xl font-bold text-gray-900">{companies.length}</p>
         </div>
         <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium uppercase text-gray-500">Active Companies</h3>
+          <h3 className="text-sm font-medium uppercase text-gray-500">Entreprises actives</h3>
           <p className="mt-2 text-3xl font-bold text-green-600">
             {companies.filter(c => c.isActive).length}
           </p>
         </div>
         <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-medium uppercase text-gray-500">Inactive Companies</h3>
+          <h3 className="text-sm font-medium uppercase text-gray-500">Entreprises inactives</h3>
           <p className="mt-2 text-3xl font-bold text-red-600">
             {companies.filter(c => !c.isActive).length}
           </p>
