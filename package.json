@@ -17,6 +17,13 @@
     "prettier": "^3.2.5"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1"
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.3",
+    "csv-writer": "^1.6.0",
+    "date-fns": "^4.1.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }

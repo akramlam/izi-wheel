@@ -7,6 +7,9 @@ interface JwtPayload {
   email: string;
   role: Role;
   companyId?: string;
+  isPaid: boolean;
+  name?: string;
+  forcePasswordChange?: boolean;
 }
 
 // Get secret from environment
@@ -22,9 +25,14 @@ export const generateToken = (user: User): string => {
     email: user.email,
     role: user.role,
     companyId: user.companyId || undefined,
+    isPaid: user.isPaid,
+    name: user.name,
+    forcePasswordChange: user.forcePasswordChange,
   };
 
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
 };
 
 /**
@@ -32,8 +40,31 @@ export const generateToken = (user: User): string => {
  */
 export const verifyToken = (token: string): JwtPayload => {
   try {
-    return jwt.verify(token, JWT_SECRET) as JwtPayload;
+    console.log('[JWT] Verifying token');
+    
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    
+    console.log('[JWT] Token verified for user:', decoded.email);
+    
+    // Validate payload structure
+    const requiredFields = ['id', 'email', 'role'];
+    for (const field of requiredFields) {
+      if (!decoded[field as keyof JwtPayload]) {
+        console.error(`[JWT] Invalid token payload: missing ${field}`);
+        throw new Error(`Invalid token payload: missing ${field}`);
+      }
+    }
+    
+    return decoded;
   } catch (error) {
-    throw new Error('Invalid or expired token');
+    if (error instanceof jwt.JsonWebTokenError) {
+      console.error('[JWT] Token verification failed:', error.message);
+    } else if (error instanceof jwt.TokenExpiredError) {
+      console.error('[JWT] Token has expired');
+    } else {
+      console.error('[JWT] Token verification error:', error);
+    }
+    throw error;
   }
 }; 

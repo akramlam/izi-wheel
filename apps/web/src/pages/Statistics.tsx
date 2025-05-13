@@ -73,7 +73,21 @@ const Statistics = () => {
   const fetchStatistics = async () => {
     try {
       setIsLoading(true);
-      const companyId = user?.companyId;
+      let companyId = user?.companyId || '';
+      
+      // For SUPER admin, we need to get a valid company ID if one isn't already set
+      if ((!companyId || companyId === '') && user?.role === 'SUPER') {
+        try {
+          const validationResponse = await api.getValidCompanyId();
+          if (validationResponse.data.companyId) {
+            companyId = validationResponse.data.companyId;
+            // Store it for future use
+            localStorage.setItem('companyId', companyId);
+          }
+        } catch (validationError) {
+          console.error('Error validating company ID for SUPER admin:', validationError);
+        }
+      }
 
       if (!companyId) {
         toast({

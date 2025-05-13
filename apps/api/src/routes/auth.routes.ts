@@ -1,7 +1,8 @@
-import { Router } from 'express';
-import { login, register, getProfile } from '../controllers/auth.controller';
+import { Router, Request, Response, NextFunction } from 'express';
+import { login, register, getProfile, changePassword } from '../controllers/auth.controller';
 import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
+import prisma from '../utils/db';
 
 const router: Router = Router();
 
@@ -12,6 +13,21 @@ const router: Router = Router();
  */
 router.post('/login', login);
 
+// Middleware to allow open registration for the first super user
+const allowFirstSuperRegistration = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const existingSuper = await prisma.user.findFirst({ where: { role: Role.SUPER } });
+    if (!existingSuper) {
+      // No super user exists, allow open registration
+      return next();
+    }
+    // Otherwise, require authentication and role
+    return authMiddleware(req, res, () => roleGuard([Role.SUPER, Role.ADMIN])(req, res, next));
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
 /**
  * @route   POST /auth/register
  * @desc    Register a new user (SUPER or ADMIN only)
@@ -19,10 +35,16 @@ router.post('/login', login);
  */
 router.post(
   '/register',
-  authMiddleware,
-  roleGuard([Role.SUPER, Role.ADMIN]),
+  allowFirstSuperRegistration,
   register
 );
+
+/**
+ * @route   POST /auth/change-password
+ * @desc    Change user password
+ * @access  Private
+ */
+router.post('/change-password', authMiddleware, changePassword);
 
 /**
  * @route   GET /auth/profile

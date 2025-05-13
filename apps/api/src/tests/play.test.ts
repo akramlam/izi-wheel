@@ -1,4 +1,5 @@
-import { testClient } from '../utils/test-client';
+import request from 'supertest';
+import { app } from '../index';
 import prisma from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -7,6 +8,7 @@ import redisClient from '../utils/redis';
  */
 describe('Play API', () => {
   let wheelId: string;
+  let companyId: string;
   
   beforeAll(async () => {
     // Set up test wheel with slots
@@ -15,6 +17,7 @@ describe('Play API', () => {
         name: 'Test Company',
       },
     });
+    companyId = company.id;
     
     const wheel = await prisma.wheel.create({
       data: {
@@ -84,8 +87,8 @@ describe('Play API', () => {
   });
   
   test('Should spin the wheel and receive a prize', async () => {
-    const response = await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    const response = await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     expect(response.status).toBe(200);
@@ -98,8 +101,8 @@ describe('Play API', () => {
   });
   
   test('Should not be rate limited for first play', async () => {
-    const response = await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    const response = await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     expect(response.status).toBe(200);
@@ -107,13 +110,13 @@ describe('Play API', () => {
   
   test('Should be rate limited for repeated plays', async () => {
     // First play
-    await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     // Second play should be rate limited
-    const response = await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    const response = await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     expect(response.status).toBe(429);
@@ -122,15 +125,15 @@ describe('Play API', () => {
   
   test('Should redeem a prize with correct PIN', async () => {
     // First create a play to get a prize
-    const playResponse = await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    const playResponse = await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     const playId = playResponse.body.play.id;
     const pin = playResponse.body.play.prize.pin;
     
     // Redeem the prize
-    const redeemResponse = await testClient
+    const redeemResponse = await request(app)
       .put(`/plays/${playId}/redeem`)
       .send({ pin });
     
@@ -141,14 +144,14 @@ describe('Play API', () => {
   
   test('Should not redeem with incorrect PIN', async () => {
     // First create a play to get a prize
-    const playResponse = await testClient
-      .post(`/companies/1/wheels/${wheelId}/play`)
+    const playResponse = await request(app)
+      .post(`/companies/${companyId}/wheels/${wheelId}/play`)
       .send({});
     
     const playId = playResponse.body.play.id;
     
     // Try to redeem with wrong PIN
-    const redeemResponse = await testClient
+    const redeemResponse = await request(app)
       .put(`/plays/${playId}/redeem`)
       .send({ pin: '000000' });
     

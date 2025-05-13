@@ -19,6 +19,36 @@ const registerSchema = z.object({
   role: z.nativeEnum(Role),
 });
 
+// Validation schema for password change
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
+});
+
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     summary: Login a user
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *       401:
+ *         description: Invalid credentials
+ */
 /**
  * User login
  */
@@ -60,6 +90,9 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         companyId: user.companyId,
+        isPaid: user.isPaid,
+        name: user.name,
+        forcePasswordChange: user.forcePasswordChange,
       },
       token,
     });
@@ -69,6 +102,34 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @openapi
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               companyId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered
+ *       400:
+ *         description: Invalid input or email in use
+ */
 /**
  * User registration (admin only)
  */
@@ -92,6 +153,14 @@ export const register = async (req: Request, res: Response) => {
 
     if (existingUser) {
       return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    // Enforce only one SUPER user in the system
+    if (role === Role.SUPER) {
+      const existingSuper = await prisma.user.findFirst({ where: { role: Role.SUPER } });
+      if (existingSuper) {
+        return res.status(400).json({ error: 'A super user already exists. Only one super user is allowed.' });
+      }
     }
 
     // Validate company ID if provided (except for SUPER users)
@@ -138,6 +207,99 @@ export const register = async (req: Request, res: Response) => {
 };
 
 /**
+ * @openapi
+ * /auth/change-password:
+ *   post:
+ *     summary: Change user password
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Invalid credentials
+ */
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    // Validate input
+    const validation = changePasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Invalid input',
+        details: validation.error.format()
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify current password
+    const isPasswordValid = await comparePassword(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password and remove forcePasswordChange flag
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        forcePasswordChange: false
+      }
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+};
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: User profile
+ *       401:
+ *         description: Authentication required
+ */
+/**
  * Get current user profile
  */
 export const getProfile = async (req: Request, res: Response) => {
@@ -153,25 +315,27 @@ export const getProfile = async (req: Request, res: Response) => {
         email: true,
         role: true,
         companyId: true,
-        createdAt: true,
-        company: {
-          select: {
-            id: true,
-            name: true,
-            plan: true,
-            maxWheels: true,
-          },
-        },
-      },
+        isPaid: true,
+        name: true,
+        forcePasswordChange: true,
+        isActive: true,
+        createdAt: true
+      }
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(200).json({ 
+        user: null,
+        error: 'User not found in database'
+      });
     }
 
-    res.status(200).json({ user });
+    return res.status(200).json({ user });
   } catch (error) {
-    console.error('Profile error:', error);
-    res.status(500).json({ error: 'Could not fetch profile' });
+    console.error('Get profile error:', error);
+    return res.status(500).json({ 
+      user: null,
+      error: 'Failed to get user profile' 
+    });
   }
 }; 

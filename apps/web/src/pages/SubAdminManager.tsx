@@ -13,30 +13,73 @@ type SubAdmin = {
   createdAt: string;
 };
 
+type Company = {
+  id: string;
+  name: string;
+  isActive: boolean;
+};
+
 const SubAdminManager = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
     isActive: true,
     role: 'SUB',
   });
 
   useEffect(() => {
-    fetchSubAdmins();
+    fetchInitialData();
   }, []);
 
-  const fetchSubAdmins = async () => {
+  const fetchInitialData = async () => {
     try {
       setIsLoading(true);
-      const companyId = user?.companyId;
+      
+      // First, make sure we have a valid companyId
+      let companyId = user?.companyId || '';
+      
+      // If not available or we're SUPER admin, try to get it from API
+      if (!companyId || user?.role === 'SUPER') {
+        try {
+          const validationResponse = await api.getValidCompanyId();
+          companyId = validationResponse.data.companyId;
+          setCompanyName(validationResponse.data.companyName || '');
+          setSelectedCompanyId(companyId);
+          
+          // For SUPER users, fetch all companies
+          if (user?.role === 'SUPER') {
+            const companiesResponse = await api.getAllCompanies();
+            if (companiesResponse.data && companiesResponse.data.companies) {
+              setCompanies(companiesResponse.data.companies);
+            }
+          }
+          
+          // Update in localStorage for future use
+          localStorage.setItem('companyId', companyId);
+        } catch (error) {
+          console.error('Error validating company ID:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Erreur',
+            description: 'Impossible de valider l\'ID d\'entreprise. Veuillez vous reconnecter.',
+          });
+          return;
+        }
+      } else {
+        setSelectedCompanyId(companyId);
+      }
+      
       if (!companyId) {
         toast({
           variant: 'destructive',
@@ -45,8 +88,33 @@ const SubAdminManager = () => {
         });
         return;
       }
+      
+      await fetchSubAdmins(companyId);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const fetchSubAdmins = async (companyId = selectedCompanyId) => {
+    try {
+      if (!companyId) return;
+      
       const response = await api.getCompanyUsers(companyId);
+      
+      // Get company name if we don't have it yet or it has changed
+      if (companyId !== 'demo-company-id') {
+        try {
+          const companyResponse = await api.getCompany(companyId);
+          if (companyResponse.data && companyResponse.data.company) {
+            if (selectedCompanyId === companyId) {
+              setCompanyName(companyResponse.data.company.name);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching company details:', error);
+        }
+      }
+      
       // Filter only SUB role users
       const subAdminUsers = response.data.users.filter(
         (user: any) => user.role === 'SUB'
@@ -59,8 +127,23 @@ const SubAdminManager = () => {
         title: 'Erreur',
         description: 'Échec du chargement des sous-administrateurs. Veuillez réessayer.',
       });
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  // Handle company change
+  const handleCompanyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCompanyId = e.target.value;
+    setSelectedCompanyId(newCompanyId);
+    
+    // When company changes, update the list of sub-admins
+    if (newCompanyId) {
+      await fetchSubAdmins(newCompanyId);
+      
+      // Update company name from companies list
+      const selectedCompany = companies.find(company => company.id === newCompanyId);
+      if (selectedCompany) {
+        setCompanyName(selectedCompany.name);
+      }
     }
   };
 
@@ -80,34 +163,32 @@ const SubAdminManager = () => {
     e.preventDefault();
     
     try {
-      if (!user?.companyId) {
+      if (!selectedCompanyId) {
         toast({
           variant: 'destructive',
           title: 'Erreur',
-          description: 'Aucun ID d\'entreprise trouvé. Veuillez vous reconnecter.',
+          description: 'Veuillez sélectionner une entreprise.',
         });
         return;
       }
 
       await api.createUser({
-        companyId: user.companyId,
+        companyId: selectedCompanyId,
         name: formData.name,
         email: formData.email,
-        password: formData.password,
         isActive: formData.isActive,
         role: 'SUB',
       });
       
       toast({
         title: 'Succès',
-        description: 'Sous-administrateur créé avec succès',
+        description: 'Sous-administrateur créé avec succès. Un email avec les identifiants a été envoyé.',
       });
       
       setIsCreating(false);
       setFormData({
         name: '',
         email: '',
-        password: '',
         isActive: true,
         role: 'SUB',
       });
@@ -139,7 +220,6 @@ const SubAdminManager = () => {
       setFormData({
         name: '',
         email: '',
-        password: '',
         isActive: true,
         role: 'SUB',
       });
@@ -156,7 +236,7 @@ const SubAdminManager = () => {
 
   const handleResetPassword = async (subAdminId: string) => {
     try {
-      if (!formData.password || formData.password.length < 8) {
+      if (!newPassword || newPassword.length < 8) {
         toast({
           variant: 'destructive',
           title: 'Erreur de validation',
@@ -166,7 +246,7 @@ const SubAdminManager = () => {
       }
 
       await api.resetUserPassword(subAdminId, {
-        password: formData.password,
+        password: newPassword,
       });
       
       toast({
@@ -175,10 +255,7 @@ const SubAdminManager = () => {
       });
       
       setResetPassword(null);
-      setFormData({
-        ...formData,
-        password: '',
-      });
+      setNewPassword('');
     } catch (error) {
       console.error('Error resetting password:', error);
       toast({
@@ -217,7 +294,6 @@ const SubAdminManager = () => {
     setFormData({
       name: subAdmin.name,
       email: subAdmin.email,
-      password: '',
       isActive: subAdmin.isActive,
       role: 'SUB',
     });
@@ -226,19 +302,16 @@ const SubAdminManager = () => {
 
   const startResetPassword = (subAdminId: string) => {
     setResetPassword(subAdminId);
-    setFormData({
-      ...formData,
-      password: '',
-    });
+    setNewPassword('');
   };
 
   const cancelAction = () => {
     setIsUpdating(null);
     setResetPassword(null);
+    setNewPassword('');
     setFormData({
       name: '',
       email: '',
-      password: '',
       isActive: true,
       role: 'SUB',
     });
@@ -260,29 +333,92 @@ const SubAdminManager = () => {
           Gestion des sous-administrateurs
         </h1>
         <p className="mt-2 text-gray-600">
-          Créez et gérez les sous-administrateurs de votre entreprise
+          {user?.role === 'SUPER' ? (
+            selectedCompanyId ? 
+              `Créez et gérez les sous-administrateurs pour l'entreprise "${companyName}"` :
+              'Sélectionnez une entreprise pour gérer ses sous-administrateurs'
+          ) : (
+            'Créez et gérez les sous-administrateurs de votre entreprise'
+          )}
         </p>
       </div>
 
       {/* Sub-Admin Management */}
       <div className="rounded-lg bg-white p-6 shadow">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-wrap items-center justify-between">
           <h2 className="text-lg font-medium text-gray-900">Sous-Administrateurs</h2>
-          {!isCreating && (
+          {user?.role === 'SUPER' && !selectedCompanyId ? (
+            <div className="text-sm text-amber-600">
+              Veuillez sélectionner une entreprise ci-dessous pour gérer ses sous-administrateurs
+            </div>
+          ) : (
             <button
               onClick={() => setIsCreating(true)}
-              className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              className={`inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 ${
+                isCreating ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={isCreating}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter un sous-administrateur
+              <Plus className="mr-1 h-4 w-4" />
+              {companyName ? `Ajouter un sous-administrateur pour ${companyName}` : `Ajouter un sous-administrateur`}
             </button>
           )}
         </div>
 
+        {user?.role === 'SUPER' && (
+          <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <label htmlFor="companySelector" className="mb-2 block text-sm font-medium text-gray-700 md:mb-0">
+                Sélectionner une entreprise pour gérer ses sous-administrateurs:
+              </label>
+              <select
+                id="companySelector"
+                value={selectedCompanyId}
+                onChange={handleCompanyChange}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 md:w-auto"
+              >
+                <option value="">-- Sélectionner une entreprise --</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name} {!company.isActive && "(Inactive)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         {isCreating && (
-          <div className="mb-6 rounded-md border border-gray-200 bg-gray-50 p-4">
-            <h3 className="mb-3 text-md font-medium text-gray-900">Créer un nouveau sous-administrateur</h3>
+          <div className="rounded-lg border border-gray-200 p-5 shadow">
+            <h3 className="mb-3 text-md font-medium text-gray-900">
+              {companyName ? 
+                `Créer un nouveau sous-administrateur pour ${companyName}` : 
+                'Créer un nouveau sous-administrateur'}
+            </h3>
             <form onSubmit={handleCreateSubAdmin} className="grid gap-4 md:grid-cols-2">
+              {user?.role === 'SUPER' && (
+                <div className="col-span-2">
+                  <label htmlFor="companyId" className="block text-sm font-medium text-gray-700">
+                    Entreprise
+                  </label>
+                  <select
+                    id="companyId"
+                    name="companyId"
+                    value={selectedCompanyId}
+                    onChange={handleCompanyChange}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="">-- Sélectionner une entreprise --</option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name} {!company.isActive && "(Inactive)"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                   Nom
@@ -313,22 +449,6 @@ const SubAdminManager = () => {
                 />
               </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Mot de passe
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                  minLength={8}
-                />
-              </div>
-              
               <div className="flex items-center self-end">
                 <input
                   type="checkbox"
@@ -343,21 +463,29 @@ const SubAdminManager = () => {
                 </label>
               </div>
               
-              <div className="col-span-2 flex space-x-2 pt-4">
-                <button
-                  type="submit"
-                  className="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                  <Check className="mr-2 h-4 w-4" />
-                  Créer
-                </button>
+              <div className="col-span-2 mt-4 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsCreating(false)}
-                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    setIsCreating(false);
+                    setFormData({
+                      name: '',
+                      email: '',
+                      isActive: true,
+                      role: 'SUB',
+                    });
+                  }}
+                  className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
                 >
                   <X className="mr-2 h-4 w-4" />
                   Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  {companyName ? `Créer pour ${companyName}` : 'Créer'}
                 </button>
               </div>
             </form>
@@ -366,7 +494,12 @@ const SubAdminManager = () => {
 
         {subAdmins.length === 0 ? (
           <div className="rounded-md bg-gray-50 p-4 text-center text-gray-600">
-            Aucun sous-administrateur trouvé. Ajoutez votre premier sous-administrateur pour commencer.
+            {selectedCompanyId ? 
+              `Aucun sous-administrateur trouvé dans ${companyName}. Ajoutez votre premier sous-administrateur pour commencer.` : 
+              user?.role === 'SUPER' ? 
+                'Veuillez sélectionner une entreprise pour voir ses sous-administrateurs' :
+                'Aucun sous-administrateur trouvé. Ajoutez votre premier sous-administrateur pour commencer.'
+            }
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -467,8 +600,8 @@ const SubAdminManager = () => {
                           <input
                             type="password"
                             name="password"
-                            value={formData.password}
-                            onChange={handleChange}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Nouveau mot de passe"
                             className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             minLength={8}

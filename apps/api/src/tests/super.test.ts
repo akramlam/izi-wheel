@@ -31,7 +31,8 @@ describe('Super Admin Console API', () => {
       data: {
         email: 'super-admin-test@example.com',
         password: hashedPassword,
-        role: Role.SUPER
+        role: Role.SUPER,
+        isPaid: true
       }
     });
     

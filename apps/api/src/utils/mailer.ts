@@ -16,28 +16,58 @@ const transporter = nodemailer.createTransport({
  * @param email User's email address
  * @param password Temporary password
  * @param companyName Company name
+ * @param adminName Admin name (optional)
+ * @param userName User's name (optional)
  */
 export const sendInviteEmail = async (
   email: string,
   password: string,
-  companyName: string
+  companyName: string,
+  adminName?: string,
+  userName?: string
 ): Promise<void> => {
   try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
+    const invitedBy = adminName ? `par <strong>${adminName}</strong>` : '';
+    
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
       to: email,
-      subject: `Welcome to IZI Wheel - ${companyName}`,
+      subject: `Bienvenue sur IZI Wheel - ${companyName}`,
       html: `
-        <h1>Welcome to IZI Wheel!</h1>
-        <p>You have been invited to join <strong>${companyName}</strong> on IZI Wheel.</p>
-        <p>Here are your login credentials:</p>
-        <ul>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>Temporary Password:</strong> ${password}</li>
-        </ul>
-        <p>Please login and change your password as soon as possible.</p>
-        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login">Click here to login</a></p>
-        <p>Thank you,<br>The IZI Wheel Team</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #4f46e5;">Bienvenue sur IZI Wheel!</h1>
+          </div>
+          
+          <p>${greeting}</p>
+          
+          <p>Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Wheel.</p>
+          
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold;">Voici vos identifiants de connexion:</p>
+            <ul style="padding-left: 20px;">
+              <li><strong>Email:</strong> ${email}</li>
+              <li><strong>Mot de passe temporaire:</strong> ${password}</li>
+            </ul>
+          </div>
+          
+          <p><strong>Important:</strong> Pour des raisons de sécurité, vous devrez changer ce mot de passe temporaire lors de votre première connexion.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${frontendUrl}/login" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
+              Se connecter maintenant
+            </a>
+          </div>
+          
+          <p>Si vous avez des questions, n'hésitez pas à contacter votre administrateur.</p>
+          
+          <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+            Cordialement,<br>
+            L'équipe IZI Wheel
+          </p>
+        </div>
       `,
     };
 

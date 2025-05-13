@@ -23,6 +23,56 @@ const bulkSlotSchema = z.array(slotSchema).min(2).refine(
 );
 
 /**
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots:
+ *   get:
+ *     summary: Get all slots for a wheel
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of slots for the wheel
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slots:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       probability:
+ *                         type: integer
+ *                       prizeCode:
+ *                         type: string
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel not found
+ */
+/**
  * Get all slots for a wheel
  */
 export const getSlots = async (req: Request, res: Response) => {
@@ -56,6 +106,61 @@ export const getSlots = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots/{slotId}:
+ *   get:
+ *     summary: Get a specific slot
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *       - in: path
+ *         name: slotId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the slot
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A specific slot
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slot:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     label:
+ *                       type: string
+ *                     probability:
+ *                       type: integer
+ *                     prizeCode:
+ *                       type: string
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel or slot not found
+ */
 /**
  * Get a specific slot
  */
@@ -96,6 +201,83 @@ export const getSlot = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots:
+ *   post:
+ *     summary: Create a new slot
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - label
+ *               - probability
+ *               - prizeCode
+ *             properties:
+ *               label:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 100
+ *               probability:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 100
+ *               prizeCode:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 50
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Slot created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slot:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     label:
+ *                       type: string
+ *                     probability:
+ *                       type: integer
+ *                     prizeCode:
+ *                       type: string
+ *                 totalProbability:
+ *                   type: integer
+ *                 remaining:
+ *                   type: integer
+ *       400:
+ *         description: Invalid input or total probability would exceed 100
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel not found
+ */
 /**
  * Create a new slot
  */
@@ -159,6 +341,86 @@ export const createSlot = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots/{slotId}:
+ *   put:
+ *     summary: Update an existing slot
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *       - in: path
+ *         name: slotId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the slot
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               label:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 100
+ *               probability:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 100
+ *               prizeCode:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 50
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Slot updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slot:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     label:
+ *                       type: string
+ *                     probability:
+ *                       type: integer
+ *                     prizeCode:
+ *                       type: string
+ *                 totalProbability:
+ *                   type: integer
+ *                 remaining:
+ *                   type: integer
+ *       400:
+ *         description: Invalid input or total probability would exceed 100
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel or slot not found
+ */
 /**
  * Update an existing slot
  */
@@ -248,7 +510,52 @@ export const updateSlot = async (req: Request, res: Response) => {
 };
 
 /**
- * Delete a slot
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots/{slotId}:
+ *   delete:
+ *     summary: Delete a slot
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *       - in: path
+ *         name: slotId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the slot
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Slot deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalProbability:
+ *                   type: integer
+ *                 remaining:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel or slot not found
  */
 export const deleteSlot = async (req: Request, res: Response) => {
   try {
@@ -307,7 +614,82 @@ export const deleteSlot = async (req: Request, res: Response) => {
 };
 
 /**
- * Bulk create or update slots
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/slots/bulk:
+ *   post:
+ *     summary: Bulk create or update slots
+ *     tags:
+ *       - Slots
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             minItems: 2
+ *             items:
+ *               type: object
+ *               required:
+ *                 - label
+ *                 - probability
+ *                 - prizeCode
+ *               properties:
+ *                 label:
+ *                   type: string
+ *                   minLength: 1
+ *                   maxLength: 100
+ *                 probability:
+ *                   type: integer
+ *                   minimum: 1
+ *                   maximum: 100
+ *                 prizeCode:
+ *                   type: string
+ *                   minLength: 1
+ *                   maxLength: 50
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Slots updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 slots:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       label:
+ *                         type: string
+ *                       probability:
+ *                         type: integer
+ *                       prizeCode:
+ *                         type: string
+ *       400:
+ *         description: Invalid input or total probability must equal 100
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Wheel not found
  */
 export const bulkUpdateSlots = async (req: Request, res: Response) => {
   try {

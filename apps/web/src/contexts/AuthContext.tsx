@@ -3,28 +3,32 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../lib/api';
 
-interface User {
+// Define user type
+export type User = {
   id: string;
   email: string;
   role: string;
-  companyId: string | null;
-}
+  companyId?: string;
+  isPaid: boolean;
+  name?: string;
+  forcePasswordChange?: boolean;
+};
 
+// Define the auth context type
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
+// Create the context with default values
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  token: null,
-  isLoading: true,
   login: async () => {},
   logout: () => {},
+  refreshUser: async () => {},
   isAuthenticated: false,
 });
 
@@ -34,8 +38,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Debugging function
+  const debugLog = (message: string, data?: any) => {
+    console.log(`[AuthProvider] ${message}`, data || '');
+  };
+
   // Configure axios defaults
   useEffect(() => {
+    debugLog('Setting up axios defaults with token', token ? 'present' : 'absent');
     if (token) {
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
@@ -43,10 +53,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [token]);
 
+  // Safe logout that always clears state
+  const logout = () => {
+    debugLog('Logging out user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('companyId');
+    setToken(null);
+    setUser(null);
+    delete apiClient.defaults.headers.common['Authorization'];
+    navigate('/login');
+  };
+
   // Check if token is valid on startup
   useEffect(() => {
     const verifyToken = async () => {
+      debugLog('Starting token verification');
+      
       if (!token) {
+        debugLog('No token found, skipping verification');
         setIsLoading(false);
         return;
       }
@@ -55,47 +80,119 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Set the token in axios headers
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         
+        debugLog('Sending auth verification request');
+        
         // Verify token by making a request to a protected endpoint
         const response = await apiClient.get('/auth/me');
-        setUser(response.data.user);
-        if (response.data.user?.companyId) {
-          localStorage.setItem('companyId', response.data.user.companyId);
+        
+        debugLog('Auth verification response received', response.status);
+        
+        // Handle empty responses (204 No Content)
+        if (!response.data || !response.data.user) {
+          debugLog('No user data in response, checking localStorage');
+          
+          // Try to use stored user data if available
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              debugLog('Using stored user data', parsedUser.email);
+              
+              setUser(parsedUser);
+              
+              // If user has forcePasswordChange flag, redirect to change password page
+              if (parsedUser.forcePasswordChange && window.location.pathname !== '/change-password') {
+                debugLog('Force password change required, redirecting');
+                navigate('/change-password');
+              }
+            } catch (e) {
+              debugLog('Failed to parse stored user, logging out', e);
+              logout();
+            }
+          } else {
+            debugLog('No stored user data, logging out');
+            logout();
+          }
         } else {
-          localStorage.removeItem('companyId');
+          debugLog('Setting user from response', response.data.user.email);
+          setUser(response.data.user);
+          
+          // Store user in localStorage for reference
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+          
+          // If user has forcePasswordChange flag, redirect to change password page
+          if (response.data.user.forcePasswordChange && window.location.pathname !== '/change-password') {
+            debugLog('Force password change required, redirecting');
+            navigate('/change-password');
+          }
         }
       } catch (error) {
-        console.error('Token validation error:', error);
-        // Token is invalid, clear it
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
+        debugLog('Token verification failed', error);
+        // Clear invalid token
+        logout();
       } finally {
+        debugLog('Finishing token verification, setting isLoading to false');
         setIsLoading(false);
       }
     };
 
+    // Always set a timeout to exit loading state after a reasonable delay
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        debugLog('Verification timeout reached, forcing loading state to end');
+        setIsLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     verifyToken();
-  }, [token]);
+    
+    return () => clearTimeout(timeout);
+  }, [token, navigate]);
+
+  const refreshUser = async () => {
+    debugLog('Refreshing user data');
+    
+    try {
+      const response = await apiClient.get('/auth/me');
+      if (response.data && response.data.user) {
+        debugLog('User data refreshed successfully', response.data.user.email);
+        setUser(response.data.user);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      } else {
+        debugLog('refreshUser: Auth endpoint returned no user data');
+      }
+    } catch (error) {
+      debugLog('Failed to refresh user data', error);
+    }
+  };
 
   const login = async (email: string, password: string) => {
+    debugLog('Attempting login', email);
+    
     try {
       const response = await apiClient.post('/auth/login', { email, password });
+      debugLog('Login successful');
+      
       const { user, token } = response.data;
 
-      // Store the token in localStorage
+      // Store the token and user in localStorage
       localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       setToken(token);
       setUser(user);
-      // Store companyId in localStorage for API calls
-      if (user.companyId) {
-        localStorage.setItem('companyId', user.companyId);
-      } else {
-        localStorage.removeItem('companyId');
+      
+      // If user has forcePasswordChange flag, redirect to change password page
+      if (user.forcePasswordChange) {
+        debugLog('Force password change required, redirecting');
+        navigate('/change-password');
+        return;
       }
-
-      // Redirect to dashboard
+      
+      // Otherwise, redirect to dashboard
+      debugLog('Redirecting to dashboard');
       navigate('/dashboard');
     } catch (error) {
+      debugLog('Login failed', error);
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(error.response.data.error || 'Login failed');
       }
@@ -103,28 +200,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    // Remove token from localStorage
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    navigate('/login');
-    // Remove companyId from localStorage on logout
-    localStorage.removeItem('companyId');
-  };
-
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        token, 
-        isLoading, 
-        login, 
-        logout, 
-        isAuthenticated: !!user 
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        refreshUser,
+        isAuthenticated: !!user,
       }}
     >
-      {children}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 }; 

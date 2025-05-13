@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { ShineBorder } from '../components/magicui/shine-border';
 
 const Login = () => {
   const { login } = useAuth();
@@ -24,9 +25,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-violet-500">
+       <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-        <div className="flex justify-center mb-4">
-          <img src="/logo.svg" alt="Logo IziKADO" className="h-16 w-auto drop-shadow-lg" />
+        <div className="flex flex-col items-center mb-4">
+          <div className="relative h-[128px] w-[128px] mb-2">
+            <img src="/loo.jpg" alt="Logo IziKADO" className="absolute inset-0 h-full w-full object-contain bg-white p-4" />
+          </div>
         </div>
         <div className="flex justify-center mb-6">
           <span className="text-lg font-semibold text-indigo-700">Admin Dashboard</span>

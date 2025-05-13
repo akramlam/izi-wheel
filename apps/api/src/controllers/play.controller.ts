@@ -69,6 +69,100 @@ const generateQrLink = (playId: string, pin: string): string => {
 };
 
 /**
+ * @openapi
+ * /plays/{wheelId}/spin:
+ *   post:
+ *     summary: Spin the wheel and create a play record
+ *     tags:
+ *       - Plays
+ *     parameters:
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               playerInfo:
+ *                 type: object
+ *                 description: Custom player information
+ *               lead:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                   phone:
+ *                     type: string
+ *                   birthDate:
+ *                     type: string
+ *                     format: date
+ *     responses:
+ *       200:
+ *         description: Successfully spun the wheel
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 play:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     wheelId:
+ *                       type: string
+ *                     ip:
+ *                       type: string
+ *                     result:
+ *                       type: string
+ *                       enum: [WIN, LOSE]
+ *                     lead:
+ *                       type: object
+ *                     prize:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         playId:
+ *                           type: string
+ *                         pin:
+ *                           type: string
+ *                         qrLink:
+ *                           type: string
+ *                         redeemedAt:
+ *                           type: string
+ *                           format: date-time
+ *                           nullable: true
+ *                 slot:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     label:
+ *                       type: string
+ *                     probability:
+ *                       type: integer
+ *                     prizeCode:
+ *                       type: string
+ *       400:
+ *         description: Invalid input or wheel is not active
+ *       404:
+ *         description: Wheel not found
+ *       429:
+ *         description: Rate limit exceeded
+ */
+/**
  * Spin the wheel and create a play record
  */
 export const spinWheel = async (req: Request, res: Response) => {
@@ -210,6 +304,60 @@ export const spinWheel = async (req: Request, res: Response) => {
 };
 
 /**
+ * @openapi
+ * /plays/{playId}/redeem:
+ *   post:
+ *     summary: Redeem a prize
+ *     tags:
+ *       - Plays
+ *     parameters:
+ *       - in: path
+ *         name: playId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the play
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pin
+ *             properties:
+ *               pin:
+ *                 type: string
+ *                 description: The 6-digit PIN for prize redemption
+ *     responses:
+ *       200:
+ *         description: Prize redeemed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 prize:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     playId:
+ *                       type: string
+ *                     pin:
+ *                       type: string
+ *                     qrLink:
+ *                       type: string
+ *                     redeemedAt:
+ *                       type: string
+ *                       format: date-time
+ *       400:
+ *         description: Invalid PIN, missing PIN, or prize already redeemed
+ *       404:
+ *         description: Prize not found
+ */
+/**
  * Redeem a prize
  */
 export const redeemPrize = async (req: Request, res: Response) => {
@@ -314,16 +462,85 @@ export const getPlayHistory = async (req: Request, res: Response) => {
 };
 
 /**
- * Get leads for a wheel (JSON format)
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/leads:
+ *   get:
+ *     summary: Get all leads for a wheel (JSON format)
+ *     tags:
+ *       - Leads
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter leads from this date (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter leads to this date (YYYY-MM-DD)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of leads for the wheel
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 leads:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       lead:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           phone:
+ *                             type: string
+ *                           birthDate:
+ *                             type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Premium feature
+ *       404:
+ *         description: Wheel not found
  */
 export const getWheelLeads = async (req: Request, res: Response) => {
   try {
-    const { wid } = req.params;
+    // Accept both wheelId and wid for compatibility
+    const wheelId = req.params.wheelId || req.params.wid;
     const { from, to } = req.query;
-    
     // Check if user's company has PREMIUM plan
     const wheel = await prisma.wheel.findUnique({
-      where: { id: wid },
+      where: { id: wheelId },
       include: {
         company: {
           select: {
@@ -332,36 +549,21 @@ export const getWheelLeads = async (req: Request, res: Response) => {
         }
       }
     });
-    
     if (!wheel) {
       return res.status(404).json({ error: 'Wheel not found' });
     }
-    
-    // Check if company has PREMIUM plan
     if (wheel.company.plan !== Plan.PREMIUM) {
-      return res.status(402).json({ 
-        error: 'This feature requires a PREMIUM plan' 
-      });
+      return res.status(402).json({ error: 'This feature requires a PREMIUM plan' });
     }
-    
-    // Build date filter if date range is provided
     const dateFilter = {};
     if (from || to) {
       dateFilter['createdAt'] = {};
-      
-      if (from) {
-        dateFilter['createdAt']['gte'] = new Date(from as string);
-      }
-      
-      if (to) {
-        dateFilter['createdAt']['lte'] = new Date(to as string);
-      }
+      if (from) dateFilter['createdAt']['gte'] = new Date(from as string);
+      if (to) dateFilter['createdAt']['lte'] = new Date(to as string);
     }
-    
-    // Get all plays with leads for this wheel
     const plays = await prisma.play.findMany({
       where: {
-        wheelId: wid,
+        wheelId,
         lead: { not: null },
         ...dateFilter
       },
@@ -370,17 +572,10 @@ export const getWheelLeads = async (req: Request, res: Response) => {
         createdAt: true,
         lead: true,
         result: true,
-        prize: {
-          select: {
-            redeemedAt: true
-          }
-        }
+        prize: { select: { redeemedAt: true } }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy: { createdAt: 'desc' }
     });
-    
     res.json({ leads: plays });
   } catch (error) {
     console.error('Get wheel leads error:', error);
@@ -389,55 +584,81 @@ export const getWheelLeads = async (req: Request, res: Response) => {
 };
 
 /**
- * Get leads for a wheel (CSV format)
+ * @openapi
+ * /companies/{companyId}/wheels/{wheelId}/leads.csv:
+ *   get:
+ *     summary: Get all leads for a wheel (CSV format)
+ *     tags:
+ *       - Leads
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: path
+ *         name: wheelId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the wheel
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter leads from this date (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter leads to this date (YYYY-MM-DD)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: CSV file with leads data
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Premium feature
+ *       404:
+ *         description: Wheel not found
  */
 export const getWheelLeadsCsv = async (req: Request, res: Response) => {
   try {
-    const { wid } = req.params;
+    const wheelId = req.params.wheelId || req.params.wid;
     const { from, to } = req.query;
-    
-    // Check if user's company has PREMIUM plan
     const wheel = await prisma.wheel.findUnique({
-      where: { id: wid },
+      where: { id: wheelId },
       include: {
-        company: {
-          select: {
-            plan: true,
-            name: true
-          }
-        }
+        company: { select: { plan: true, name: true } }
       }
     });
-    
     if (!wheel) {
       return res.status(404).json({ error: 'Wheel not found' });
     }
-    
-    // Check if company has PREMIUM plan
     if (wheel.company.plan !== Plan.PREMIUM) {
-      return res.status(402).json({ 
-        error: 'This feature requires a PREMIUM plan' 
-      });
+      return res.status(402).json({ error: 'This feature requires a PREMIUM plan' });
     }
-    
-    // Build date filter if date range is provided
     const dateFilter = {};
     if (from || to) {
       dateFilter['createdAt'] = {};
-      
-      if (from) {
-        dateFilter['createdAt']['gte'] = new Date(from as string);
-      }
-      
-      if (to) {
-        dateFilter['createdAt']['lte'] = new Date(to as string);
-      }
+      if (from) dateFilter['createdAt']['gte'] = new Date(from as string);
+      if (to) dateFilter['createdAt']['lte'] = new Date(to as string);
     }
-    
-    // Get all plays with leads for this wheel
     const plays = await prisma.play.findMany({
       where: {
-        wheelId: wid,
+        wheelId,
         lead: { not: null },
         ...dateFilter
       },
@@ -446,18 +667,10 @@ export const getWheelLeadsCsv = async (req: Request, res: Response) => {
         createdAt: true,
         lead: true,
         result: true,
-        prize: {
-          select: {
-            redeemedAt: true
-          }
-        }
+        prize: { select: { redeemedAt: true } }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy: { createdAt: 'desc' }
     });
-    
-    // Format data for CSV
     const records = plays.map(play => {
       const lead = play.lead as any;
       return {
@@ -471,8 +684,6 @@ export const getWheelLeadsCsv = async (req: Request, res: Response) => {
         redeemed: play.prize?.redeemedAt ? 'Yes' : 'No'
       };
     });
-    
-    // Create CSV
     const csvStringifier = createObjectCsvStringifier({
       header: [
         { id: 'id', title: 'ID' },
@@ -485,13 +696,13 @@ export const getWheelLeadsCsv = async (req: Request, res: Response) => {
         { id: 'redeemed', title: 'Prize Redeemed' }
       ]
     });
-    
     const csvString = csvStringifier.getHeaderString() + csvStringifier.stringifyRecords(records);
     
-    // Set response headers for CSV download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="leads-${wheel.company.name}-${new Date().toISOString().split('T')[0]}.csv"`);
-    
+    // Force the exact Content-Type header without charset
+    res.set({
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename="leads-${wheel.company.name}-${new Date().toISOString().split('T')[0]}.csv"`
+    });
     res.send(csvString);
   } catch (error) {
     console.error('Get wheel leads CSV error:', error);
@@ -500,7 +711,67 @@ export const getWheelLeadsCsv = async (req: Request, res: Response) => {
 };
 
 /**
- * Update the company statistics function to support date filtering
+ * @openapi
+ * /companies/{companyId}/statistics:
+ *   get:
+ *     summary: Get company statistics
+ *     tags:
+ *       - Companies
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: UUID of the company
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [week, month, year, all]
+ *         default: month
+ *         description: Time period for statistics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Company statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalPlays:
+ *                   type: integer
+ *                 totalLeads:
+ *                   type: integer
+ *                 totalPrizes:
+ *                   type: integer
+ *                 redemptionRate:
+ *                   type: number
+ *                   format: float
+ *                 wheelStats:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       plays:
+ *                         type: integer
+ *                       leads:
+ *                         type: integer
+ *                       prizes:
+ *                         type: integer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Not an admin or super user
+ *       404:
+ *         description: Company not found
  */
 export const getCompanyStatistics = async (req: Request, res: Response) => {
   try {

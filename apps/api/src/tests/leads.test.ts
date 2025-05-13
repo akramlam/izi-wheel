@@ -5,6 +5,9 @@ import { Role, Plan } from '@prisma/client';
 import { hashPassword } from '../utils/auth';
 import { generateToken } from '../utils/jwt';
 
+// Generate a unique test identifier
+const testId = Date.now().toString();
+
 describe('Leads API', () => {
   let adminToken: string;
   let subUserToken: string;
@@ -18,7 +21,7 @@ describe('Leads API', () => {
     // Create a test company with PREMIUM plan
     const premiumCompany = await prisma.company.create({
       data: {
-        name: 'Test Premium Company',
+        name: `Test Premium Company ${testId}`,
         plan: Plan.PREMIUM,
         maxWheels: 5
       }
@@ -28,7 +31,7 @@ describe('Leads API', () => {
     // Create a test company with BASIC plan
     const basicCompany = await prisma.company.create({
       data: {
-        name: 'Test Basic Company',
+        name: `Test Basic Company ${testId}`,
         plan: Plan.BASIC,
         maxWheels: 2
       }
@@ -41,7 +44,7 @@ describe('Leads API', () => {
     // Admin user for premium company
     const adminUser = await prisma.user.create({
       data: {
-        email: 'admin-leads-test@example.com',
+        email: `admin-leads-test-${testId}@example.com`,
         password: hashedPassword,
         role: Role.ADMIN,
         companyId
@@ -51,7 +54,7 @@ describe('Leads API', () => {
     // Sub user for premium company
     const subUser = await prisma.user.create({
       data: {
-        email: 'sub-leads-test@example.com',
+        email: `sub-leads-test-${testId}@example.com`,
         password: hashedPassword,
         role: Role.SUB,
         companyId
@@ -61,7 +64,7 @@ describe('Leads API', () => {
     // Create a test wheel for premium company
     const wheel = await prisma.wheel.create({
       data: {
-        name: 'Test Wheel with Leads',
+        name: `Test Wheel with Leads ${testId}`,
         mode: 'ALL_WIN',
         companyId,
         formSchema: {},
@@ -82,7 +85,7 @@ describe('Leads API', () => {
     // Create a test wheel for basic company
     const basicWheel = await prisma.wheel.create({
       data: {
-        name: 'Test Basic Wheel',
+        name: `Test Basic Wheel ${testId}`,
         mode: 'ALL_WIN',
         companyId: basicCompanyId,
         formSchema: {},
@@ -131,7 +134,7 @@ describe('Leads API', () => {
     await prisma.user.deleteMany({
       where: { 
         email: { 
-          in: ['admin-leads-test@example.com', 'sub-leads-test@example.com'] 
+          in: [`admin-leads-test-${testId}@example.com`, `sub-leads-test-${testId}@example.com`] 
         } 
       }
     });
@@ -158,7 +161,7 @@ describe('Leads API', () => {
       // Create a token for a user in the basic company
       const basicAdminUser = await prisma.user.create({
         data: {
-          email: 'basic-admin@example.com',
+          email: `basic-admin-${testId}@example.com`,
           password: await hashPassword('testpassword123'),
           role: Role.ADMIN,
           companyId: basicCompanyId
@@ -202,7 +205,7 @@ describe('Leads API', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.header['content-type']).toBe('text/csv');
+      expect(res.header['content-type']).toContain('text/csv');
       expect(res.header['content-disposition']).toContain('attachment; filename="leads-');
       
       // Check CSV content
@@ -215,7 +218,7 @@ describe('Leads API', () => {
       // Create a token for a user in the basic company
       const basicAdminUser = await prisma.user.create({
         data: {
-          email: 'basic-admin-csv@example.com',
+          email: `basic-admin-csv-${testId}@example.com`,
           password: await hashPassword('testpassword123'),
           role: Role.ADMIN,
           companyId: basicCompanyId

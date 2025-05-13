@@ -17,21 +17,25 @@ model Company {
   maxWheels Int      @default(1)
   wheels    Wheel[]
   admins    User[]
+  plays     Play[]   // Track plays by company
   isActive  Boolean   @default(true)
   deletedAt DateTime?
   createdAt DateTime @default(now())
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  role      Role
-  companyId String?
-  company   Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  isActive  Boolean   @default(true)
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
+  id                  String    @id @default(uuid())
+  name                String    @default("")
+  email               String    @unique
+  password            String
+  role                Role
+  companyId           String?
+  company             Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isActive            Boolean   @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  isPaid              Boolean   @default(false)
+  forcePasswordChange Boolean   @default(false)
 }
 
 model Wheel {
@@ -39,11 +43,13 @@ model Wheel {
   companyId  String
   company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name       String
-  mode       WheelMode
-  formSchema Json
-  isActive   Boolean   @default(false)
+  mode       WheelMode @default(RANDOM_WIN)
+  formSchema Json?     // Schema for the lead capture form
+  isActive   Boolean   @default(true)
   slots      Slot[]
   plays      Play[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Slot {
@@ -51,29 +57,33 @@ model Slot {
   wheelId     String
   wheel       Wheel    @relation(fields: [wheelId], references: [id], onDelete: Cascade)
   label       String
-  probability Int
-  prizeCode   String
+  description String?
+  color       String?  // Hexadecimal color code
+  weight      Int      @default(1) // Probability weight
+  isWinning   Boolean  @default(false)
+  position    Int      @default(0) // Display order
+  isActive    Boolean  @default(true)
+  plays       Play[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Play {
-  id        String     @id @default(uuid())
-  wheelId   String
-  wheel     Wheel      @relation(fields: [wheelId], references: [id], onDelete: Cascade)
-  ip        String
-  createdAt DateTime   @default(now())
-  prizeId   String?    @unique
-  prize     Prize?
-  result    PlayResult
-  lead      Json?      // Store lead data (name, email, phone, birthDate)
-}
-
-model Prize {
-  id         String    @id @default(uuid())
-  playId     String    @unique
-  play       Play      @relation(fields: [playId], references: [id], onDelete: Cascade)
-  pin        String
-  redeemedAt DateTime?
-  qrLink     String
+  id               String           @id @default(uuid())
+  wheelId          String
+  wheel            Wheel            @relation(fields: [wheelId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  slotId           String
+  slot             Slot             @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  leadInfo         Json?            // Store lead data (name, email, phone, etc.)
+  result           PlayResult
+  pin              String?          // PIN code for redemption
+  qrLink           String?          // QR code URL for redemption
+  redemptionStatus RedemptionStatus @default(PENDING)
+  redeemedAt       DateTime?
+  ip               String?
+  createdAt        DateTime         @default(now())
 }
 
 enum Role {
@@ -90,6 +100,11 @@ enum WheelMode {
 enum PlayResult {
   WIN
   LOSE
+}
+
+enum RedemptionStatus {
+  PENDING
+  REDEEMED
 }
 
 enum Plan {

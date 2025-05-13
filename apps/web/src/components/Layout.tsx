@@ -98,7 +98,7 @@ const Layout = () => {
         <div className="flex h-16 items-center justify-between px-4">
           <a href="/" className="flex items-center gap-2">
             <img
-              src="/logo.svg"
+              src="/lo.png"
               alt="Logo IziKADO"
               className="h-14 w-auto drop-shadow-lg"
             />

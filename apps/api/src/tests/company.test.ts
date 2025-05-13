@@ -5,6 +5,9 @@ import { Role } from '@prisma/client';
 import { hashPassword } from '../utils/auth';
 import { generateToken } from '../utils/jwt';
 
+// Generate a unique test identifier to prevent DB conflicts
+const testId = Date.now().toString();
+
 describe('Company API', () => {
   let superAdminToken: string;
   let adminToken: string;
@@ -17,16 +20,17 @@ describe('Company API', () => {
     const hashedPassword = await hashPassword('testpassword123');
     superAdminUser = await prisma.user.create({
       data: {
-        email: 'super-admin-company@test.com',
+        email: `super-admin-company-${testId}@test.com`,
         password: hashedPassword,
-        role: Role.SUPER
+        role: Role.SUPER,
+        isPaid: true
       }
     });
 
     // Create a test company
     const company = await prisma.company.create({
       data: {
-        name: 'Test Company',
+        name: `Test Company ${testId}`,
         plan: 'BASIC',
         maxWheels: 2
       }
@@ -36,7 +40,7 @@ describe('Company API', () => {
     // Create a regular admin user
     adminUser = await prisma.user.create({
       data: {
-        email: 'admin-company@test.com',
+        email: `admin-company-${testId}@test.com`,
         password: hashedPassword,
         role: Role.ADMIN,
         companyId: company.id
@@ -52,12 +56,12 @@ describe('Company API', () => {
     // Clean up test data
     await prisma.user.deleteMany({
       where: {
-        email: { in: ['super-admin-company@test.com', 'admin-company@test.com'] }
+        email: { in: [`super-admin-company-${testId}@test.com`, `admin-company-${testId}@test.com`] }
       }
     });
     await prisma.company.deleteMany({
       where: {
-        name: { startsWith: 'Test Company' }
+        name: { contains: testId }
       }
     });
   });
@@ -68,14 +72,14 @@ describe('Company API', () => {
         .post('/companies')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Test Company Created',
+          name: `Test Company Created ${testId}-1`,
           plan: 'PREMIUM',
           maxWheels: 5
         });
 
       expect(res.status).toBe(201);
       expect(res.body.company).toHaveProperty('id');
-      expect(res.body.company.name).toBe('Test Company Created');
+      expect(res.body.company.name).toBe(`Test Company Created ${testId}-1`);
       expect(res.body.company.plan).toBe('PREMIUM');
       expect(res.body.company.maxWheels).toBe(5);
     });
@@ -85,7 +89,7 @@ describe('Company API', () => {
         .post('/companies')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Test Company Unauthorized',
+          name: `Test Company Unauthorized ${testId}-2`,
           plan: 'BASIC',
           maxWheels: 1
         });
@@ -98,7 +102,7 @@ describe('Company API', () => {
         .post('/companies')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Test Company Invalid Plan',
+          name: `Test Company Invalid Plan ${testId}-3`,
           plan: 'INVALID_PLAN',
           maxWheels: 1
         });
@@ -111,7 +115,7 @@ describe('Company API', () => {
         .post('/companies')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Test Company Invalid MaxWheels',
+          name: `Test Company Invalid MaxWheels ${testId}-4`,
           plan: 'BASIC',
           maxWheels: 0
         });
@@ -120,12 +124,13 @@ describe('Company API', () => {
     });
 
     it('should prevent duplicate company names', async () => {
+      const duplicateName = `Test Company Duplicate ${testId}-5`;
       // First create a company
       await request(app)
         .post('/companies')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Test Company Duplicate',
+          name: duplicateName,
           plan: 'BASIC',
           maxWheels: 1
         });
@@ -135,12 +140,64 @@ describe('Company API', () => {
         .post('/companies')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          name: 'Test Company Duplicate',
+          name: duplicateName,
           plan: 'BASIC',
           maxWheels: 1
         });
 
       expect(res.status).toBe(409);
+    });
+
+    it('should create a company with admin invitations when SUPER admin', async () => {
+      // Mock the sendInviteEmail function
+      jest.spyOn(require('../utils/mailer'), 'sendInviteEmail').mockResolvedValue(undefined);
+      
+      const res = await request(app)
+        .post('/companies')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: `Test Company with Admins ${testId}-8`,
+          plan: 'BASIC',
+          maxWheels: 3,
+          admins: [
+            { 
+              name: 'Admin User',
+              email: `admin-test-${testId}@example.com`, 
+              role: 'ADMIN' 
+            },
+            { 
+              name: 'Sub Admin User',
+              email: `subadmin-test-${testId}@example.com`, 
+              role: 'SUB' 
+            }
+          ]
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.company).toHaveProperty('id');
+      expect(res.body.company.name).toBe(`Test Company with Admins ${testId}-8`);
+      expect(res.body.admins).toHaveLength(2);
+      expect(res.body.admins[0]).toHaveProperty('email', `admin-test-${testId}@example.com`);
+      expect(res.body.admins[0]).toHaveProperty('role', 'ADMIN');
+      expect(res.body.admins[1]).toHaveProperty('email', `subadmin-test-${testId}@example.com`);
+      expect(res.body.admins[1]).toHaveProperty('role', 'SUB');
+      
+      // Verify users were created in the database
+      const adminUser = await prisma.user.findUnique({
+        where: { email: `admin-test-${testId}@example.com` }
+      });
+      expect(adminUser).not.toBeNull();
+      expect(adminUser?.companyId).toBe(res.body.company.id);
+      expect(adminUser?.forcePasswordChange).toBe(true);
+      
+      // Clean up created users
+      await prisma.user.deleteMany({
+        where: {
+          email: {
+            in: [`admin-test-${testId}@example.com`, `subadmin-test-${testId}@example.com`]
+          }
+        }
+      });
     });
   });
 
@@ -152,7 +209,7 @@ describe('Company API', () => {
       // Create a company to delete
       const companyToDelete = await prisma.company.create({
         data: {
-          name: 'Test Company To Delete',
+          name: `Test Company To Delete ${testId}-6`,
           plan: 'BASIC',
           maxWheels: 1
         }
@@ -162,7 +219,7 @@ describe('Company API', () => {
       // Create a company with wheels
       const companyWithWheels = await prisma.company.create({
         data: {
-          name: 'Test Company With Wheels',
+          name: `Test Company With Wheels ${testId}-7`,
           plan: 'BASIC',
           maxWheels: 1,
           wheels: {

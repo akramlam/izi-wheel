@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, Edit, Trash2, Play, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, ToggleLeft, ToggleRight, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { toast } from '../hooks/use-toast';
 
 const WheelManager = () => {
   const { user } = useAuth();
@@ -13,7 +14,9 @@ const WheelManager = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [wheelToDelete, setWheelToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
+  // Both SUPER and ADMIN users can create, edit, and delete wheels
   const canEdit = user?.role === 'SUPER' || user?.role === 'ADMIN';
 
   useEffect(() => {
@@ -24,6 +27,23 @@ const WheelManager = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Only validate if no company ID is present
+      const storedCompanyId = localStorage.getItem('companyId');
+      if (!storedCompanyId || storedCompanyId === 'null') {
+        try {
+          const validationResponse = await api.getValidCompanyId();
+          if (validationResponse.data.companyId) {
+            localStorage.setItem('companyId', validationResponse.data.companyId);
+            setCompanyId(validationResponse.data.companyId);
+          }
+        } catch (validationError) {
+          console.error('Error validating company ID:', validationError);
+        }
+      } else {
+        setCompanyId(storedCompanyId);
+      }
+      
       const response = await api.getWheels();
       setWheels(response.data.wheels || []);
     } catch (error) {
@@ -78,6 +98,36 @@ const WheelManager = () => {
       console.error('Error toggling wheel status:', error);
       setError('Failed to update wheel status. Please try again.');
     }
+  };
+
+  const getPublicWheelUrl = (wheelId: string) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/play/${companyId}/${wheelId}`;
+  };
+  
+  const copyPublicUrl = (wheelId: string) => {
+    const url = getPublicWheelUrl(wheelId);
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast({
+          title: "URL copiée!",
+          description: "L'URL de la roue a été copiée dans le presse-papiers.",
+          variant: "default",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy URL:', err);
+        toast({
+          title: "Échec de la copie",
+          description: "Impossible de copier l'URL. Veuillez réessayer.",
+          variant: "destructive",
+        });
+      });
+  };
+  
+  const openPublicWheel = (wheelId: string) => {
+    const url = getPublicWheelUrl(wheelId);
+    window.open(url, '_blank');
   };
 
   if (isLoading) {
@@ -164,6 +214,9 @@ const WheelManager = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Parties
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Lien public
+                  </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                     Actions
                   </th>
@@ -218,6 +271,29 @@ const WheelManager = () => {
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                       {wheel._count?.plays || 0}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      {wheel.isActive && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => copyPublicUrl(wheel.id)}
+                            className="rounded p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                            title="Copier le lien public"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openPublicWheel(wheel.id)}
+                            className="rounded p-1 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-900"
+                            title="Ouvrir la roue publique"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                      {!wheel.isActive && (
+                        <span className="text-xs text-gray-400">Activer la roue pour partager</span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">

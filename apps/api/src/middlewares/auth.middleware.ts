@@ -11,6 +11,9 @@ declare global {
         email: string;
         role: Role;
         companyId?: string;
+        isPaid: boolean;
+        name?: string;
+        forcePasswordChange?: boolean;
       };
     }
   }
@@ -53,8 +56,24 @@ export const roleGuard = (allowedRoles: Role[]) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    console.log('Role check for user:', req.user.email, 'Role:', req.user.role, 'isPaid:', req.user.isPaid);
+
+    // SUPER admin always has access if role is allowed
+    if (req.user.role === Role.SUPER && allowedRoles.includes(Role.SUPER)) {
+      console.log('SUPER admin granted access');
+      return next();
+    }
+
+    // Only allow if user's role is in allowedRoles
     if (!allowedRoles.includes(req.user.role)) {
+      console.log('Access denied - role not in allowed roles:', allowedRoles);
       return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    // Restrict ADMIN if not paid
+    if (req.user.role === Role.ADMIN && req.user.isPaid === false) {
+      console.log('ADMIN with isPaid=false denied access');
+      return res.status(403).json({ error: 'Admin must pay to access full admin features.' });
     }
 
     next();
@@ -72,18 +91,27 @@ export const companyGuard = (req: Request, res: Response, next: NextFunction) =>
 
   // SUPER users can access all companies
   if (req.user.role === Role.SUPER) {
+    console.log('SUPER admin granted access to company resources');
     return next();
   }
 
-  const companyId = req.params.companyId || req.body.companyId;
+  const companyId = req.params.companyId || req.body.companyId || req.params.cid;
   
   // No company ID in request, continue (will be caught by other middleware if needed)
   if (!companyId) {
+    console.log('No company ID in request parameters, continuing...');
     return next();
+  }
+
+  // No company ID in user object
+  if (!req.user.companyId) {
+    console.log('User has no company ID:', req.user.email);
+    return res.status(403).json({ error: 'No company ID associated with this account' });
   }
 
   // Check if user belongs to the requested company
   if (req.user.companyId !== companyId) {
+    console.log('Access denied to company:', companyId, 'User belongs to:', req.user.companyId);
     return res.status(403).json({ error: 'Access denied to this company resource' });
   }
 

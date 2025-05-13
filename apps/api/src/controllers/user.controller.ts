@@ -6,15 +6,29 @@ import { generateRandomPassword } from '../utils/auth';
 import { sendInviteEmail } from '../utils/mailer';
 
 /**
- * Get all users for a company
+ * @openapi
+ * /companies/{companyId}/users:
+ *   get:
+ *     summary: Get all users for a company
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of users
  */
 export const getCompanyUsers = async (req: Request, res: Response) => {
   try {
-    const { cid } = req.params;
+    const { companyId } = req.params;
     
     const users = await prisma.user.findMany({
       where: {
-        companyId: cid
+        companyId
       },
       select: {
         id: true,
@@ -36,12 +50,46 @@ export const getCompanyUsers = async (req: Request, res: Response) => {
 };
 
 /**
- * Invite a new user to a company
+ * @openapi
+ * /companies/{companyId}/users:
+ *   post:
+ *     summary: Invite a new user to a company
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: User invited
+ *       400:
+ *         description: Invalid input
  */
 export const inviteUser = async (req: Request, res: Response) => {
   try {
-    const { cid } = req.params;
-    const { email, role } = req.body;
+    const { companyId } = req.params;
+    const { email, role, name } = req.body;
+    const adminUser = req.user; // The current authenticated user
     
     // Validate role
     if (role !== Role.SUB && role !== Role.ADMIN) {
@@ -54,7 +102,7 @@ export const inviteUser = async (req: Request, res: Response) => {
     const existingUser = await prisma.user.findFirst({
       where: {
         email,
-        companyId: cid
+        companyId
       }
     });
     
@@ -64,7 +112,7 @@ export const inviteUser = async (req: Request, res: Response) => {
     
     // Check if company exists
     const company = await prisma.company.findUnique({
-      where: { id: cid }
+      where: { id: companyId }
     });
     
     if (!company) {
@@ -78,16 +126,21 @@ export const inviteUser = async (req: Request, res: Response) => {
     // Create the user
     const user = await prisma.user.create({
       data: {
+        name: name || "",  // Use provided name or empty string
         email,
         password: hashedPassword,
         role,
-        companyId: cid,
-        isActive: true
+        companyId,
+        isActive: true,
+        forcePasswordChange: true  // Force password change on first login
       }
     });
     
+    // Get admin name from user object if available
+    const adminName = adminUser?.name || adminUser?.email?.split('@')[0] || 'L\'administrateur';
+    
     // Send invite email with temporary password
-    await sendInviteEmail(email, tempPassword, company.name);
+    await sendInviteEmail(email, tempPassword, company.name, adminName, name);
     
     // Return user without password
     const { password, ...userWithoutPassword } = user;
@@ -99,18 +152,58 @@ export const inviteUser = async (req: Request, res: Response) => {
 };
 
 /**
- * Update a user's role or active status
+ * @openapi
+ * /companies/{companyId}/users/{userId}:
+ *   put:
+ *     summary: Update a user in a company
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: User updated
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: User not found
  */
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    const { cid, uid } = req.params;
+    const { companyId, uid } = req.params;
     const { role, isActive } = req.body;
     
     // Check if user exists and belongs to the company
     const user = await prisma.user.findFirst({
       where: {
         id: uid,
-        companyId: cid
+        companyId
       }
     });
     
@@ -150,17 +243,38 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 /**
- * Soft delete a user
+ * @openapi
+ * /companies/{companyId}/users/{userId}:
+ *   delete:
+ *     summary: Delete a user from a company
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted
+ *       404:
+ *         description: User not found
  */
 export const deleteUser = async (req: Request, res: Response) => {
   try {
-    const { cid, uid } = req.params;
+    const { companyId, uid } = req.params;
     
     // Check if user exists and belongs to the company
     const user = await prisma.user.findFirst({
       where: {
         id: uid,
-        companyId: cid
+        companyId
       }
     });
     
@@ -168,26 +282,21 @@ export const deleteUser = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found in this company' });
     }
     
-    // Soft delete by setting isActive to false and recording deletion time
-    const deletedUser = await prisma.user.update({
+    // Don't allow deleting SUPER users
+    if (user.role === Role.SUPER) {
+      return res.status(403).json({ error: 'Super users cannot be deleted' });
+    }
+    
+    // Soft delete the user
+    await prisma.user.update({
       where: { id: uid },
       data: {
         isActive: false,
         deletedAt: new Date()
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-        deletedAt: true
       }
     });
     
-    res.json({ 
-      message: 'User deleted successfully', 
-      user: deletedUser 
-    });
+    res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user' });

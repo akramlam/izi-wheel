@@ -16,13 +16,13 @@ router.use(authMiddleware);
 // Get all users for a company (ADMIN+ only)
 router.get('/', roleGuard([Role.ADMIN, Role.SUPER]), getCompanyUsers);
 
-// Invite a new user to a company (ADMIN only)
-router.post('/', roleGuard([Role.ADMIN]), inviteUser);
+// Invite a new user to a company (ADMIN or SUPER)
+router.post('/', roleGuard([Role.ADMIN, Role.SUPER]), inviteUser);
 
-// Update a user's role or active status (ADMIN only)
-router.put('/:uid', roleGuard([Role.ADMIN]), updateUser);
+// Update a user's role or active status (ADMIN or SUPER)
+router.put('/:uid', roleGuard([Role.ADMIN, Role.SUPER]), updateUser);
 
-// Delete a user (ADMIN only)
-router.delete('/:uid', roleGuard([Role.ADMIN]), deleteUser);
+// Delete a user (ADMIN or SUPER)
+router.delete('/:uid', roleGuard([Role.ADMIN, Role.SUPER]), deleteUser);
 
 export default router; 
