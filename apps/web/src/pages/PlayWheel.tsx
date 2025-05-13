@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Wheel } from 'react-custom-roulette';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from '../components/ui/dialog';
+//import { 
+//  Dialog, 
+//  DialogContent, 
+//  DialogHeader, 
+//  DialogTitle, 
+//  DialogDescription 
+//} from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
 import { Loader2 } from 'lucide-react';

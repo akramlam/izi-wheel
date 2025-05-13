@@ -126,10 +126,6 @@ const Dashboard = () => {
           <p className="text-gray-500 mb-4">Si vous souhaitez utiliser un passage du Lorem Ipsum, vous devez vous assurer qu'il n'y a rien.</p>
           <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg w-fit">Commencer</button>
         </div>
-        <div className="flex-1 flex items-center justify-center">
-          {/* Illustration ou avatar */}
-          <img src="https://assets-v2.lottiefiles.com/a/2b2e2e3e-1162-11ee-8b1e-6b7e2e3e3e3e/2b2e2e3e-1162-11ee-8b1e-6b7e2e3e3e3e.gif" alt="Bienvenue" className="w-48 h-48 object-contain" />
-        </div>
       </div>
 
       {/* Statistiques principales */}

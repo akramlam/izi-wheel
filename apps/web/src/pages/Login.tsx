@@ -28,7 +28,7 @@ const Login = () => {
        <ShineBorder shineColor={["#A07CFE", "#FE8FB5", "#FFBE7B"]} />
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         <div className="flex flex-col items-center mb-4">
-          <div className="relative h-[128px] w-[128px] mb-2">
+          <div className="relative h-[180px] w-[180px] mb-2">
             <img src="/loo.jpg" alt="Logo IziKADO" className="absolute inset-0 h-full w-full object-contain bg-white p-4" />
           </div>
         </div>

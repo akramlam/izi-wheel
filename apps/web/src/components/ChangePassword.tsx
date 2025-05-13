@@ -67,8 +67,9 @@ const ChangePassword = () => {
 
   // If user is not forcing password change, redirect to dashboard
   if (user && !user.forcePasswordChange) {
-    navigate('/dashboard');
-    return null;
+    // Supprimer la redirection automatique pour permettre à tous les utilisateurs de changer leur mot de passe
+    // navigate('/dashboard');
+    // return null;
   }
 
   return (
