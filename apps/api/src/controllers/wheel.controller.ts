@@ -212,7 +212,9 @@ export const getWheel = async (req: Request, res: Response) => {
         companyId,
       },
       include: {
-        slots: true,
+        slots: {
+          where: { isActive: true }
+        },
         _count: {
           select: { plays: true },
         },

@@ -20,28 +20,28 @@ const playSchema = z.object({
 });
 
 /**
- * Generate a random slot based on probabilities
+ * Generate a random slot based on weights
  */
-const selectRandomSlot = (slots: Array<{ id: string; probability: number }>) => {
+const selectRandomSlot = (slots: Array<{ id: string; weight: number }>) => {
   // Validate slots
   if (!slots || slots.length === 0) {
     throw new Error('No slots available');
   }
   
-  // Calculate total probability
-  const totalProbability = slots.reduce((sum, slot) => sum + slot.probability, 0);
-  if (totalProbability !== 100) {
-    throw new Error('Total probability must equal 100%');
+  // Calculate total weight
+  const totalWeight = slots.reduce((sum, slot) => sum + slot.weight, 0);
+  if (totalWeight !== 100) {
+    throw new Error('Total weight must equal 100%');
   }
   
   // Generate a random number between 1 and 100
   const randomNum = Math.floor(Math.random() * 100) + 1;
   
-  // Select slot based on probability ranges
-  let cumulativeProbability = 0;
+  // Select slot based on weight ranges
+  let cumulativeWeight = 0;
   for (const slot of slots) {
-    cumulativeProbability += slot.probability;
-    if (randomNum <= cumulativeProbability) {
+    cumulativeWeight += slot.weight;
+    if (randomNum <= cumulativeWeight) {
       return slot.id;
     }
   }
@@ -181,7 +181,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         slots: {
           select: {
             id: true,
-            probability: true,
+            weight: true,
             prizeCode: true,
             label: true,
           },

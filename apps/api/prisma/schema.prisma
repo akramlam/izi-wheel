@@ -57,6 +57,7 @@ model Slot {
   wheelId     String
   wheel       Wheel    @relation(fields: [wheelId], references: [id], onDelete: Cascade)
   label       String
+  prizeCode   String?
   description String?
   color       String?  // Hexadecimal color code
   weight      Int      @default(1) // Probability weight

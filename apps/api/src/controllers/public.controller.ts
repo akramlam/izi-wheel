@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { prisma } from '../utils/db';
+import prisma from '../utils/db';
 import { generateQRCode } from '../utils/qrcode';
 import { generatePIN } from '../utils/pin';
+import { ensureWheelHasSlots } from '../utils/db-init';
 
 /**
  * Get public wheel data
@@ -17,16 +18,23 @@ export const getPublicWheel = async (req: Request, res: Response) => {
       });
     }
 
-    // Find the company
-    const company = await prisma.company.findUnique({
-      where: { 
-        id: companyId,
-        isActive: true 
-      }
+    console.log(`Looking for company ${companyId} and wheel ${wheelId}`);
+
+    // First check if company exists at all
+    const companyCheck = await prisma.company.findUnique({
+      where: { id: companyId }
     });
 
-    if (!company) {
+    if (!companyCheck) {
+      console.log(`Company not found with ID: ${companyId}`);
       return res.status(404).json({ error: 'Company not found' });
+    }
+
+    console.log(`Company found: ${companyCheck.name}, isActive: ${companyCheck.isActive}`);
+
+    // If company exists but is not active, return appropriate message
+    if (!companyCheck.isActive) {
+      return res.status(403).json({ error: 'Company is not active' });
     }
 
     // Find the wheel with its slots
@@ -45,7 +53,49 @@ export const getPublicWheel = async (req: Request, res: Response) => {
     });
 
     if (!wheel) {
+      console.log(`Wheel not found: ${wheelId} for company ${companyId}`);
       return res.status(404).json({ error: 'Wheel not found' });
+    }
+
+    // If wheel has no slots, create default ones
+    if (!wheel.slots || wheel.slots.length === 0) {
+      console.log(`Wheel ${wheelId} has no slots. Creating default slots...`);
+      await ensureWheelHasSlots(wheelId);
+      
+      // Fetch the wheel again with the new slots
+      const updatedWheel = await prisma.wheel.findUnique({
+        where: {
+          id: wheelId,
+          companyId,
+          isActive: true
+        },
+        include: {
+          slots: {
+            where: { isActive: true },
+            orderBy: { position: 'asc' }
+          }
+        }
+      });
+      
+      if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
+        return res.status(500).json({ error: 'Failed to create default slots for wheel' });
+      }
+      
+      // Return updated wheel with the new slots
+      return res.status(200).json({
+        wheel: {
+          id: updatedWheel.id,
+          name: updatedWheel.name,
+          formSchema: updatedWheel.formSchema,
+          slots: updatedWheel.slots.map(slot => ({
+            id: slot.id,
+            label: slot.label,
+            color: slot.color,
+            weight: slot.weight,
+            isWinning: slot.isWinning
+          }))
+        }
+      });
     }
 
     // Return only necessary data for public view
@@ -77,6 +127,12 @@ export const spinWheel = async (req: Request, res: Response) => {
     const { companyId, wheelId } = req.params;
     const { lead } = req.body;
 
+    console.log('Received spin request:', {
+      companyId,
+      wheelId,
+      lead
+    });
+
     // Validate input
     if (!companyId || !wheelId) {
       return res.status(400).json({ 
@@ -84,9 +140,9 @@ export const spinWheel = async (req: Request, res: Response) => {
       });
     }
 
-    if (!lead || typeof lead !== 'object') {
+    if (!lead || typeof lead !== 'object' || Object.keys(lead).length === 0) {
       return res.status(400).json({ 
-        error: 'Lead information is required' 
+        error: 'Lead information is required and must contain at least one field' 
       });
     }
 
@@ -108,9 +164,13 @@ export const spinWheel = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Wheel not found' });
     }
 
-    if (wheel.slots.length === 0) {
+    if (!wheel.slots || wheel.slots.length === 0) {
+      console.error('Wheel has no active slots:', wheelId);
       return res.status(400).json({ error: 'Wheel has no active slots' });
     }
+
+    // Log the slots for debugging
+    console.log(`Found ${wheel.slots.length} active slots for wheel ${wheelId}`);
 
     // Select a slot based on weights
     const slot = selectSlotByWeight(wheel.slots);

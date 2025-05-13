@@ -6,21 +6,12 @@ import { createError } from '../middlewares/error.middleware';
 // Validation schema for creating/updating a slot
 const slotSchema = z.object({
   label: z.string().min(1).max(100),
-  probability: z.number().int().min(1).max(100),
+  weight: z.number().int().min(1),
   prizeCode: z.string().min(1).max(50),
 });
 
 // Validation schema for bulk slot creation/update
-const bulkSlotSchema = z.array(slotSchema).min(2).refine(
-  (slots) => {
-    const totalProbability = slots.reduce((sum, slot) => sum + slot.probability, 0);
-    return totalProbability === 100;
-  },
-  {
-    message: 'Total probability must equal 100',
-    path: ['probability'],
-  }
-);
+const bulkSlotSchema = z.array(slotSchema).min(2);
 
 /**
  * @openapi
@@ -92,9 +83,11 @@ export const getSlots = async (req: Request, res: Response) => {
     }
 
     const slots = await prisma.slot.findMany({
-      where: { wheelId },
-      orderBy: { probability: 'desc' },
+      where: { wheelId, isActive: true },
+      orderBy: { weight: 'desc' },
     });
+
+    console.log(`Found ${slots.length} active slots for wheel ${wheelId}`);
 
     res.status(200).json({ slots });
   } catch (error) {
@@ -303,15 +296,15 @@ export const createSlot = async (req: Request, res: Response) => {
     // Get existing slots to verify total probability
     const existingSlots = await prisma.slot.findMany({
       where: { wheelId },
-      select: { probability: true },
+      select: { weight: true },
     });
     
-    const currentTotal = existingSlots.reduce((sum, slot) => sum + slot.probability, 0);
-    const newTotal = currentTotal + validatedData.probability;
+    const currentTotal = existingSlots.reduce((sum, slot) => sum + slot.weight, 0);
+    const newTotal = currentTotal + validatedData.weight;
     
     if (newTotal > 100) {
       throw createError(
-        `Total probability would exceed 100 (current: ${currentTotal}, new: ${validatedData.probability})`,
+        `Total probability would exceed 100 (current: ${currentTotal}, new: ${validatedData.weight})`,
         400
       );
     }
@@ -321,6 +314,7 @@ export const createSlot = async (req: Request, res: Response) => {
       data: {
         ...validatedData,
         wheelId,
+        isActive: true,
       },
     });
 
@@ -455,22 +449,22 @@ export const updateSlot = async (req: Request, res: Response) => {
     }
     
     // If probability is being updated, verify total probability
-    if (validatedData.probability !== undefined) {
+    if (validatedData.weight !== undefined) {
       // Get all other slots
       const otherSlots = await prisma.slot.findMany({
         where: {
           wheelId,
           id: { not: slotId },
         },
-        select: { probability: true },
+        select: { weight: true },
       });
       
-      const otherTotal = otherSlots.reduce((sum, slot) => sum + slot.probability, 0);
-      const newTotal = otherTotal + validatedData.probability;
+      const otherTotal = otherSlots.reduce((sum, slot) => sum + slot.weight, 0);
+      const newTotal = otherTotal + validatedData.weight;
       
       if (newTotal > 100) {
         throw createError(
-          `Total probability would exceed 100 (other slots: ${otherTotal}, new: ${validatedData.probability})`,
+          `Total probability would exceed 100 (other slots: ${otherTotal}, new: ${validatedData.weight})`,
           400
         );
       }
@@ -481,16 +475,19 @@ export const updateSlot = async (req: Request, res: Response) => {
       where: {
         id: slotId,
       },
-      data: validatedData,
+      data: {
+        ...validatedData,
+        isActive: true,
+      },
     });
 
     // Get the new total probability
     const allSlots = await prisma.slot.findMany({
       where: { wheelId },
-      select: { probability: true },
+      select: { weight: true },
     });
     
-    const totalProbability = allSlots.reduce((sum, slot) => sum + slot.probability, 0);
+    const totalProbability = allSlots.reduce((sum, slot) => sum + slot.weight, 0);
 
     res.status(200).json({ 
       slot,
@@ -594,10 +591,10 @@ export const deleteSlot = async (req: Request, res: Response) => {
     // Get the new total probability
     const remainingSlots = await prisma.slot.findMany({
       where: { wheelId },
-      select: { probability: true },
+      select: { weight: true },
     });
     
-    const totalProbability = remainingSlots.reduce((sum, slot) => sum + slot.probability, 0);
+    const totalProbability = remainingSlots.reduce((sum, slot) => sum + slot.weight, 0);
 
     res.status(200).json({ 
       message: 'Slot deleted successfully',
@@ -724,12 +721,13 @@ export const bulkUpdateSlots = async (req: Request, res: Response) => {
         });
       }
       
-      // Create new slots
+      // Create new slots, always set isActive: true
       const newSlots = await Promise.all(
         validatedData.map(slotData =>
           tx.slot.create({
             data: {
               ...slotData,
+              isActive: true,
               wheelId,
             },
           })

@@ -8,7 +8,7 @@ import { sendInviteEmail } from '../utils/mailer';
 export const getCompanyStatistics = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
-    const { from, to } = req.query;
+    const { range, from, to } = req.query;
     
     // Special handling for demo-company-id (SUPER admin with no companies)
     if (companyId === 'demo-company-id' && req.user?.role === 'SUPER') {
@@ -32,7 +32,19 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     let fromDate = subDays(new Date(), 6); // Default to last 7 days
     let toDate = new Date();
     
-    if (from) {
+    // Handle range parameter (7d, 30d, 90d, all)
+    if (range) {
+      if (range === '7d') {
+        fromDate = subDays(new Date(), 6);
+      } else if (range === '30d') {
+        fromDate = subDays(new Date(), 29);
+      } else if (range === '90d') {
+        fromDate = subDays(new Date(), 89);
+      } else if (range === 'all') {
+        fromDate = new Date(0); // Beginning of time
+      }
+    } else if (from) {
+      // If explicit from date is provided, use it
       fromDate = new Date(from as string);
     }
     
@@ -44,32 +56,46 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     const wheels = await prisma.wheel.findMany({
       where: { companyId },
       select: { id: true, isActive: true },
-    });
+    }) || [];
     const totalWheels = wheels.length;
     const activeWheels = wheels.filter(w => w.isActive).length;
 
     // Total plays and prizes with date filter
-    const totalPlays = await prisma.play.count({
-      where: { 
-        wheel: { companyId },
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
-      },
-    });
-    
-    const totalPrizes = await prisma.prize.count({
-      where: { 
-        play: { 
+    let totalPlays = 0;
+    try {
+      const playsResult = await prisma.play.count({
+        where: { 
           wheel: { companyId },
           createdAt: { 
             gte: fromDate,
             lte: toDate
           }
-        } 
-      },
-    });
+        },
+      });
+      totalPlays = playsResult || 0;
+    } catch (error) {
+      console.error('Error counting plays:', error);
+      totalPlays = 0;
+    }
+    
+    // Count winning plays (prizes)
+    let totalPrizes = 0;
+    try {
+      const prizesResult = await prisma.play.count({
+        where: { 
+          wheel: { companyId },
+          result: 'WIN',
+          createdAt: { 
+            gte: fromDate,
+            lte: toDate
+          }
+        },
+      });
+      totalPrizes = prizesResult || 0;
+    } catch (error) {
+      console.error('Error counting prizes:', error);
+      totalPrizes = 0;
+    }
 
     // Generate dates for the last 7 days
     const dates = Array.from({ length: 7 }).map((_, i) => {
@@ -89,7 +115,7 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
           lte: toDate
         }
       }
-    });
+    }) || [];
     
     // Populate playsByDay with actual counts
     plays.forEach(play => {
@@ -103,25 +129,24 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     // Prepare prizesByDay with 0 counts
     const prizesByDay = dates.map(date => ({ date, count: 0 }));
     
-    // Get prizes with related plays
-    const prizesWithPlays = await prisma.prize.findMany({
+    // Get winning plays (prizes) grouped by day
+    const winningPlays = await prisma.play.findMany({
       where: {
-        play: {
-          wheel: { companyId },
-          createdAt: { 
-            gte: fromDate,
-            lte: toDate
-          }
+        wheel: { companyId },
+        result: 'WIN',
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
         }
       },
       include: {
-        play: true
+        slot: true
       }
-    });
+    }) || [];
     
     // Populate prizesByDay with actual counts
-    prizesWithPlays.forEach(prize => {
-      const dateStr = format(prize.play.createdAt, 'yyyy-MM-dd');
+    winningPlays.forEach(play => {
+      const dateStr = format(play.createdAt, 'yyyy-MM-dd');
       const dayIndex = prizesByDay.findIndex(day => day.date === dateStr);
       if (dayIndex >= 0) {
         prizesByDay[dayIndex].count++;
@@ -141,9 +166,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       take: 10,
       include: {
         wheel: { select: { name: true } },
-        prize: true,
+        slot: true
       },
-    });
+    }) || [];
 
     res.json({
       totalWheels,
@@ -179,23 +204,29 @@ export const getAllCompanies = async (req: Request, res: Response) => {
 export const updateCompany = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, isActive, plan, maxWheels } = req.body;
-    // Validate the plan value if provided
-    if (plan && !Object.values(Plan).includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' });
+    let { name, isActive, plan, maxWheels } = req.body;
+    // Defensive: Only allow valid plan values
+    if (plan !== undefined) {
+      if (typeof plan !== 'string' || !plan || !Object.values(Plan).includes(plan)) {
+        return res.status(400).json({ error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' });
+      }
     }
-    // Validate maxWheels if provided
-    if (maxWheels !== undefined && maxWheels < 1) {
-      return res.status(400).json({ error: 'maxWheels must be at least 1' });
+    // Defensive: Only allow positive maxWheels
+    if (maxWheels !== undefined) {
+      if (typeof maxWheels === 'string') maxWheels = parseInt(maxWheels, 10);
+      if (typeof maxWheels !== 'number' || isNaN(maxWheels) || maxWheels < 1) {
+        return res.status(400).json({ error: 'maxWheels must be at least 1' });
+      }
     }
+    // Build update data object
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (isActive !== undefined) data.isActive = isActive;
+    if (plan !== undefined && plan) data.plan = plan === 'BASIC' ? Plan.BASIC : Plan.PREMIUM;
+    if (maxWheels !== undefined) data.maxWheels = maxWheels;
     const updated = await prisma.company.update({
       where: { id },
-      data: {
-        ...(name !== undefined ? { name } : {}),
-        ...(isActive !== undefined ? { isActive } : {}),
-        ...(plan && { plan }),
-        ...(maxWheels !== undefined ? { maxWheels } : {}),
-      },
+      data,
     });
     res.json({ company: updated });
   } catch (error: any) {
@@ -203,27 +234,32 @@ export const updateCompany = async (req: Request, res: Response) => {
       // Prisma not found error
       return res.status(404).json({ error: 'Company not found' });
     }
-    console.error('Update company error:', error.message || error);
+    console.error('Update company error:', error);
     res.status(500).json({ error: 'Failed to update company' });
   }
 };
 
 export const createCompany = async (req: Request, res: Response) => {
   try {
-    const { name, plan, maxWheels, isActive, admins } = req.body;
+    let { name, plan, maxWheels, isActive, admins } = req.body;
 
     // Validate the plan value if provided
-    if (plan && !Object.values(Plan).includes(plan)) {
-      return res.status(400).json({ 
-        error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
-      });
+    if (plan !== undefined) {
+      if (typeof plan !== 'string' || !plan || !Object.values(Plan).includes(plan)) {
+        return res.status(400).json({ 
+          error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
+        });
+      }
     }
 
     // Validate maxWheels if provided
-    if (maxWheels !== undefined && maxWheels < 1) {
-      return res.status(400).json({ 
-        error: 'maxWheels must be at least 1' 
-      });
+    if (maxWheels !== undefined) {
+      if (typeof maxWheels === 'string') maxWheels = parseInt(maxWheels, 10);
+      if (typeof maxWheels !== 'number' || isNaN(maxWheels) || maxWheels < 1) {
+        return res.status(400).json({ 
+          error: 'maxWheels must be at least 1' 
+        });
+      }
     }
     
     // Check if company name is already in use
@@ -236,13 +272,12 @@ export const createCompany = async (req: Request, res: Response) => {
     }
 
     // Create the company
+    const data: any = { name };
+    if (plan !== undefined && plan) data.plan = plan === 'BASIC' ? Plan.BASIC : Plan.PREMIUM;
+    if (maxWheels !== undefined) data.maxWheels = maxWheels;
+    if (isActive !== undefined) data.isActive = isActive;
     const company = await prisma.company.create({
-      data: {
-        name,
-        ...(plan && { plan }),
-        ...(maxWheels && { maxWheels }),
-        ...(isActive !== undefined ? { isActive } : {})
-      }
+      data
     });
 
     // Handle admin invitations if provided
