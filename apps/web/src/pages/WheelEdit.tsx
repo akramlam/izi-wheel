@@ -7,7 +7,7 @@ import { ChevronLeft, Save, Plus, Trash2, Target } from 'lucide-react';
 type Slot = {
   id?: string;
   label: string;
-  probability: number;
+  weight: number;
   prizeCode: string;
 };
 
@@ -35,12 +35,19 @@ const WheelEdit = () => {
     isActive: false,
     slots: [],
   });
+  // Company selection state
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
 
   useEffect(() => {
     if (!isNew) {
       fetchWheelData();
     } else {
       setIsLoading(false);
+      // Fetch companies for dropdown
+      api.getCompanies().then(res => {
+        setCompanies(res.data.companies || []);
+      });
     }
   }, [wheelId]);
 
@@ -93,7 +100,7 @@ const WheelEdit = () => {
     const updatedSlots = [...wheel.slots];
     updatedSlots[index] = {
       ...updatedSlots[index],
-      [field]: field === 'probability' ? Number(value) : value,
+      [field]: field === 'weight' ? Number(value) : value,
     };
 
     setWheel(prev => ({
@@ -107,7 +114,7 @@ const WheelEdit = () => {
       ...prev,
       slots: [
         ...prev.slots,
-        { label: 'New Prize', probability: 10, prizeCode: 'PRIZE' + (prev.slots.length + 1) },
+        { label: 'New Prize', weight: 10, prizeCode: 'PRIZE' + (prev.slots.length + 1) },
       ],
     }));
   };
@@ -130,39 +137,34 @@ const WheelEdit = () => {
       return false;
     }
 
-    const totalProbability = wheel.slots.reduce((sum, slot) => sum + slot.probability, 0);
-    if (totalProbability !== 100) {
-      toast({
-        variant: 'destructive',
-        title: 'Erreur de validation',
-        description: `La somme des probabilités doit être égale à 100%. Total actuel : ${totalProbability}%`,
-      });
-      return false;
-    }
-
+    // No need to check for sum == 100 with weights
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateSlots()) return;
-
+    if (isNew && !selectedCompanyId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Veuillez sélectionner une entreprise pour cette roue.',
+      });
+      return;
+    }
     setIsSaving(true);
-    
     try {
       let savedWheel;
-      
       if (isNew) {
-        // Create new wheel
+        // Create new wheel with companyId
         const response = await api.createWheel({
           name: wheel.name,
           mode: wheel.mode,
           formSchema: wheel.formSchema,
           isActive: wheel.isActive,
+          companyId: selectedCompanyId,
         });
         savedWheel = response.data.wheel;
-        
         // Create slots
         if (savedWheel.id) {
           await api.bulkUpdateSlots(savedWheel.id, wheel.slots);
@@ -229,6 +231,23 @@ const WheelEdit = () => {
         <div className="rounded-lg bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-medium text-gray-900">Informations sur la roue</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {/* Company select (only when creating) */}
+            {isNew && (
+              <div className="col-span-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">Entreprise</label>
+                <select
+                  value={selectedCompanyId}
+                  onChange={e => setSelectedCompanyId(e.target.value)}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                >
+                  <option value="">Sélectionnez une entreprise</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="col-span-2">
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Nom de la roue
@@ -339,10 +358,7 @@ const WheelEdit = () => {
           </div>
           
           <div className="mb-2 text-right text-sm text-gray-500">
-            Probabilité totale : {wheel.slots.reduce((sum, slot) => sum + slot.probability, 0)}%
-            {wheel.slots.reduce((sum, slot) => sum + slot.probability, 0) !== 100 && (
-              <span className="ml-2 text-red-600">(Doit être égal à 100%)</span>
-            )}
+            Poids total : {wheel.slots.reduce((sum, slot) => sum + slot.weight, 0)}
           </div>
 
           {wheel.slots.length === 0 ? (
@@ -373,7 +389,7 @@ const WheelEdit = () => {
                       Code du lot
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Probabilité (%)
+                      Poids
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                       Actions
@@ -407,9 +423,8 @@ const WheelEdit = () => {
                         <input
                           type="number"
                           min="1"
-                          max="100"
-                          value={slot.probability}
-                          onChange={(e) => handleSlotChange(index, 'probability', e.target.value)}
+                          value={slot.weight}
+                          onChange={(e) => handleSlotChange(index, 'weight', e.target.value)}
                           className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                           required
                         />

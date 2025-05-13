@@ -12,7 +12,7 @@ import SubAdminManager from './pages/SubAdminManager';
 import Statistics from './pages/Statistics';
 import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
-import PlayWheel from './pages/PlayWheel';
+import PlayWheelV2 from './pages/PlayWheelV2';
 import RedeemPrize from './pages/RedeemPrize';
 import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
@@ -81,7 +81,7 @@ function App() {
       <Route path="/register-super" element={<RegisterSuper />} />
       
       {/* Public wheel routes */}
-      <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
+      <Route path="/play/:companyId/:wheelId" element={<PlayWheelV2 />} />
       <Route path="/redeem/:playId" element={<RedeemPrize />} />
       
       <Route path="/change-password" element={

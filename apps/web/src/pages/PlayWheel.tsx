@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wheel } from 'react-custom-roulette';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
-//import { 
-//  Dialog, 
-//  DialogContent, 
-//  DialogHeader, 
-//  DialogTitle, 
-//  DialogDescription 
-//} from '../components/ui/dialog';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, Phone, Calendar, User } from 'lucide-react';
+import { Confetti } from '../components/magicui/confetti';
+import Wheel from '../components/wheel/Wheel';
+import type { WheelConfig } from '../components/wheel/types';
 
 // Define types
 type WheelData = {
@@ -49,6 +51,23 @@ type PlayResponse = {
   };
 };
 
+// Mapping input types to icons
+const inputIcons: Record<string, React.ReactNode> = {
+  name: <User className="h-4 w-4 text-gray-400" />,
+  email: <Mail className="h-4 w-4 text-gray-400" />,
+  phone: <Phone className="h-4 w-4 text-gray-400" />,
+  birthDate: <Calendar className="h-4 w-4 text-gray-400" />,
+};
+
+// Brand colors
+const BRAND = {
+  primaryGradient: '#a25afd',   // Violet
+  secondaryGradient: '#6366f1', // Indigo
+};
+
+// Confetti colors
+const CONFETTI_COLORS = [BRAND.primaryGradient, BRAND.secondaryGradient, '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
+
 const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
@@ -59,6 +78,17 @@ const PlayWheel = () => {
   const [wheelColors, setWheelColors] = useState<string[]>([]);
   const [spinResult, setSpinResult] = useState<PlayResponse | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [wheelConfig, setWheelConfig] = useState<WheelConfig>({
+    segments: [],
+    spinDurationMin: 3,
+    spinDurationMax: 6,
+    sounds: {
+      tick: true,
+      win: true
+    },
+    hapticFeedback: true
+  });
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Fetch wheel data
   const { data: wheelData, isLoading: isLoadingWheel, error: wheelError } = useQuery<WheelData>({
@@ -78,11 +108,26 @@ const PlayWheel = () => {
   // Prepare wheel data when loaded
   useEffect(() => {
     if (wheelData) {
-      // Set wheel colors
-      const colors = wheelData.slots.map(slot => 
-        slot.color || (slot.isWinning ? '#28a745' : '#dc3545')
-      );
-      setWheelColors(colors);
+      // Ensure we have valid slot data, even if the wheel has no slots
+      if (!wheelData.slots || wheelData.slots.length === 0) {
+        return;
+      }
+      
+      // Set wheel colors and prepare segments configuration
+      const segments = wheelData.slots.map(slot => ({
+        label: slot.label,
+        color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
+        isWinning: slot.isWinning
+      }));
+      
+      setWheelConfig({
+        ...wheelConfig,
+        segments,
+        colors: {
+          primaryGradient: BRAND.primaryGradient,
+          secondaryGradient: BRAND.secondaryGradient
+        }
+      });
 
       // Extract form fields from formSchema
       const fields: FormField[] = [];
@@ -108,50 +153,59 @@ const PlayWheel = () => {
   // Spin wheel mutation
   const { mutate: spinWheel, isPending: isSpinning } = useMutation({
     mutationFn: async () => {
-      const response = await api.spinWheel(companyId || '', wheelId || '', {
-        lead: formData
-      });
-      return response.data as PlayResponse;
+      const response = await api.spinWheel(companyId || '', wheelId || '', { lead: formData });
+      return response.data;
     },
     onSuccess: (data) => {
-      // Find the winning slot index
-      const slotIndex = wheelData?.slots.findIndex(
-        slot => slot.label === data.slot.label
-      ) || 0;
+      if (!wheelData || !wheelData.slots || wheelData.slots.length === 0) return;
+      // Find corresponding slot index
+      let slotIndex = wheelData.slots.findIndex((slot) => slot.label === data.slot.label);
+      if (slotIndex === -1) slotIndex = 0;
       
       setPrizeIndex(slotIndex);
       setSpinResult(data);
       setMustSpin(true);
       
-      // Show result after spinning animation completes
+      // Show result after wheel stops spinning
       setTimeout(() => {
         setShowResultModal(true);
         if (data.play.result === 'WIN') {
-          toast({
-            title: 'Congratulations!',
-            description: 'You won a prize! Email sent with details.',
-          });
+          setShowConfetti(true);
         }
-      }, 5000); // Wait for wheel animation to complete
+      }, 5500); // Slightly longer than spin duration
     },
     onError: (error) => {
+      console.error('Error spinning wheel:', error);
       toast({
-        variant: 'destructive',
         title: 'Error',
         description: 'Failed to spin the wheel. Please try again.',
+        variant: 'destructive'
       });
     }
   });
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    const missingFields = formFields
+      .filter(field => field.required && !formData[field.name])
+      .map(field => field.label);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: 'Missing information',
+        description: `Please fill in the following fields: ${missingFields.join(', ')}`,
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // Spin the wheel!
     spinWheel();
   };
 
@@ -159,175 +213,205 @@ const PlayWheel = () => {
     setMustSpin(false);
   };
 
+  // Handle QR code download
+  const handleDownloadQR = () => {
+    if (spinResult?.play?.prize?.qrLink) {
+      const link = document.createElement('a');
+      link.href = spinResult.play.prize.qrLink;
+      link.download = `prize-qr-${spinResult.play.id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   if (isLoadingWheel) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
-        <span className="ml-2 text-lg">Chargement de la roue...</span>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">IZI Wheel</h1>
+        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+        <p className="mt-4 text-lg text-gray-700">Loading the wheel...</p>
       </div>
     );
   }
 
   if (wheelError || !wheelData) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-red-600">Roue introuvable</h1>
-        <p className="mb-6 text-gray-600">
-          Désolé, cette roue n'existe pas ou n'est pas disponible.
-        </p>
-        <Button onClick={() => window.location.href = '/'}>
-          Retour à l'accueil
-        </Button>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">Oops!</h1>
+        <div className="p-6 bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-xl max-w-md w-full">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Something went wrong</h2>
+          <p className="text-gray-600 mb-6">We couldn't load the wheel. Please try again later or contact support.</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="w-full bg-gradient-to-r from-indigo-500 to-pink-500"
+          >
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
-  const wheelOptions = {
-    backgroundColors: wheelColors,
-    textColors: Array(wheelData.slots.length).fill('#ffffff'),
-    outerBorderColor: '#13113c',
-    outerBorderWidth: 5,
-    innerBorderColor: '#13113c',
-    innerBorderWidth: 20,
-    textDistance: 75,
-    perpendicularText: true,
-    radiusLineColor: '#ffffff40',
-    radiusLineWidth: 1
-  };
+  if (!wheelData.slots || wheelData.slots.length === 0) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">No Wheel Configuration</h1>
+        <div className="p-6 bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-xl max-w-md w-full">
+          <p className="text-gray-600 mb-6">The wheel is not properly configured. Please contact the administrator.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl rounded-lg bg-white p-6 shadow-xl sm:p-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            {wheelData.name}
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Remplissez le formulaire ci-dessous et tournez la roue pour gagner !
-          </p>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Form Section */}
-          <div className="space-y-6 sm:order-2">
-            <h2 className="text-xl font-semibold text-gray-800">Entrez vos coordonnées</h2>
-            
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 overflow-x-hidden animate-gradient-x p-4">
+      {/* Logo */}
+      <h1 className="text-4xl font-extrabold text-indigo-700 drop-shadow-lg mb-8 flex items-center gap-2">
+        <span className="text-pink-500">IZI</span> Wheel
+      </h1>
+      
+      {/* Confetti (only shown on win) */}
+      {showConfetti && (
+        <Confetti
+          options={{
+            particleCount: 160,
+            angle: 90,
+            spread: 120,
+            colors: CONFETTI_COLORS,
+            shapes: ["star", "circle", "square"],
+          }}
+          className="!fixed inset-0 z-[300] pointer-events-none"
+        />
+      )}
+      
+      {/* Main Content */}
+      <div className="w-full max-w-md mx-auto bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden">
+        {formFields.length > 0 && !mustSpin ? (
+          // Form View
+          <div className="p-6">
+            <h2 className="text-2xl font-semibold text-center text-indigo-700 mb-6">
+              Entrez vos coordonnées
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {formFields.map((field) => (
-                <div key={field.name}>
-                  <label 
-                    htmlFor={field.name} 
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    {field.label} {field.required && <span className="text-red-500">*</span>}
+                <div key={field.name} className="space-y-1">
+                  <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+                    {field.label}
                   </label>
-                  <input
-                    id={field.name}
-                    name={field.name}
-                    type={field.type}
-                    required={field.required}
-                    value={formData[field.name] || ''}
-                    onChange={handleFormChange}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      {inputIcons[field.name] || null}
+                    </div>
+                    <input
+                      type={field.type}
+                      id={field.name}
+                      name={field.name}
+                      value={formData[field.name] || ''}
+                      onChange={handleFormChange}
+                      required={field.required}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                      placeholder={field.label}
+                    />
+                  </div>
                 </div>
               ))}
-
-              <Button 
-                type="submit" 
-                className="mt-6 w-full bg-indigo-600 py-3 text-lg font-semibold hover:bg-indigo-700"
-                disabled={isSpinning || mustSpin}
+              <Button
+                type="submit"
+                className="w-full mt-6 py-4 bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all duration-300"
+                disabled={isSpinning}
               >
                 {isSpinning ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Lancement en cours...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Loading...
                   </>
                 ) : (
-                  'Tournez la roue !'
+                  'Tourner la roue !'
                 )}
               </Button>
             </form>
           </div>
-
-          {/* Wheel Section */}
-          <div className="flex justify-center sm:order-1">
-            <div className="relative h-80 w-80 sm:h-96 sm:w-96">
-              <Wheel
-                mustStartSpinning={mustSpin}
-                prizeNumber={prizeIndex}
-                data={wheelData.slots.map(slot => ({ option: slot.label }))}
-                onStopSpinning={handleStopSpinning}
-                {...wheelOptions}
-                spinDuration={0.5}
-              />
-              {!mustSpin && !isSpinning && (
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-                  <div className="h-6 w-6 rounded-full bg-indigo-600 shadow-lg"></div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Result Modal */}
-      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl">
-              {spinResult?.play.result === 'WIN' ? 'Félicitations ! 🎉' : 'Pas de chance cette fois 😔'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-4 text-center">
-            {spinResult?.play.result === 'WIN' ? (
-              <div className="space-y-4">
-                <p className="text-lg font-medium text-gray-900">
-                  Vous avez gagné: <span className="text-indigo-600">{spinResult.slot.label}</span>
-                </p>
-                
-                <div className="rounded-md bg-gray-50 p-4">
-                  <p className="mb-2 font-medium">Votre code PIN:</p>
-                  <p className="text-2xl font-bold tracking-widest text-indigo-600">
-                    {spinResult.play.prize?.pin}
-                  </p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Conservez ce code PIN pour récupérer votre lot
-                  </p>
-                </div>
-                
-                <div className="mx-auto max-w-xs">
-                  <p className="mb-2 font-medium">Scannez le QR code pour récupérer votre lot:</p>
-                  <img 
-                    src={spinResult.play.prize?.qrLink} 
-                    alt="QR Code" 
-                    className="mx-auto h-48 w-48"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="py-6">
-                <p className="text-lg text-gray-700">Vous n'avez pas gagné cette fois-ci.</p>
-                <p className="mt-2 text-gray-600">Merci d'avoir participé !</p>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowResultModal(false)}
-            >
-              Fermer
-            </Button>
-            {spinResult?.play.result === 'WIN' && (
-              <Button 
-                onClick={() => navigate(`/redeem/${spinResult.play.id}`)}
+        ) : (
+          // Wheel View
+          <div className="relative p-6 flex flex-col items-center justify-center">
+            <Wheel
+              config={wheelConfig}
+              isSpinning={mustSpin}
+              prizeIndex={prizeIndex}
+              onSpin={() => {
+                if (!mustSpin) setMustSpin(true);
+              }}
+            />
+            
+            {/* Only show back button if appropriate */}
+            {!mustSpin && (
+              <button
+                onClick={() => setMustSpin(false)}
+                className="mt-4 text-indigo-600 hover:text-indigo-800 font-medium"
               >
-                Récupérer le lot
-              </Button>
+                ← Return to form
+              </button>
             )}
+          </div>
+        )}
+      </div>
+      
+      {/* Prize Result Modal */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="bg-white bg-opacity-95 backdrop-blur-md rounded-xl shadow-2xl border-0 max-w-md p-0 overflow-hidden">
+          <div className={`p-6 ${spinResult?.play.result === 'WIN' ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-slate-600 to-slate-800'}`}>
+            <DialogTitle className="text-white text-2xl font-bold text-center">
+              {spinResult?.play.result === 'WIN' ? '🎉 You Won!' : 'Better Luck Next Time'}
+            </DialogTitle>
+          </div>
+          <div className="p-6">
+            <DialogDescription className="text-center text-lg mb-4">
+              {spinResult?.slot.label}
+            </DialogDescription>
+            
+            {spinResult?.play.result === 'WIN' && spinResult.play.prize && (
+              <div className="flex flex-col items-center space-y-4 my-4">
+                <div className="bg-gray-100 rounded-lg p-4 w-full text-center">
+                  <p className="text-sm text-gray-500 mb-1">Your Prize PIN</p>
+                  <p className="text-3xl font-mono font-bold tracking-wider">{spinResult.play.prize.pin}</p>
+                </div>
+                
+                {spinResult.play.prize.qrLink && (
+                  <div className="mt-4 text-center">
+                    <img 
+                      src={spinResult.play.prize.qrLink} 
+                      alt="Prize QR Code" 
+                      className="w-48 h-48 mx-auto mb-2"
+                    />
+                    <Button 
+                      onClick={handleDownloadQR}
+                      variant="outline" 
+                      className="mt-2 text-indigo-600 border-indigo-300"
+                    >
+                      Download QR
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex justify-center mt-6">
+              <Button 
+                onClick={() => {
+                  setShowResultModal(false);
+                  setShowConfetti(false);
+                  // Reset for another spin
+                  setTimeout(() => {
+                    setMustSpin(false);
+                    setFormData({});
+                  }, 500);
+                }}
+                className="px-8 py-2 bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold rounded-lg"
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

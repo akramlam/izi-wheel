@@ -257,6 +257,18 @@ export const api = {
   },
   
   spinWheel: async (companyId: string, wheelId: string, data: { lead: Record<string, string> }) => {
+    // Validate data before sending
+    if (!data || !data.lead || Object.keys(data.lead).length === 0) {
+      console.error('Invalid lead data for wheel spin:', data);
+      throw new Error('Invalid lead data for wheel spin');
+    }
+    
+    // Log the request being made
+    console.log('Sending wheel spin request:', {
+      url: `/public/companies/${companyId}/wheels/${wheelId}/spin`,
+      data: data
+    });
+    
     return apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
   },
   
