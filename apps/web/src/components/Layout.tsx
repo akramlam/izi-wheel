@@ -22,7 +22,7 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const navigate = useNavigate();
-  const avatarUrl = 'https://api.dicebear.com/7.x/adventurer/svg?seed=' + (user?.email || 'user');
+  const avatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user?.email || 'user') + '&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50';
 
   const closeSidebar = () => {
     setSidebarOpen(false);
@@ -95,16 +95,16 @@ const Layout = () => {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex h-16 items-center justify-between px-4">
-          <a href="/" className="flex items-center gap-2">
+        <div className="relative h-32 flex justify-center items-center px-4">
+          <a href="/" className="flex items-center">
             <img
               src="/lo.png"
               alt="Logo IziKADO"
-              className="h-14 w-auto drop-shadow-lg"
+              className="h-28 w-auto drop-shadow-lg"
             />
           </a>
           <button 
-            className="p-1 hover:bg-indigo-800 lg:hidden rounded"
+            className="absolute right-2 top-2 p-1 hover:bg-indigo-800 lg:hidden rounded"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-6 w-6" />
@@ -173,18 +173,25 @@ const Layout = () => {
                         <img src={avatarUrl} alt="avatar" className="w-20 h-20 rounded-full border-4 border-white shadow mb-2" />
                         <div className="text-lg font-bold text-gray-900">{user?.email?.split('@')[0] || 'Utilisateur'}</div>
                         <div className="text-sm text-gray-500 mb-2">{user?.email}</div>
+                        
                         <div className="flex gap-2 mb-2">
-                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team1" className="w-8 h-8 rounded-full border-2 border-white" />
-                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team2" className="w-8 h-8 rounded-full border-2 border-white" />
-                          <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=team3" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team1&backgroundColor=b6e3f4&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team2&backgroundColor=c0aede&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
+                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team3&backgroundColor=d1d4f9&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
                           <button className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">+</button>
                         </div>
                       </div>
                       <div className="flex-1 flex flex-col gap-1 px-4">
                         <a href="/dashboard" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><Home className="w-5 h-5" /> Accueil</a>
-                        <a href="/profile" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><User className="w-5 h-5" /> Profil</a>
-                        <a href="/projects" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition relative"><Folder className="w-5 h-5" /> Projets <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">3</span></a>
-                        <a href="/subscription" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><CreditCard className="w-5 h-5" /> Abonnement</a>
+                        <button 
+                          onClick={() => {
+                            navigate('/profile');
+                            setShowAccountMenu(false);
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-2 rounded-lg text-left text-gray-700 hover:bg-indigo-50 transition"
+                        >
+                          <User className="w-5 h-5" /> Profil
+                        </button>
                       </div>
                       <div className="mt-auto px-4 pt-4">
                         <button onClick={logout} className="w-full text-center py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition text-lg">Déconnexion</button>

@@ -14,6 +14,8 @@ import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
 import PlayWheel from './pages/PlayWheel';
 import RedeemPrize from './pages/RedeemPrize';
+import Profile from './pages/Profile';
+import AccountSettings from './pages/AccountSettings';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -99,6 +101,8 @@ function App() {
         <Route path="wheels" element={<WheelManager />} />
         <Route path="wheels/:wheelId" element={<WheelEdit />} />
         <Route path="statistics" element={<Statistics />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="account-settings" element={<AccountSettings />} />
         
         {/* Super admin only routes */}
         <Route path="companies" element={

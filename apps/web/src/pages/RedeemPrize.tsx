@@ -3,9 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { Label } from '../components/ui/label';
+//import { Input } from '../components/ui/input';
+//import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+//import { Label } from '../components/ui/label';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
 
