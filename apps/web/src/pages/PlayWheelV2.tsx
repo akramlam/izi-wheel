@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Wheel } from 'react-custom-roulette';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { Loader2, Mail, Phone, Calendar, User, Sparkles } from 'lucide-react';
-import { Confetti } from '@/components/magicui/confetti';
+import { Confetti } from '../components/magicui/confetti';
+import Wheel from '../components/wheel/Wheel';
+import { WheelConfig } from '../components/wheel/types';
+import soundUtils from '../lib/sound';
 
 // Brand accent color and confetti colors
 const ACCENT = '#6366f1'; // Indigo
@@ -23,12 +25,28 @@ const PlayWheelV2 = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const [mustSpin, setMustSpin] = useState(false);
   const [prizeIndex, setPrizeIndex] = useState(0);
   const [showResultModal, setShowResultModal] = useState(false);
   const [spinResult, setSpinResult] = useState<any>(null);
   const [formFields, setFormFields] = useState<any[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  
+  // Initialize wheel configuration
+  const [wheelConfig, setWheelConfig] = useState<WheelConfig>({
+    segments: [],
+    spinDurationMin: 3,
+    spinDurationMax: 6,
+    sounds: {
+      tick: true,
+      win: true
+    },
+    hapticFeedback: true,
+    colors: {
+      primaryGradient: '#a25afd',
+      secondaryGradient: '#6366f1'
+    }
+  });
 
   // Fetch wheel data
   const { data: wheelData, isLoading: isLoadingWheel, error: wheelError } = useQuery({
@@ -40,8 +58,14 @@ const PlayWheelV2 = () => {
     enabled: !!companyId && !!wheelId,
   });
 
+  // Initialize sound system
+  useEffect(() => {
+    soundUtils.init();
+  }, []);
+
   useEffect(() => {
     if (wheelData) {
+      // Setup form fields
       const fields: any[] = [];
       if (wheelData.formSchema) {
         if (Array.isArray(wheelData.formSchema.fields)) {
@@ -56,11 +80,27 @@ const PlayWheelV2 = () => {
         }
       }
       setFormFields(fields);
+      
+      // Setup wheel configuration
+      if (wheelData.slots && wheelData.slots.length > 0) {
+        setWheelConfig({
+          ...wheelConfig,
+          segments: wheelData.slots.map((slot: { 
+            label?: string; 
+            color?: string; 
+            isWinning?: boolean;
+          }) => ({
+            label: slot.label || 'Prize',
+            color: slot.color || '#a5b4fc',
+            isWinning: !!slot.isWinning
+          }))
+        });
+      }
     }
   }, [wheelData]);
 
   // Spin wheel mutation
-  const { mutate: spinWheel, isPending: isSpinning } = useMutation({
+  const { mutate: spinWheel, isPending: isSpinningMutation } = useMutation({
     mutationFn: async () => {
       const response = await api.spinWheel(companyId || '', wheelId || '', { lead: formData });
       return response.data;
@@ -69,13 +109,16 @@ const PlayWheelV2 = () => {
       if (!wheelData || !wheelData.slots || wheelData.slots.length === 0) return;
       let slotIndex = wheelData.slots.findIndex((slot: any) => slot.label === data.slot.label);
       if (slotIndex === -1) slotIndex = 0;
+      
       setPrizeIndex(slotIndex);
       setSpinResult(data);
-      setMustSpin(true);
+      setIsSpinning(true);
+      
+      // Show result after wheel stops spinning
       setTimeout(() => {
         setShowResultModal(true);
         if (data.play.result === 'WIN') setShowConfetti(true);
-      }, 5000);
+      }, 5500);
     },
     onError: () => {
       alert('Failed to spin the wheel. Please try again.');
@@ -92,7 +135,9 @@ const PlayWheelV2 = () => {
     spinWheel();
   };
 
-  const handleStopSpinning = () => setMustSpin(false);
+  const handleStopSpinning = () => {
+    setIsSpinning(false);
+  };
 
   // --- UI ---
   return (
@@ -122,57 +167,22 @@ const PlayWheelV2 = () => {
         <div className="relative flex flex-col items-center justify-center">
           {/* Spinning blur/glow behind the wheel */}
           <div className="absolute z-0 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow" style={{ animationDuration: '12s' }} />
-          <div className="relative h-96 w-96 rounded-full shadow-2xl bg-white/60 backdrop-blur-2xl border-[12px] border-indigo-400/80 overflow-visible">
-            {/* Multi-layered border for 3D effect */}
-            <div className="absolute inset-0 z-10 rounded-full pointer-events-none">
-              <div className="absolute inset-0 rounded-full border-[10px] border-white/60" />
-              <div className="absolute inset-2 rounded-full border-[6px] border-indigo-300/60" />
-              <div className="absolute inset-4 rounded-full border-[2px] border-purple-200/60" />
-            </div>
-            {/* Animated wheel glow */}
-            <div className="absolute -inset-4 z-0 rounded-full bg-gradient-to-br from-indigo-400 via-pink-400 to-purple-400 opacity-40 blur-2xl animate-pulse" />
-            {/* SVG gloss/reflection overlay */}
-            <svg className="absolute inset-0 z-20 w-full h-full pointer-events-none" viewBox="0 0 384 384" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="192" cy="90" rx="120" ry="40" fill="white" fillOpacity="0.18" />
-              <ellipse cx="192" cy="100" rx="90" ry="20" fill="white" fillOpacity="0.10" />
-              <ellipse cx="192" cy="300" rx="80" ry="16" fill="white" fillOpacity="0.07" />
-            </svg>
+          <div className="relative rounded-full shadow-2xl overflow-visible">
             {wheelData && wheelData.slots && wheelData.slots.length > 0 ? (
               <Wheel
-                mustStartSpinning={mustSpin}
-                prizeNumber={prizeIndex}
-                data={wheelData.slots.map((slot: any) => ({ option: slot.label || 'Prize' }))}
-                onStopSpinning={handleStopSpinning}
-                spinDuration={0.6}
-                backgroundColors={wheelData.slots.map((slot: any) => slot.color || '#a5b4fc')}
-                textColors={Array(wheelData.slots.length).fill('#fff')}
-                outerBorderColor="#6366f1"
-                outerBorderWidth={12}
-                innerBorderColor="#fff"
-                innerBorderWidth={24}
-                textDistance={80}
-                perpendicularText={true}
-                radiusLineColor="#fff5"
-                radiusLineWidth={2}
+                config={wheelConfig}
+                isSpinning={isSpinning}
+                prizeIndex={prizeIndex}
+                onSpin={() => setIsSpinning(true)}
               />
             ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center rounded-full border-8 border-indigo-600 bg-white">
+              <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60 backdrop-blur-2xl">
                 <div className="p-8 text-center">
                   <p className="text-xl font-bold text-gray-800">La roue n'est pas configurée</p>
                   <p className="mt-2 text-gray-600">Aucune option n'est disponible pour cette roue.</p>
                 </div>
               </div>
             )}
-            {/* Enhanced pointer with metallic/gem look and shadow */}
-            <div className="absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-1/2">
-              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-pink-400 via-indigo-400 to-purple-400 shadow-2xl flex items-center justify-center animate-bounce pointer-events-none border-4 border-white/80">
-                <div className="h-10 w-10 bg-gradient-to-b from-white via-indigo-100 to-indigo-400 rounded-b-full shadow-lg flex items-center justify-center" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}>
-                  <div className="h-3 w-3 rounded-full bg-gradient-to-br from-yellow-300 via-pink-200 to-indigo-200 shadow-inner border border-white/80 mt-1" />
-                </div>
-              </div>
-              {/* Pointer shadow */}
-              <div className="absolute left-1/2 top-10 -translate-x-1/2 w-8 h-4 bg-black/20 rounded-b-full blur-sm" />
-            </div>
           </div>
         </div>
         {/* Form Section */}
@@ -201,10 +211,11 @@ const PlayWheelV2 = () => {
             <Button
               type="submit"
               className="mt-6 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 py-4 text-xl font-bold text-white shadow-xl hover:from-indigo-600 hover:to-pink-600 transition-all duration-200 animate-shimmer"
-              disabled={isSpinning || mustSpin}
+              disabled={isSpinningMutation || isSpinning}
               aria-label="Tournez la roue !"
+              onClick={() => soundUtils.play('click')}
             >
-              {isSpinning ? (
+              {isSpinningMutation ? (
                 <>
                   <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                   Lancement en cours...
@@ -249,24 +260,28 @@ const PlayWheelV2 = () => {
                 </div>
               </div>
             ) : (
-              <div className="py-8">
-                <p className="text-2xl text-gray-700 font-semibold">Vous n'avez pas gagné cette fois-ci.</p>
-                <p className="mt-3 text-lg text-gray-600">Merci d'avoir participé !</p>
+              <div className="py-6">
+                <p className="text-2xl text-gray-700">Vous n'avez pas gagné cette fois-ci.</p>
+                <p className="mt-4 text-gray-600">Merci d'avoir participé !</p>
               </div>
             )}
           </div>
-          <div className="flex justify-center gap-6 mt-4">
+          <div className="flex justify-center gap-4">
             <Button
               variant="outline"
-              onClick={() => { setShowResultModal(false); setShowConfetti(false); }}
-              className="rounded-xl border-indigo-200 text-lg px-6 py-2"
+              onClick={() => {
+                setShowResultModal(false);
+                setShowConfetti(false);
+                setIsSpinning(false);
+              }}
+              className="rounded-xl px-8 py-3 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
             >
               Fermer
             </Button>
             {spinResult?.play.result === 'WIN' && (
               <Button
                 onClick={() => navigate(`/redeem/${spinResult.play.id}`)}
-                className="rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white text-lg px-6 py-2 font-bold shadow-md"
+                className="rounded-xl px-8 py-3 bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-bold"
               >
                 Récupérer le lot
               </Button>
