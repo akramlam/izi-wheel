@@ -15,6 +15,7 @@ import { Loader2, Mail, Phone, Calendar, User } from 'lucide-react';
 import { Confetti } from '../components/magicui/confetti';
 import Wheel from '../components/wheel/Wheel';
 import type { WheelConfig } from '../components/wheel/types';
+import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 
 // Define types
 type WheelData = {
@@ -28,13 +29,6 @@ type WheelData = {
     weight: number;
     isWinning: boolean;
   }[];
-};
-
-type FormField = {
-  name: string;
-  label: string;
-  type: string;
-  required: boolean;
 };
 
 type PlayResponse = {
@@ -138,10 +132,10 @@ const PlayWheel = () => {
         } else if (typeof wheelData.formSchema === 'object') {
           // If formSchema is directly defining fields
           const defaultFields = [
-            { name: 'name', label: 'Name', type: 'text', required: true },
+            { name: 'name', label: 'Nom', type: 'text', required: true },
             { name: 'email', label: 'Email', type: 'email', required: true },
-            { name: 'phone', label: 'Phone', type: 'tel', required: false },
-            { name: 'birthDate', label: 'Birth Date', type: 'date', required: false }
+            { name: 'phone', label: 'Téléphone', type: 'tel', required: false },
+            { name: 'birthDate', label: 'Date de naissance', type: 'date', required: false }
           ];
           fields.push(...defaultFields);
         }
@@ -184,26 +178,18 @@ const PlayWheel = () => {
     }
   });
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = (data: PlayerFormData) => {
+    // Convert PlayerFormData to the format expected by the API
+    const apiFormData: Record<string, string> = {
+      name: data.name,
+      email: data.email,
+    };
     
-    // Basic validation
-    const missingFields = formFields
-      .filter(field => field.required && !formData[field.name])
-      .map(field => field.label);
+    if (data.phone) apiFormData.phone = data.phone;
+    if (data.birthDate) apiFormData.birthDate = data.birthDate;
     
-    if (missingFields.length > 0) {
-      toast({
-        title: 'Missing information',
-        description: `Please fill in the following fields: ${missingFields.join(', ')}`,
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Update form data state
+    setFormData(apiFormData);
     
     // Spin the wheel!
     spinWheel();
@@ -213,12 +199,12 @@ const PlayWheel = () => {
     setMustSpin(false);
   };
 
-  // Handle QR code download
   const handleDownloadQR = () => {
-    if (spinResult?.play?.prize?.qrLink) {
+    if (spinResult?.play.prize?.qrLink) {
+      // Create temporary link
       const link = document.createElement('a');
       link.href = spinResult.play.prize.qrLink;
-      link.download = `prize-qr-${spinResult.play.id}.png`;
+      link.download = 'prize-qr-code.png';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -281,7 +267,7 @@ const PlayWheel = () => {
             colors: CONFETTI_COLORS,
             shapes: ["star", "circle", "square"],
           }}
-          className="!fixed inset-0 z-[300] pointer-events-none"
+          className="!fixed inset-0 z-[300] pointer-events-none size-full"
         />
       )}
       
@@ -290,47 +276,11 @@ const PlayWheel = () => {
         {formFields.length > 0 && !mustSpin ? (
           // Form View
           <div className="p-6">
-            <h2 className="text-2xl font-semibold text-center text-indigo-700 mb-6">
-              Entrez vos coordonnées
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {formFields.map((field) => (
-                <div key={field.name} className="space-y-1">
-                  <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
-                    {field.label}
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      {inputIcons[field.name] || null}
-                    </div>
-                    <input
-                      type={field.type}
-                      id={field.name}
-                      name={field.name}
-                      value={formData[field.name] || ''}
-                      onChange={handleFormChange}
-                      required={field.required}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg bg-white bg-opacity-70 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                      placeholder={field.label}
-                    />
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="submit"
-                className="w-full mt-6 py-4 bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-indigo-500/30 transition-all duration-300"
-                disabled={isSpinning}
-              >
-                {isSpinning ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Tourner la roue !'
-                )}
-              </Button>
-            </form>
+            <PlayerForm 
+              fields={formFields}
+              onSubmit={handleFormSubmit}
+              isSubmitting={isSpinning}
+            />
           </div>
         ) : (
           // Wheel View

@@ -14,7 +14,7 @@ model Company {
   id        String   @id @default(uuid())
   name      String   @unique
   plan      Plan     @default(BASIC)
-  maxWheels Int      @default(1)
+  maxWheels Int      @default(5)
   wheels    Wheel[]
   admins    User[]
   plays     Play[]   // Track plays by company
@@ -46,6 +46,7 @@ model Wheel {
   mode       WheelMode @default(RANDOM_WIN)
   formSchema Json?     // Schema for the lead capture form
   isActive   Boolean   @default(true)
+  qrCodeLink String?   // QR code for sharing the wheel
   slots      Slot[]
   plays      Play[]
   createdAt  DateTime  @default(now())

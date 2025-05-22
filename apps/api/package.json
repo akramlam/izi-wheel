@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec \"ts-node --transpile-only\" src/index.ts",
+    "dev": "nodemon --exec \"ts-node --transpile-only\" src/index.ts --port 0.0.0.0",
     "test": "jest",
     "test:cov": "jest --coverage --passWithNoTests",
     "build": "tsc",

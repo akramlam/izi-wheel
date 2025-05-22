@@ -36,17 +36,26 @@ export function playSound(name: keyof typeof SOUND_PATHS, volume = 1.0): void {
   }
 
   try {
-    // Stop and reset the sound first
+    // Reset the audio to make sure it starts from the beginning
     sound.pause();
     sound.currentTime = 0;
+    
+    // Set volume and play with error handling
     sound.volume = volume;
     
-    // Play the sound
-    sound.play().catch(error => {
-      console.warn(`Failed to play sound ${name}:`, error);
-    });
+    // Use a promise to handle the play gracefully
+    const playPromise = sound.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        // Ignore abort errors as they're common when sounds are played in quick succession
+        if (error.name !== 'AbortError') {
+          console.warn(`Failed to play sound ${name}:`, error);
+        }
+      });
+    }
   } catch (error) {
-    console.error(`Error playing sound ${name}:`, error);
+    console.warn(`Error playing sound ${name}:`, error);
   }
 }
 

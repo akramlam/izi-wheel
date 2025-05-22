@@ -3,6 +3,7 @@ import { WheelMode } from '@prisma/client';
 import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
+import { generateQRCode } from '../utils/qrcode';
 
 // Validation schema for creating/updating a wheel
 const wheelSchema = z.object({
@@ -347,7 +348,7 @@ export const createWheel = async (req: Request, res: Response) => {
       );
     }
     
-    // Create the wheel
+    // Create the wheel first
     const wheel = await prisma.wheel.create({
       data: {
         ...validatedData,
@@ -355,7 +356,23 @@ export const createWheel = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ wheel });
+    // Get base URL from environment or request
+    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+    const publicWheelUrl = `${baseUrl}/play/${companyId}/${wheel.id}`;
+    
+    // Generate QR code for the wheel URL
+    const qrCodeLink = await generateQRCode(publicWheelUrl);
+    
+    // Update the wheel with the QR code
+    const updatedWheel = await prisma.wheel.update({
+      where: { id: wheel.id },
+      data: { qrCodeLink },
+    });
+
+    res.status(201).json({ 
+      wheel: updatedWheel,
+      publicUrl: publicWheelUrl
+    });
   } catch (error) {
     if (error instanceof Error) {
       res.status(error instanceof z.ZodError ? 400 : 500).json({ 
@@ -467,15 +484,38 @@ export const updateWheel = async (req: Request, res: Response) => {
       throw createError('Wheel not found', 404);
     }
     
+    // Prepare update data with type that includes qrCodeLink
+    const updateData: any = { ...validatedData };
+    
+    // Check if wheel is being activated and needs a QR code
+    if (validatedData.isActive === true && !existingWheel.qrCodeLink) {
+      // Get base URL from environment or request
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const publicWheelUrl = `${baseUrl}/play/${companyId}/${wheelId}`;
+      
+      // Generate QR code for the wheel URL
+      const qrCodeLink = await generateQRCode(publicWheelUrl);
+      
+      // Add QR code to the data being updated
+      updateData.qrCodeLink = qrCodeLink;
+    }
+    
     // Update the wheel
     const wheel = await prisma.wheel.update({
       where: {
         id: wheelId,
       },
-      data: validatedData,
+      data: updateData,
     });
 
-    res.status(200).json({ wheel });
+    // Include the public URL in the response if there's a QR code
+    const response: any = { wheel };
+    if (wheel.qrCodeLink) {
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      response.publicUrl = `${baseUrl}/play/${companyId}/${wheelId}`;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     if (error instanceof Error) {
       res.status(error instanceof z.ZodError ? 400 : 500).json({ 

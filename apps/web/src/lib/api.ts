@@ -39,7 +39,6 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Helper to get a valid companyId from localStorage
 async function getValidCompanyId() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -269,14 +268,87 @@ export const api = {
       data: data
     });
     
-    return apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
+    const response = await apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
+    
+    // Add a cache-busting parameter to QR code URL if it exists
+    if (response.data?.play?.prize?.qrLink) {
+      const qrLink = response.data.play.prize.qrLink;
+      // Add a cache-busting parameter
+      const cacheBuster = `?t=${Date.now()}`;
+      response.data.play.prize.qrLink = qrLink.includes('?') 
+        ? `${qrLink}&t=${Date.now()}` 
+        : `${qrLink}${cacheBuster}`;
+    }
+    
+    return response;
   },
   
   getPrizeDetails: async (playId: string) => {
-    return apiClient.get(`/public/plays/${playId}`);
+    console.log('Fetching prize details for play ID:', playId);
+    if (!playId) {
+      console.error('No play ID provided');
+      throw new Error('Identifiant de jeu manquant. Veuillez réessayer.');
+    }
+    
+    // Validate if this is a real UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(playId)) {
+      console.error('Invalid UUID format for play ID:', playId);
+      throw new Error('Format d\'identifiant invalide. Impossible de récupérer les détails du prix.');
+    }
+    
+    try {
+      console.log('Making API request to /public/plays/' + playId);
+      const result = await apiClient.get(`/public/plays/${playId}`);
+      console.log('Prize details fetched successfully:', result.data);
+      return result;
+    } catch (error: any) {
+      console.error('Error fetching prize details:', error);
+      
+      // Enhance the error message for better debugging
+      if (error.response?.status === 400) {
+        console.error('Bad Request (400) when fetching prize - Play ID might be invalid:', playId);
+        throw new Error('Identifiant de jeu invalide. Impossible de récupérer les détails du prix.');
+      } else if (error.response?.status === 404) {
+        console.error('Not Found (404) when fetching prize - Play ID does not exist:', playId);
+        throw new Error('Ce lot n\'existe pas ou a déjà été récupéré.');
+      } else {
+        throw new Error('Erreur lors de la récupération des détails du prix. Veuillez réessayer plus tard.');
+      }
+    }
+  },
+  
+  debugPlayId: async (playId: string) => {
+    console.log('Running diagnostics for play ID:', playId);
+    
+    if (!playId) {
+      throw new Error('No play ID provided for diagnostics');
+    }
+    
+    try {
+      const response = await apiClient.get(`/public/debug/plays/${playId}`);
+      console.log('Debug information received:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in play ID diagnostics:', error);
+      throw error;
+    }
   },
   
   redeemPrize: async (playId: string, data: { pin: string }) => {
-    return apiClient.post(`/public/plays/${playId}/redeem`, data);
+    console.log('Attempting to redeem prize for play ID:', playId);
+    if (!playId || playId.startsWith('tmp-') || playId.startsWith('fallback-')) {
+      console.error('Invalid play ID format. Cannot redeem prize for temporary ID:', playId);
+      throw new Error('Ce lot ne peut pas être récupéré avec un identifiant temporaire.');
+    }
+    
+    try {
+      const result = await apiClient.post(`/public/plays/${playId}/redeem`, data);
+      console.log('Prize redeemed successfully:', result.data);
+      return result;
+    } catch (error: any) {
+      console.error('Error redeeming prize:', error);
+      throw error;
+    }
   },
 }; 

@@ -7,6 +7,7 @@ interface WheelProps {
   isSpinning: boolean;
   prizeIndex: number;
   onSpin: () => void;
+  showSpinButton?: boolean;
 }
 
 // Constants for wheel dimensions
@@ -46,7 +47,7 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
 }
 
 // Main Wheel component
-const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin }) => {
+const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false }) => {
   // State for animation and interaction
   const [rotation, setRotation] = useState(0);
   const [pointerDropped, setPointerDropped] = useState(false);
@@ -189,13 +190,13 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin })
                 <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3" />
               </filter>
               <path 
-                d="M24 0 L48 32 L24 16 L0 32 Z" 
+                d="M24 48 L48 16 L24 32 L0 16 Z" 
                 fill={colors.pointer}
                 stroke={colors.pointerBorder}
                 strokeWidth="3"
                 filter="url(#shadow)"
               />
-              <circle cx="24" cy="16" r="6" fill={colors.primaryGradient} stroke="#fff" strokeWidth="2" />
+              <circle cx="24" cy="32" r="6" fill={colors.primaryGradient} stroke="#fff" strokeWidth="2" />
             </svg>
           )}
         </div>
@@ -360,33 +361,35 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin })
         )}
       </svg>
       
-      {/* Spin button */}
-      <button
-        className="mt-8 px-10 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 
-                   text-white font-bold text-lg shadow-xl hover:shadow-indigo-500/30 
-                   transition-all duration-300 focus:outline-none focus:ring-2 
-                   focus:ring-indigo-300 active:scale-95 disabled:opacity-50 
-                   disabled:cursor-not-allowed"
-        onClick={handleSpinClick}
-        disabled={isSpinning}
-        role="button"
-        aria-label="Spin the wheel"
-        aria-disabled={isSpinning}
-      >
-        <span className="relative z-10 flex items-center justify-center">
-          {isSpinning ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Spinning...
-            </>
-          ) : (
-            'Tourner la roue !'
-          )}
-        </span>
-      </button>
+      {/* Spin button - only shown if showSpinButton is true */}
+      {showSpinButton && (
+        <button
+          className="mt-8 px-10 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 
+                     text-white font-bold text-lg shadow-xl hover:shadow-indigo-500/30 
+                     transition-all duration-300 focus:outline-none focus:ring-2 
+                     focus:ring-indigo-300 active:scale-95 disabled:opacity-50 
+                     disabled:cursor-not-allowed"
+          onClick={handleSpinClick}
+          disabled={isSpinning}
+          role="button"
+          aria-label="Spin the wheel"
+          aria-disabled={isSpinning}
+        >
+          <span className="relative z-10 flex items-center justify-center">
+            {isSpinning ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Spinning...
+              </>
+            ) : (
+              'Tourner la roue !'
+            )}
+          </span>
+        </button>
+      )}
     </div>
   );
 };

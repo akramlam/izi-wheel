@@ -2,8 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, Edit, Trash2, Play, ToggleLeft, ToggleRight, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, ToggleLeft, ToggleRight, Loader2, ExternalLink, Copy, QrCode, Download } from 'lucide-react';
 import { toast } from '../hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
 
 const WheelManager = () => {
   const { user } = useAuth();
@@ -15,6 +24,10 @@ const WheelManager = () => {
   const [wheelToDelete, setWheelToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  
+  // QR code modal state
+  const [selectedWheel, setSelectedWheel] = useState<any | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   // Both SUPER and ADMIN users can create, edit, and delete wheels
   const canEdit = user?.role === 'SUPER' || user?.role === 'ADMIN';
@@ -87,13 +100,26 @@ const WheelManager = () => {
 
   const handleToggleActive = async (wheelId: string, currentState: boolean) => {
     try {
-      await api.updateWheel(wheelId, { isActive: !currentState });
-      // Update local state
+      const response = await api.updateWheel(wheelId, { isActive: !currentState });
+      
+      // Update local state with potentially new QR code
       setWheels(
         wheels.map(wheel => 
-          wheel.id === wheelId ? { ...wheel, isActive: !currentState } : wheel
+          wheel.id === wheelId ? { 
+            ...wheel, 
+            isActive: !currentState,
+            qrCodeLink: response.data.wheel.qrCodeLink
+          } : wheel
         )
       );
+
+      if (!currentState) {
+        toast({
+          title: "Roue activée",
+          description: "La roue est maintenant accessible publiquement.",
+          variant: "default",
+        });
+      }
     } catch (error) {
       console.error('Error toggling wheel status:', error);
       setError('Failed to update wheel status. Please try again.');
@@ -128,6 +154,23 @@ const WheelManager = () => {
   const openPublicWheel = (wheelId: string) => {
     const url = getPublicWheelUrl(wheelId);
     window.open(url, '_blank');
+  };
+
+  const showQrCode = (wheel: any) => {
+    setSelectedWheel(wheel);
+    setShowQrModal(true);
+  };
+
+  const handleDownloadQR = () => {
+    if (selectedWheel?.qrCodeLink) {
+      // Create temporary link
+      const link = document.createElement('a');
+      link.href = selectedWheel.qrCodeLink;
+      link.download = `wheel-qr-${selectedWheel.name}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   if (isLoading) {
@@ -174,6 +217,56 @@ const WheelManager = () => {
           </div>
         </div>
       )}
+
+      {/* QR Code Modal */}
+      <Dialog open={showQrModal} onOpenChange={setShowQrModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Code QR pour la roue</DialogTitle>
+            <DialogDescription>
+              Scannez ce QR code pour accéder directement à la roue "{selectedWheel?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedWheel?.qrCodeLink ? (
+            <div className="flex flex-col items-center justify-center py-4">
+              <img 
+                src={selectedWheel.qrCodeLink} 
+                alt="QR Code" 
+                className="h-64 w-64 rounded-lg border border-gray-200"
+              />
+              <p className="mt-4 text-sm text-gray-500 text-center">
+                URL: {getPublicWheelUrl(selectedWheel.id)}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-gray-500">
+                Cette roue n'a pas encore de code QR. Activez-la pour générer un code QR.
+              </p>
+            </div>
+          )}
+          
+          <DialogFooter className="flex sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setShowQrModal(false)}
+            >
+              Fermer
+            </Button>
+            {selectedWheel?.qrCodeLink && (
+              <Button 
+                variant="default"
+                onClick={handleDownloadQR}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Télécharger
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Wheels list */}
       {wheels.length === 0 ? (
@@ -288,6 +381,13 @@ const WheelManager = () => {
                             title="Ouvrir la roue publique"
                           >
                             <ExternalLink className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => showQrCode(wheel)}
+                            className="rounded p-1 text-purple-600 hover:bg-purple-100 hover:text-purple-900"
+                            title="Afficher le code QR"
+                          >
+                            <QrCode className="h-4 w-4" />
                           </button>
                         </div>
                       )}

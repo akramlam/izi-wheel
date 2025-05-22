@@ -3,7 +3,8 @@ import {
   getPublicWheel,
   spinWheel,
   getPrizeDetails,
-  redeemPrize
+  redeemPrize,
+  debugPlayId
 } from '../controllers/public.controller';
 
 const router = Router();
@@ -23,15 +24,16 @@ const debugRequestMiddleware = (req, res, next) => {
   next();
 };
 
-// Apply debug middleware
-router.use(debugRequestMiddleware);
-
 // Public wheel endpoints
+router.use(debugRequestMiddleware);
 router.get('/companies/:companyId/wheels/:wheelId', getPublicWheel);
 router.post('/companies/:companyId/wheels/:wheelId/spin', spinWheel);
 
 // Prize redemption endpoints
 router.get('/plays/:playId', getPrizeDetails);
 router.post('/plays/:playId/redeem', redeemPrize);
+
+// Diagnostic endpoints
+router.get('/debug/plays/:playId', debugPlayId);
 
 export default router; 

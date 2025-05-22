@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../utils/db';
+import prisma, { checkPlayExists } from '../utils/db';
 import { generateQRCode } from '../utils/qrcode';
 import { generatePIN } from '../utils/pin';
 import { ensureWheelHasSlots } from '../utils/db-init';
@@ -146,7 +146,7 @@ export const spinWheel = async (req: Request, res: Response) => {
       });
     }
 
-    // Find the wheel with its slots
+    // Find the wheel with its slots (include mode)
     const wheel = await prisma.wheel.findUnique({
       where: {
         id: wheelId,
@@ -172,14 +172,42 @@ export const spinWheel = async (req: Request, res: Response) => {
     // Log the slots for debugging
     console.log(`Found ${wheel.slots.length} active slots for wheel ${wheelId}`);
 
-    // Select a slot based on weights
-    const slot = selectSlotByWeight(wheel.slots);
+    // --- NEW LOGIC FOR ALL_WIN MODE ---
+    let slot;
+    if (wheel.mode === 'ALL_WIN') {
+      // Filter winning slots
+      let winningSlots = wheel.slots.filter(s => s.isWinning);
+      if (winningSlots.length === 0) {
+        // Auto-fix: set all slots to winning
+        await prisma.slot.updateMany({
+          where: { wheelId: wheel.id, isActive: true },
+          data: { isWinning: true }
+        });
+        // Reload slots
+        const updatedWheel = await prisma.wheel.findUnique({
+          where: { id: wheelId, companyId, isActive: true },
+          include: { slots: { where: { isActive: true } } }
+        });
+        if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
+          return res.status(400).json({ error: 'No slots available for ALL_WIN wheel after auto-fix' });
+        }
+        winningSlots = updatedWheel.slots;
+      }
+      // Select a random winning slot
+      slot = winningSlots[Math.floor(Math.random() * winningSlots.length)];
+    } else {
+      // Select a slot based on weights (original logic)
+      slot = selectSlotByWeight(wheel.slots);
+    }
+    // --- END NEW LOGIC ---
     
     // Generate PIN and QR code for winning slots
     let pin = null;
     let qrLink = null;
     
-    if (slot.isWinning) {
+    // For ALL_WIN, always treat as win; for others, check slot.isWinning
+    const isWin = wheel.mode === 'ALL_WIN' ? true : slot.isWinning;
+    if (isWin) {
       pin = generatePIN();
       // Use the playId format instead of wheelId_pin for redemption
       const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
@@ -195,7 +223,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         companyId,
         slotId: slot.id,
         leadInfo: lead,
-        result: slot.isWinning ? 'WIN' : 'LOSE',
+        result: isWin ? 'WIN' : 'LOSE',
         pin: pin,
         qrLink: qrLink,
         ip: req.ip || req.socket.remoteAddress || null
@@ -203,7 +231,7 @@ export const spinWheel = async (req: Request, res: Response) => {
     });
 
     // If this is a winning play, update the QR code with the actual playId
-    if (slot.isWinning && qrLink) {
+    if (isWin && qrLink) {
       const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
       const updatedQrLink = await generateQRCode(`${baseUrl}/redeem/${play.id}`);
       
@@ -250,7 +278,23 @@ export const getPrizeDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Play ID is required' });
     }
 
-    // Find the play
+    // Validate UUID format using regex for basic validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(playId)) {
+      console.error(`Invalid UUID format for playId: ${playId}`);
+      return res.status(400).json({ error: 'Invalid play ID format', validationError: true });
+    }
+
+    // Check if play exists before attempting to fetch details
+    const playExists = await checkPlayExists(playId);
+    if (!playExists) {
+      return res.status(404).json({ 
+        error: 'Play not found', 
+        details: 'No play record found with the provided ID' 
+      });
+    }
+
+    // Find the play with full details
     const play = await prisma.play.findUnique({
       where: { id: playId },
       include: {
@@ -259,6 +303,7 @@ export const getPrizeDetails = async (req: Request, res: Response) => {
     });
 
     if (!play) {
+      console.error(`Play not found for ID: ${playId}`);
       return res.status(404).json({ error: 'Play not found' });
     }
 
@@ -267,6 +312,7 @@ export const getPrizeDetails = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'This play did not result in a prize' });
     }
 
+    console.log(`Successfully fetched prize details for playId: ${playId}`);
     return res.status(200).json({
       id: play.id,
       pin: play.pin,
@@ -358,4 +404,55 @@ function selectSlotByWeight(slots: { id: string; weight: number; isWinning: bool
   
   // Fallback to first slot (shouldn't happen)
   return slots[0];
-} 
+}
+
+/**
+ * Debug endpoint to validate playId
+ */
+export const debugPlayId = async (req: Request, res: Response) => {
+  try {
+    const { playId } = req.params;
+    
+    if (!playId) {
+      return res.status(400).json({ error: 'Play ID is required' });
+    }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const isValidUuid = uuidRegex.test(playId);
+    
+    // Check if play exists
+    const playExists = await checkPlayExists(playId);
+    
+    // Get more diagnostics if the play exists
+    let playDetails = null;
+    if (playExists) {
+      const play = await prisma.play.findUnique({
+        where: { id: playId },
+        select: {
+          id: true,
+          result: true,
+          redemptionStatus: true,
+          createdAt: true,
+          pin: true,
+          qrLink: true
+        }
+      });
+      
+      playDetails = play;
+    }
+    
+    // Return diagnostic information
+    return res.status(200).json({
+      diagnostics: {
+        playId,
+        isValidUuidFormat: isValidUuid,
+        existsInDatabase: playExists,
+        details: playDetails
+      }
+    });
+  } catch (error) {
+    console.error('Error in play ID debug endpoint:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}; 

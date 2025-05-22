@@ -100,7 +100,6 @@ async function main() {
         id: `demo-slot-${slot.prizeCode}`,
         wheelId: demoWheel.id,
         label: slot.label,
-        probability: slot.probability,
         prizeCode: slot.prizeCode,
       },
     });
