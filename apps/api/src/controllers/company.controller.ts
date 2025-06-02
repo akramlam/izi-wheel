@@ -4,11 +4,13 @@ import { subDays, format } from 'date-fns';
 import { Plan, Role } from '@prisma/client';
 import { hashPassword, generateRandomPassword } from '../utils/auth';
 import { sendInviteEmail } from '../utils/mailer';
+import { z } from 'zod';
+import { createError } from '../middlewares/error.middleware';
 
 export const getCompanyStatistics = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
-    const { from, to } = req.query;
+    const { range, from, to } = req.query;
     
     // Special handling for demo-company-id (SUPER admin with no companies)
     if (companyId === 'demo-company-id' && req.user?.role === 'SUPER') {
@@ -32,7 +34,19 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     let fromDate = subDays(new Date(), 6); // Default to last 7 days
     let toDate = new Date();
     
-    if (from) {
+    // Handle range parameter (7d, 30d, 90d, all)
+    if (range) {
+      if (range === '7d') {
+        fromDate = subDays(new Date(), 6);
+      } else if (range === '30d') {
+        fromDate = subDays(new Date(), 29);
+      } else if (range === '90d') {
+        fromDate = subDays(new Date(), 89);
+      } else if (range === 'all') {
+        fromDate = new Date(0); // Beginning of time
+      }
+    } else if (from) {
+      // If explicit from date is provided, use it
       fromDate = new Date(from as string);
     }
     
@@ -44,32 +58,46 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     const wheels = await prisma.wheel.findMany({
       where: { companyId },
       select: { id: true, isActive: true },
-    });
+    }) || [];
     const totalWheels = wheels.length;
     const activeWheels = wheels.filter(w => w.isActive).length;
 
     // Total plays and prizes with date filter
-    const totalPlays = await prisma.play.count({
-      where: { 
-        wheel: { companyId },
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
-      },
-    });
-    
-    const totalPrizes = await prisma.prize.count({
-      where: { 
-        play: { 
+    let totalPlays = 0;
+    try {
+      const playsResult = await prisma.play.count({
+        where: { 
           wheel: { companyId },
           createdAt: { 
             gte: fromDate,
             lte: toDate
           }
-        } 
-      },
-    });
+        },
+      });
+      totalPlays = playsResult || 0;
+    } catch (error) {
+      console.error('Error counting plays:', error);
+      totalPlays = 0;
+    }
+    
+    // Count winning plays (prizes)
+    let totalPrizes = 0;
+    try {
+      const prizesResult = await prisma.play.count({
+        where: { 
+          wheel: { companyId },
+          result: 'WIN',
+          createdAt: { 
+            gte: fromDate,
+            lte: toDate
+          }
+        },
+      });
+      totalPrizes = prizesResult || 0;
+    } catch (error) {
+      console.error('Error counting prizes:', error);
+      totalPrizes = 0;
+    }
 
     // Generate dates for the last 7 days
     const dates = Array.from({ length: 7 }).map((_, i) => {
@@ -89,7 +117,7 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
           lte: toDate
         }
       }
-    });
+    }) || [];
     
     // Populate playsByDay with actual counts
     plays.forEach(play => {
@@ -103,25 +131,24 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     // Prepare prizesByDay with 0 counts
     const prizesByDay = dates.map(date => ({ date, count: 0 }));
     
-    // Get prizes with related plays
-    const prizesWithPlays = await prisma.prize.findMany({
+    // Get winning plays (prizes) grouped by day
+    const winningPlays = await prisma.play.findMany({
       where: {
-        play: {
-          wheel: { companyId },
-          createdAt: { 
-            gte: fromDate,
-            lte: toDate
-          }
+        wheel: { companyId },
+        result: 'WIN',
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
         }
       },
       include: {
-        play: true
+        slot: true
       }
-    });
+    }) || [];
     
     // Populate prizesByDay with actual counts
-    prizesWithPlays.forEach(prize => {
-      const dateStr = format(prize.play.createdAt, 'yyyy-MM-dd');
+    winningPlays.forEach(play => {
+      const dateStr = format(play.createdAt, 'yyyy-MM-dd');
       const dayIndex = prizesByDay.findIndex(day => day.date === dateStr);
       if (dayIndex >= 0) {
         prizesByDay[dayIndex].count++;
@@ -141,9 +168,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       take: 10,
       include: {
         wheel: { select: { name: true } },
-        prize: true,
+        slot: true
       },
-    });
+    }) || [];
 
     res.json({
       totalWheels,
@@ -178,139 +205,119 @@ export const getAllCompanies = async (req: Request, res: Response) => {
 
 export const updateCompany = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { name, isActive, plan, maxWheels } = req.body;
+    // Get the company ID from the URL parameter
+    const companyId = req.params.companyId || req.params.id;
+    
+    if (!companyId) {
+      return res.status(400).json({ error: 'Company ID is required' });
+    }
+
+    const { name, plan, maxWheels, isActive } = req.body;
+
+    console.log('Updating company:', { companyId, name, plan, maxWheels, isActive });
+
     // Validate the plan value if provided
-    if (plan && !Object.values(Plan).includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' });
+    if (plan !== undefined) {
+      if (!(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+        return res.status(400).json({
+          error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
+        });
+      }
     }
-    // Validate maxWheels if provided
-    if (maxWheels !== undefined && maxWheels < 1) {
-      return res.status(400).json({ error: 'maxWheels must be at least 1' });
-    }
-    const updated = await prisma.company.update({
-      where: { id },
+
+    const company = await prisma.company.update({
+      where: { id: companyId },
       data: {
-        ...(name !== undefined ? { name } : {}),
-        ...(isActive !== undefined ? { isActive } : {}),
-        ...(plan && { plan }),
-        ...(maxWheels !== undefined ? { maxWheels } : {}),
+        name,
+        plan,
+        maxWheels,
+        isActive,
       },
     });
-    res.json({ company: updated });
-  } catch (error: any) {
-    if (error.code === 'P2025') {
-      // Prisma not found error
-      return res.status(404).json({ error: 'Company not found' });
+
+    res.json({ company });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.format() });
     }
-    console.error('Update company error:', error.message || error);
+    console.error('Update company error:', error);
     res.status(500).json({ error: 'Failed to update company' });
   }
 };
 
 export const createCompany = async (req: Request, res: Response) => {
   try {
-    const { name, plan, maxWheels, isActive, admins } = req.body;
+    const { name, plan, maxWheels, admins } = req.body;
 
-    // Validate the plan value if provided
-    if (plan && !Object.values(Plan).includes(plan)) {
-      return res.status(400).json({ 
-        error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
+    // Validate plan
+    if (plan && !(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+      return res.status(400).json({
+        error: 'Invalid plan. Must be BASIC or PREMIUM.'
       });
     }
 
-    // Validate maxWheels if provided
-    if (maxWheels !== undefined && maxWheels < 1) {
-      return res.status(400).json({ 
-        error: 'maxWheels must be at least 1' 
-      });
-    }
-    
-    // Check if company name is already in use
+    // Check if company with the same name already exists
     const existingCompany = await prisma.company.findFirst({
-      where: { name }
+      where: { name },
     });
-    
+
     if (existingCompany) {
-      return res.status(409).json({ error: 'Company name already in use' });
+      return res.status(400).json({ error: 'A company with this name already exists. Please use a different name.' });
     }
 
-    // Create the company
+    // Validate admins array
+    if (admins && !Array.isArray(admins)) {
+      return res.status(400).json({ error: 'Admins must be an array' });
+    }
+
+    // Creating company with validated data
+    const companyData = {
+      name,
+      plan: plan || Plan.BASIC, // Default to BASIC if not provided
+      maxWheels: maxWheels || 5, // Default to 5 if not provided
+    };
+
     const company = await prisma.company.create({
-      data: {
-        name,
-        ...(plan && { plan }),
-        ...(maxWheels && { maxWheels }),
-        ...(isActive !== undefined ? { isActive } : {})
-      }
+      data: companyData,
     });
 
-    // Handle admin invitations if provided
-    const adminUsers = [];
-    if (admins && Array.isArray(admins) && admins.length > 0) {
-      const currentUser = req.user;
-      const adminName = currentUser?.name || 'Super Admin';
-      
+    // Create admin users if provided
+    let createdAdmins: any[] = [];
+    if (admins && admins.length > 0) {
       for (const admin of admins) {
+        if (!admin.email || !admin.role) {
+          console.warn('Skipping admin creation due to missing email or role:', admin);
+          continue; // Skip if essential fields are missing
+        }
+        const tempPassword = generateRandomPassword();
+        const hashedPassword = await hashPassword(tempPassword);
         try {
-          // Validate required fields
-          if (!admin.email || !admin.role) {
-            console.warn('Skipping admin invitation - missing email or role', admin);
-            continue;
-          }
-          
-          // Validate role - only ADMIN or SUB roles are allowed
-          if (admin.role !== Role.ADMIN && admin.role !== Role.SUB) {
-            console.warn(`Skipping admin invitation - invalid role: ${admin.role}`);
-            continue;
-          }
-          
-          // Check if email is already in use in this company
-          const existingUser = await prisma.user.findFirst({
-            where: {
-              email: admin.email,
-              companyId: company.id
-            }
-          });
-          
-          if (existingUser) {
-            console.warn(`User with email ${admin.email} already exists in this company`);
-            continue;
-          }
-          
-          // Generate random password
-          const tempPassword = generateRandomPassword();
-          const hashedPassword = await hashPassword(tempPassword);
-          
-          // Create the user
-          const user = await prisma.user.create({
+          const newUser = await prisma.user.create({
             data: {
+              name: admin.name || '',
               email: admin.email,
               password: hashedPassword,
-              role: admin.role,
+              role: admin.role as Role,
               companyId: company.id,
-              isActive: true
-            }
+              forcePasswordChange: true,
+            },
           });
-          
-          // Send invitation email without trying to update fields with problems
-          await sendInviteEmail(admin.email, tempPassword, company.name, adminName, admin.name || '');
-          
-          // Add to list of created users (without password)
-          const { password, ...userWithoutPassword } = user;
-          adminUsers.push(userWithoutPassword);
-        } catch (error) {
-          console.error(`Failed to create admin user ${admin.email}:`, error);
-          // Continue with other admins even if one fails
+          // Send invitation email
+          await sendInviteEmail(admin.email, tempPassword, company.name, req.user?.name, admin.name);
+          const { password, ...adminWithoutPassword } = newUser;
+          createdAdmins.push(adminWithoutPassword);
+        } catch (userError) {
+          console.error(`Failed to create admin user ${admin.email}:`, userError);
+          // Potentially collect these errors to send back in response if needed
         }
       }
     }
 
-    res.status(201).json({ 
-      company,
-      admins: adminUsers
-    });
+    res.status(201).json({ company, admins: createdAdmins });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.format() });
+    }
     console.error('Create company error:', error);
     res.status(500).json({ error: 'Failed to create company' });
   }
@@ -514,4 +521,45 @@ export const validateSuperAdminAccess = async (req: Request, res: Response) => {
     console.error('Super admin access validation error:', error);
     return res.status(500).json({ error: 'Failed to validate company access' });
   }
+};
+
+export const updateCompanyPlan = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    const { plan } = req.body;
+
+    if (!(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+      return res.status(400).json({
+        error: 'Invalid plan. Must be BASIC or PREMIUM.'
+      });
+    }
+
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      data: { plan },
+    });
+
+    res.json({ company: updatedCompany });
+  } catch (error) {
+    console.error('Update company plan error:', error);
+    res.status(500).json({ error: 'Failed to update company plan' });
+  }
 }; 
+
+export const getCompany = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    res.json({ company });
+  } catch (error) {
+    console.error('Get company error:', error);
+    res.status(500).json({ error: 'Failed to fetch company' });
+  }
+};  

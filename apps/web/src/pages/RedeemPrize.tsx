@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
-//import { Input } from '../components/ui/input';
-//import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-//import { Label } from '../components/ui/label';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { toast } from '../hooks/use-toast';
+import { Input } from '../components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Label } from '../components/ui/label';
+import { Loader2, CheckCircle, AlertCircle, Home } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
+
+import PrizeDebugger from '../components/PrizeDebugger';
 
 type PrizeDetails = {
   id: string;
@@ -21,167 +29,245 @@ type PrizeDetails = {
 };
 
 const RedeemPrize = () => {
-  const { playId } = useParams<{ playId: string }>();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { playId: urlPlayId } = useParams<{ playId: string }>();
   const [pinCode, setPinCode] = useState('');
   const [redemptionStatus, setRedemptionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [effectivePlayId, setEffectivePlayId] = useState<string | undefined>(urlPlayId);
+  const [isIdValid, setIsIdValid] = useState<boolean>(false);
+  
+  // Validate UUID format
+  useEffect(() => {
+    let id = urlPlayId;
+    
+    // If no URL playId, try to get from session storage
+    if (!id) {
+      id = sessionStorage.getItem('lastPlayId') || undefined;
+      if (id) {
+        console.log('Recovered play ID from session storage:', id);
+        setEffectivePlayId(id);
+      }
+    }
+    
+    // Validate UUID format
+    if (id) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isValid = uuidRegex.test(id);
+      console.log(`Play ID ${id} is ${isValid ? 'valid' : 'invalid'} UUID format`);
+      setIsIdValid(isValid);
+      
+      if (!isValid) {
+        toast({
+          title: "Format invalide",
+          description: "L'identifiant du jeu n'est pas dans un format valide.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      console.error('No play ID available');
+      setIsIdValid(false);
+    }
+  }, [urlPlayId, toast]);
 
-  // Fetch prize details
+  // Fetch prize details only if we have a valid ID
   const { 
     data: prizeDetails, 
     isLoading, 
     error,
     refetch 
   } = useQuery<PrizeDetails>({
-    queryKey: ['prize', playId],
+    queryKey: ['prize', effectivePlayId],
     queryFn: async () => {
-      const response = await api.getPrizeDetails(playId || '');
-      return response.data;
+      try {
+        console.log('Fetching prize details for play ID:', effectivePlayId);
+        const response = await api.getPrizeDetails(effectivePlayId || '');
+        return response.data;
+      } catch (err) {
+        console.error('Error fetching prize details:', err);
+        throw err;
+      }
     },
-    enabled: !!playId,
+    enabled: !!effectivePlayId && isIdValid,
+    retry: 1, // Only retry once to avoid overwhelming with failed requests
   });
 
-  // Redeem prize mutation
+  // Redeem the prize
   const { mutate: redeemPrize, isPending: isRedeeming } = useMutation({
     mutationFn: async () => {
-      const response = await api.redeemPrize(playId || '', { pin: pinCode });
+      if (!effectivePlayId || !pinCode) {
+        throw new Error('ID de jeu ou code PIN manquant');
+      }
+      const response = await api.redeemPrize(effectivePlayId, { pin: pinCode });
       return response.data;
     },
     onSuccess: () => {
       setRedemptionStatus('success');
       toast({
-        title: 'Lot récupéré !',
-        description: 'Votre lot a été récupéré avec succès.',
-        variant: 'default',
+        title: "Succès!",
+        description: "Votre lot a été récupéré avec succès!",
       });
-      refetch(); // Refresh prize details to show updated status
+      // Refetch prize details to show updated status
+      refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       setRedemptionStatus('error');
       toast({
-        title: 'Échec de la récupération',
-        description: 'Le code PIN que vous avez saisi est incorrect ou le lot a déjà été récupéré.',
-        variant: 'destructive',
+        title: "Erreur",
+        description: error.message || "Erreur lors de la récupération du lot",
+        variant: "destructive"
       });
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Improved validation for PIN code
+    if (!pinCode || pinCode.length < 6) {
+      toast({
+        title: "Code PIN invalide",
+        description: "Veuillez entrer un code PIN à 6 chiffres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // PIN format validation (check if it contains only digits)
+    if (!/^\d+$/.test(pinCode)) {
+      toast({
+        title: "Format incorrect",
+        description: "Le code PIN doit contenir uniquement des chiffres",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Continue with redeeming the prize
     redeemPrize();
   };
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
-        <span className="ml-2 text-lg">Chargement des détails du lot...</span>
+      <div className="flex h-screen flex-col items-center justify-center p-4">
+        <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mb-4" />
+        <p className="text-lg text-gray-600">Chargement des détails du lot...</p>
       </div>
     );
   }
 
-  if (error || !prizeDetails) {
+  // Error state - show friendly error message
+  if (error || !isIdValid || !prizeDetails) {
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Désolé, nous n\'avons pas pu trouver ce lot ou il n\'existe pas.';
+    
     return (
       <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
         <AlertCircle className="mb-4 h-16 w-16 text-red-500" />
         <h1 className="mb-4 text-2xl font-bold text-red-600">Lot introuvable</h1>
-        <p className="mb-6 text-gray-600">
-          Désolé, nous n'avons pas pu trouver ce lot ou il n'existe pas.
+        <p className="mb-6 text-gray-600 max-w-md">
+          {!isIdValid 
+            ? 'L\'identifiant fourni n\'est pas valide. Veuillez vérifier le lien ou scanner à nouveau le QR code.' 
+            : errorMessage
+          }
         </p>
-        <Button onClick={() => window.location.href = '/'}>
+        <Button 
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2"
+        >
+          <Home size={16} />
           Retour à l'accueil
         </Button>
       </div>
     );
   }
 
-  const isAlreadyRedeemed = prizeDetails.status === 'REDEEMED';
+  // Already redeemed prize
+  if (prizeDetails.status === 'REDEEMED') {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
+        <CheckCircle className="mb-4 h-16 w-16 text-green-500" />
+        <h1 className="mb-4 text-2xl font-bold text-green-600">Lot déjà récupéré</h1>
+        <p className="mb-6 text-gray-600">
+          Ce lot a déjà été récupéré. Chaque lot ne peut être récupéré qu'une seule fois.
+        </p>
+        <Button 
+          onClick={() => navigate('/')}
+          className="flex items-center gap-2"
+        >
+          <Home size={16} />
+          Retour à l'accueil
+        </Button>
+      </div>
+    );
+  }
 
+  // Main content - pending redemption
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-indigo-50 to-white p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Récupération de lot</CardTitle>
+    <div className="container max-w-md mx-auto px-4 py-10">
+      <Card className="border-2 border-indigo-100 shadow-lg">
+        <CardHeader className="text-center bg-gradient-to-r from-indigo-50 to-pink-50 rounded-t-lg">
+          <CardTitle className="text-2xl text-indigo-700">Récupérer votre lot</CardTitle>
           <CardDescription>
-            {isAlreadyRedeemed 
-              ? 'Ce lot a déjà été récupéré' 
-              : 'Entrez votre code PIN pour récupérer votre lot'}
+            Félicitations! Vous avez gagné: <span className="font-bold text-pink-600">{prizeDetails.prize.label}</span>
           </CardDescription>
         </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Prize Information */}
-          <div className="rounded-lg bg-indigo-50 p-4 text-center">
-            <h3 className="mb-1 text-lg font-medium text-gray-700">Votre lot</h3>
-            <p className="text-2xl font-bold text-indigo-600">{prizeDetails.prize.label}</p>
-            {prizeDetails.prize.description && (
-              <p className="mt-2 text-sm text-gray-600">{prizeDetails.prize.description}</p>
-            )}
-          </div>
-
-          {/* Lead Information */}
-          <div>
-            <h3 className="mb-2 font-medium text-gray-700">Vos informations</h3>
-            <div className="space-y-1 rounded-md border border-gray-200 bg-white p-3 text-sm">
-              {Object.entries(prizeDetails.lead).map(([key, value]) => (
-                <div key={key} className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-gray-500">{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
-                  <span className="col-span-2 text-gray-800">{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Redemption Status */}
-          {isAlreadyRedeemed ? (
-            <div className="flex flex-col items-center justify-center rounded-md bg-green-50 p-6 text-center">
-              <CheckCircle className="mb-2 h-12 w-12 text-green-500" />
-              <h3 className="text-xl font-medium text-green-600">Lot déjà récupéré</h3>
-              <p className="mt-2 text-gray-600">Ce lot a été récupéré avec succès.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="pin">Code PIN</Label>
-                <Input
-                  id="pin"
-                  type="text"
-                  value={pinCode}
-                  onChange={(e) => setPinCode(e.target.value)}
-                  placeholder="Entrez votre code PIN"
-                  required
-                  className="text-center text-xl tracking-wider"
-                  maxLength={6}
-                />
-              </div>
-              
-              <Button 
-                type="submit"
-                className="w-full"
-                disabled={isRedeeming || !pinCode.trim()}
-              >
-                {isRedeeming ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Récupération en cours...
-                  </>
-                ) : (
-                  'Récupérer le lot'
-                )}
-              </Button>
-            </form>
+        <CardContent className="pt-6">
+          {prizeDetails.prize.description && (
+            <p className="mb-6 text-gray-600 text-center italic">
+              {prizeDetails.prize.description}
+            </p>
           )}
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="pin">Entrez votre code PIN</Label>
+                <InputOTP 
+                  maxLength={6} 
+                  value={pinCode} 
+                  onChange={setPinCode}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <div className="pt-2">
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90"
+                  disabled={isRedeeming || pinCode.length < 6}
+                >
+                  {isRedeeming ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Récupération en cours...
+                    </>
+                  ) : (
+                    "Récupérer le lot"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
         </CardContent>
-        
-        <CardFooter className="flex justify-center">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/'}
-            className="mt-2"
-          >
-            Retour à l'accueil
-          </Button>
+        <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
+          <p>Code de lot: {prizeDetails.id}</p>
+          <p className="mt-1">Entrez le code PIN qui vous a été fourni pour récupérer votre lot.</p>
         </CardFooter>
       </Card>
+      
+      <PrizeDebugger playId={effectivePlayId || ''} />
     </div>
   );
 };

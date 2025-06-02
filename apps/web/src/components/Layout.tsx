@@ -1,213 +1,138 @@
-import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import {
-  LayoutDashboard,
-  Target,
-  BarChart3,
-  Building2,
-  Users,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  Home,
-  User,
-  Folder,
-  CreditCard,
-} from 'lucide-react';
+import Sidebar from './Sidebar';
+import TopBar from './TopBar';
+import { Heart, MessageCircle, Mail, Phone } from 'lucide-react';
 
 const Layout = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const navigate = useNavigate();
-  const avatarUrl = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user?.email || 'user') + '&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50';
-
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
-
-  // Navigation items with role-based access control
-  const navItems = [
-    {
-      name: 'Tableau de bord',
-      path: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />,
-      allowed: ['SUPER', 'ADMIN', 'SUB'],
-    },
-    {
-      name: 'Roues',
-      path: '/wheels',
-      icon: <Target className="h-5 w-5" />,
-      allowed: ['SUPER', 'ADMIN', 'SUB'],
-    },
-    {
-      name: 'Statistiques',
-      path: '/statistics',
-      icon: <BarChart3 className="h-5 w-5" />,
-      allowed: ['SUPER', 'ADMIN', 'SUB'],
-    },
-    {
-      name: 'Entreprises',
-      path: '/companies',
-      icon: <Building2 className="h-5 w-5" />,
-      allowed: ['SUPER'],
-    },
-    {
-      name: 'Sous-administrateurs',
-      path: '/sub-admins',
-      icon: <Users className="h-5 w-5" />,
-      allowed: ['SUPER', 'ADMIN'],
-    },
-  ];
-
-  const filteredNavItems = navItems.filter(item => 
-    item.allowed.includes(user?.role || '')
-  );
-
-  // Ajout d'un effet pour fermer le menu au clic extérieur
-  useEffect(() => {
-    if (!showAccountMenu) return;
-    function handleClick(e: MouseEvent) {
-      if (!(e.target as HTMLElement).closest('.relative')) {
-        setShowAccountMenu(false);
-      }
-    }
-    window.addEventListener('mousedown', handleClick);
-    return () => window.removeEventListener('mousedown', handleClick);
-  }, [showAccountMenu]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
-          onClick={closeSidebar}
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-indigo-900 text-white transition-transform duration-300 lg:relative lg:translate-x-0 ${
+      {/* Sidebar - Single component */}
+      <div 
+        className={`fixed inset-y-0 left-0 z-50 w-64 lg:w-64 lg:static lg:translate-x-0 transform transition-transform duration-200 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Sidebar header */}
-        <div className="relative h-32 flex justify-center items-center px-4">
-          <a href="/" className="flex items-center">
-            <img
-              src="/lo.png"
-              alt="Logo IziKADO"
-              className="h-28 w-auto drop-shadow-lg"
-            />
-          </a>
-          <button 
-            className="absolute right-2 top-2 p-1 hover:bg-indigo-800 lg:hidden rounded"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
+        <Sidebar />
+      </div>
 
-        {/* Navigation */}
-        <nav className="mt-5 h-full overflow-y-auto pb-20">
-          <ul className="space-y-2 px-2">
-            {filteredNavItems.map((item) => (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-indigo-800 text-white'
-                        : 'hover:bg-indigo-800/70 text-indigo-100'
-                    }`
-                  }
-                  onClick={closeSidebar}
-                >
-                  {item.icon}
-                  <span className="ml-3">{item.name}</span>
-                </NavLink>
-              </li>
-            ))}
-            <li>
-              <button
-                onClick={logout}
-                className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-indigo-100 hover:bg-indigo-800/70"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="ml-3">Déconnexion</span>
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </aside>
+      {/* Main content container */}
+      <div className="flex flex-col flex-1 w-full lg:pl-0">
+        {/* Top navigation */}
+        <TopBar onMenuClick={() => setSidebarOpen(true)} />
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white shadow">
-          <div className="px-4 py-3 lg:px-6">
-            <div className="flex items-center justify-between">
-              <button
-                className="p-1 rounded-md hover:bg-gray-100 lg:hidden"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              <div className="flex-1 flex justify-end items-center">
-                <div className="relative">
-                  <button
-                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white font-bold text-lg shadow transition-all focus:outline-none border-2 border-white hover:scale-105"
-                    title={user?.email || 'Compte'}
-                    onClick={() => setShowAccountMenu((v) => !v)}
-                  >
-                    <img src={avatarUrl} alt="avatar" className="w-9 h-9 rounded-full object-cover" />
-                  </button>
-                  {showAccountMenu && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl py-6 z-50 border border-gray-100 animate-fade-in flex flex-col min-h-[480px]">
-                      <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setShowAccountMenu(false)}><X className="w-5 h-5" /></button>
-                      <div className="flex flex-col items-center px-6 pb-4">
-                        <img src={avatarUrl} alt="avatar" className="w-20 h-20 rounded-full border-4 border-white shadow mb-2" />
-                        <div className="text-lg font-bold text-gray-900">{user?.email?.split('@')[0] || 'Utilisateur'}</div>
-                        <div className="text-sm text-gray-500 mb-2">{user?.email}</div>
-                        
-                        <div className="flex gap-2 mb-2">
-                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team1&backgroundColor=b6e3f4&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
-                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team2&backgroundColor=c0aede&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
-                          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=team3&backgroundColor=d1d4f9&radius=50" className="w-8 h-8 rounded-full border-2 border-white" />
-                          <button className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">+</button>
-                        </div>
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1 px-4">
-                        <a href="/dashboard" className="flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 transition"><Home className="w-5 h-5" /> Accueil</a>
-                        <button 
-                          onClick={() => {
-                            navigate('/profile');
-                            setShowAccountMenu(false);
-                          }}
-                          className="flex w-full items-center gap-3 px-4 py-2 rounded-lg text-left text-gray-700 hover:bg-indigo-50 transition"
-                        >
-                          <User className="w-5 h-5" /> Profil
-                        </button>
-                      </div>
-                      <div className="mt-auto px-4 pt-4">
-                        <button onClick={logout} className="w-full text-center py-3 rounded-xl font-bold text-red-600 bg-red-50 hover:bg-red-100 transition text-lg">Déconnexion</button>
-                      </div>
+        {/* Content area */}
+        <div className="flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+          {/* Main content */}
+          <main className="flex-1 p-6">
+            <Outlet />
+          </main>
+
+          {/* Footer - Simplified design */}
+          <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-4">
+                {/* About column */}
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white uppercase tracking-wider mb-4">À PROPOS</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    izi KADO est une plateforme innovante qui permet aux entreprises de créer et gérer des roues de jeux promotionnels.
+                  </p>
+                  <div className="flex items-center">
+                    <Heart className="h-4 w-4 mr-2 text-purple-600 dark:text-purple-400" />
+                    <span className="text-sm text-purple-600 dark:text-purple-400">Fait avec passion</span>
+                  </div>
+                </div>
+                
+                {/* Links column */}
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white uppercase tracking-wider mb-4">LIENS UTILES</h3>
+                  <ul className="space-y-2">
+                    <li>
+                      <Link to="/dashboard" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">
+                        Tableau de bord
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/profile" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">
+                        Mon profil
+                      </Link>
+                    </li>
+                    <li>
+                      <a href="/politique-confidentialite" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">
+                        Politique de confidentialité
+                      </a>
+                    </li>
+                    <li>
+                      <a href="/conditions-utilisation" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">
+                        Conditions d'utilisation
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+                
+                {/* Contact column */}
+                <div className="flex flex-col">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white uppercase tracking-wider mb-4">CONTACT</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300">support@izitouch.fr</span>
                     </div>
-                  )}
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-300">+33 (0)1 23 45 67 89</span>
+                    </div>
+                    <div className="mt-2">
+                      <button className="inline-flex items-center px-4 py-2 rounded-md bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-800/40 transition duration-150">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        <span className="text-sm font-medium">Nous contacter</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer bottom with copyright and social icons */}
+              <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  © {new Date().getFullYear()} izi TOUCH. Tous droits réservés.
+                </div>
+                <div className="flex space-x-4 mt-4 md:mt-0">
+                  <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" aria-label="Facebook">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                    </svg>
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" aria-label="Instagram">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63z" />
+                      <path d="M12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666z" />
+                      <circle cx="17.338" cy="4.462" r="1.2" />
+                    </svg>
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" aria-label="Twitter">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                    </svg>
+                  </a>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
-
-        {/* Main content area */}
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
-          <Outlet />
-        </main>
+          </footer>
+        </div>
       </div>
     </div>
   );

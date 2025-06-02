@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { WheelMode } from '@prisma/client';
+import { WheelMode, SocialNetwork, PlayLimit } from '@prisma/client';
 import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
+import { generateQRCode } from '../utils/qrcode';
 
 // Validation schema for creating/updating a wheel
 const wheelSchema = z.object({
@@ -10,6 +11,13 @@ const wheelSchema = z.object({
   mode: z.nativeEnum(WheelMode),
   formSchema: z.record(z.any()).or(z.array(z.any())),
   isActive: z.boolean().optional().default(false),
+  probability: z.number().optional(),
+  // New fields for social media redirection
+  socialNetwork: z.nativeEnum(SocialNetwork).optional(),
+  redirectUrl: z.string().url().optional(),
+  redirectText: z.string().max(500).optional(),
+  // New field for play limit
+  playLimit: z.nativeEnum(PlayLimit).optional().default(PlayLimit.ONCE_PER_DAY),
 });
 
 /**
@@ -212,7 +220,9 @@ export const getWheel = async (req: Request, res: Response) => {
         companyId,
       },
       include: {
-        slots: true,
+        slots: {
+          where: { isActive: true }
+        },
         _count: {
           select: { plays: true },
         },
@@ -307,51 +317,62 @@ export const getWheel = async (req: Request, res: Response) => {
  *         description: Company not found
  */
 /**
- * Create a new wheel
+ * Create a new wheel for a company
  */
 export const createWheel = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
     
-    // Special handling for demo-company-id (SUPER admin with no companies)
-    if (companyId === 'demo-company-id' && req.user?.role === 'SUPER') {
+    // Validate companyId
+    if (!companyId) {
+      return res.status(400).json({ error: 'Invalid or missing companyId in URL.' });
+    }
+
+    // Log the raw request body for debugging
+    console.log('Raw wheel creation request body:', JSON.stringify(req.body, null, 2));
+
+    // Validate wheel data
+    const validationResult = wheelSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      console.error('Wheel validation failed:', validationResult.error);
       return res.status(400).json({ 
-        error: 'Cannot create wheels in demo mode. Please create a company first.' 
+        error: 'Invalid wheel data', 
+        details: validationResult.error.format() 
       });
     }
     
-    // Validate request body
-    const validatedData = wheelSchema.parse(req.body);
+    // Log the validated data to help with debugging
+    const validatedData = validationResult.data;
+    console.log('Creating wheel with validated data:', JSON.stringify(validatedData, null, 2));
+    console.log('Wheel mode:', validatedData.mode);
     
-    // Check company exists and wheel limit
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      include: {
-        _count: {
-          select: { wheels: true },
-        },
-      },
-    });
-
-    if (!company) {
-      throw createError('Company not found', 404);
-    }
-
-    // Check if company has reached max wheels
-    if (company._count.wheels >= company.maxWheels) {
-      throw createError(
-        `Company has reached the maximum number of wheels (${company.maxWheels})`,
-        400
-      );
-    }
+    // Remove probability field if it exists (not in schema)
+    const { probability, ...wheelDataForDb } = validatedData;
     
-    // Create the wheel
+    // Create wheel in database
     const wheel = await prisma.wheel.create({
       data: {
-        ...validatedData,
+        ...wheelDataForDb,
         companyId,
       },
     });
+
+    // Generate QR code for the wheel
+    try {
+      const wheelUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/play/${companyId}/${wheel.id}`;
+      const qrCodePath = await generateQRCode(wheelUrl);
+      
+      // Update wheel with QR code link
+      await prisma.wheel.update({
+        where: { id: wheel.id },
+        data: { qrCodeLink: qrCodePath }
+      });
+      
+      wheel.qrCodeLink = qrCodePath;
+    } catch (qrError) {
+      console.error('Error generating QR code:', qrError);
+      // Continue without QR code
+    }
 
     res.status(201).json({ wheel });
   } catch (error) {
@@ -439,21 +460,39 @@ export const createWheel = async (req: Request, res: Response) => {
  *         description: Wheel not found
  */
 /**
- * Update an existing wheel
+ * Update a wheel
  */
 export const updateWheel = async (req: Request, res: Response) => {
   try {
     const { companyId, wheelId } = req.params;
-    
-    // Special handling for demo-company-id (SUPER admin with no companies)
-    if (companyId === 'demo-company-id' && req.user?.role === 'SUPER') {
-      return res.status(404).json({ error: 'Wheel not found in demo company' });
+
+    // Validate IDs
+    if (!companyId || !wheelId) {
+      return res.status(400).json({ error: 'Invalid or missing IDs in URL.' });
+    }
+
+    // Log the raw request body for debugging
+    console.log('Raw wheel update request body:', JSON.stringify(req.body, null, 2));
+
+    // Validate wheel data
+    const validationResult = wheelSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      console.error('Wheel update validation failed:', validationResult.error);
+      return res.status(400).json({ 
+        error: 'Invalid wheel data', 
+        details: validationResult.error.format() 
+      });
     }
     
-    // Validate request body
-    const validatedData = wheelSchema.partial().parse(req.body);
+    // Log the validated data to help with debugging
+    const validatedData = validationResult.data;
+    console.log('Updating wheel with validated data:', JSON.stringify(validatedData, null, 2));
+    console.log('Wheel mode:', validatedData.mode);
     
-    // Check wheel exists and belongs to company
+    // Remove probability field if it exists (not in schema)
+    const { probability, ...wheelDataForDb } = validatedData;
+
+    // Check if wheel exists and belongs to the company
     const existingWheel = await prisma.wheel.findFirst({
       where: {
         id: wheelId,
@@ -462,15 +501,13 @@ export const updateWheel = async (req: Request, res: Response) => {
     });
 
     if (!existingWheel) {
-      throw createError('Wheel not found', 404);
+      return res.status(404).json({ error: 'Wheel not found or does not belong to this company.' });
     }
-    
+
     // Update the wheel
     const wheel = await prisma.wheel.update({
-      where: {
-        id: wheelId,
-      },
-      data: validatedData,
+      where: { id: wheelId },
+      data: wheelDataForDb,
     });
 
     res.status(200).json({ wheel });
@@ -556,5 +593,111 @@ export const deleteWheel = async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ error: 'An unexpected error occurred' });
     }
+  }
+};
+
+/**
+ * Fix a wheel's slots by setting positions and making at least one slot winning
+ */
+export const fixWheel = async (req: Request, res: Response) => {
+  try {
+    const { wheelId } = req.params;
+
+    // Get the wheel with its slots
+    const wheel = await prisma.wheel.findUnique({
+      where: { id: wheelId },
+      include: { slots: true },
+    });
+
+    if (!wheel) {
+      return res.status(404).json({ error: 'Wheel not found' });
+    }
+
+    console.log(`Fixing wheel: ${wheel.name} (${wheelId})`);
+
+    let slotsCreated = 0;
+    let slotsUpdated = 0;
+
+    // If wheel has no slots, create default ones
+    if (wheel.slots.length === 0) {
+      console.log('No slots found, creating default slots');
+      
+      // Create default slots
+      const defaultSlots = [
+        { 
+          wheelId,
+          label: 'Prix 1', 
+          prizeCode: 'PRIZE1',
+          color: '#FF6384',
+          weight: 34,
+          isWinning: true,
+          position: 0,
+          isActive: true
+        },
+        { 
+          wheelId,
+          label: 'Prix 2', 
+          prizeCode: 'PRIZE2',
+          color: '#36A2EB',
+          weight: 33,
+          isWinning: false,
+          position: 1,
+          isActive: true
+        },
+        { 
+          wheelId,
+          label: 'Prix 3', 
+          prizeCode: 'PRIZE3',
+          color: '#FFCE56',
+          weight: 33,
+          isWinning: false,
+          position: 2,
+          isActive: true
+        }
+      ];
+      
+      for (const slotData of defaultSlots) {
+        await prisma.slot.create({
+          data: slotData
+        });
+        slotsCreated++;
+      }
+    } else {
+      console.log(`Found ${wheel.slots.length} slots to fix`);
+      
+      // Ensure slots have proper positions and at least one is winning
+      let hasWinningSlot = wheel.slots.some(slot => slot.isWinning);
+      
+      for (let i = 0; i < wheel.slots.length; i++) {
+        const slot = wheel.slots[i];
+        const updates: any = {
+          position: i,
+          isActive: true
+        };
+        
+        // Make first slot winning if none are winning
+        if (!hasWinningSlot && i === 0) {
+          updates.isWinning = true;
+          hasWinningSlot = true;
+        }
+        
+        await prisma.slot.update({
+          where: { id: slot.id },
+          data: updates
+        });
+        
+        slotsUpdated++;
+      }
+    }
+
+    return res.status(200).json({
+      message: 'Wheel fixed successfully',
+      wheelId,
+      slotsCreated,
+      slotsUpdated
+    });
+  } catch (error) {
+    console.error('Error fixing wheel:', error);
+    return res.status(500).json({ error: 'Failed to fix wheel' });
   }
 }; 

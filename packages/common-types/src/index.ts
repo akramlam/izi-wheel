@@ -38,6 +38,7 @@ export interface Company {
   name: string;
   plan: Plan;
   maxWheels: number;
+  isActive: boolean;
   createdAt: Date;
 }
 
@@ -56,7 +57,7 @@ export interface Slot {
   id: string;
   wheelId: string;
   label: string;
-  probability: number;
+  weight: number;
   prizeCode: string;
 }
 

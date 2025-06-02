@@ -53,6 +53,16 @@
     @apply bg-gray-50 text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Ensure input text is always visible */
+  input, textarea, select {
+    color: hsl(var(--foreground));
+  }
+  
+  input::placeholder, textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+  
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -79,6 +89,12 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+  
+  .dark input, .dark textarea, .dark select {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+  
   .theme {
     --animate-shine: shine var(--duration) infinite linear;
   }

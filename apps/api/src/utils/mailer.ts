@@ -1,15 +1,40 @@
 import nodemailer from 'nodemailer';
 
-// Create a transporter using SMTP.com
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.smtp.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
+// Get SMTP configuration from environment variables
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.smtp.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
+const SMTP_USER = process.env.SMTP_USER || '';
+const SMTP_PASS = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+
+// Check if SMTP configuration is valid
+const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
+
+// Create a test/fallback transport when SMTP is not configured
+const testTransport = {
+  sendMail: async (mailOptions: any) => {
+    console.log('EMAIL NOT SENT (SMTP not configured) - Would have sent:', {
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      text: mailOptions.text || 'Email content would be here'
+    });
+    return { messageId: 'test-id' };
+  }
+};
+
+// Create a transporter using SMTP.com if configured
+const transporter = isSmtpConfigured ? nodemailer.createTransport({
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
   auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASSWORD || '',
+    user: SMTP_USER,
+    pass: SMTP_PASS,
   },
-});
+}) : testTransport;
+
+// Log SMTP configuration status on startup
+console.log(`Mailer initialized: ${isSmtpConfigured ? 'Using SMTP configuration' : 'Using test transport (emails will be logged but not sent)'}`);
 
 /**
  * Send an invitation email to a new user
@@ -70,6 +95,11 @@ export const sendInviteEmail = async (
         </div>
       `,
     };
+
+    if (!isSmtpConfigured) {
+      console.log(`[TEST MODE] Invitation email would be sent to ${email} with password ${password}`);
+      return;
+    }
 
     await transporter.sendMail(mailOptions);
     console.log(`Invitation email sent to ${email}`);

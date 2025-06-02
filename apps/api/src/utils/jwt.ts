@@ -1,4 +1,4 @@
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { User, Role } from '@prisma/client';
 
 // Interface for JWT payload
@@ -14,7 +14,21 @@ interface JwtPayload {
 
 // Get secret from environment
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'default-dev-secret';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN_STRING = process.env.JWT_EXPIRES_IN || '7d';
+
+function parseExpiresIn(timeStr: string): number {
+  const unit = timeStr.charAt(timeStr.length - 1);
+  const value = parseInt(timeStr.substring(0, timeStr.length - 1), 10);
+  if (isNaN(value)) return 60 * 60 * 24 * 7; // Default to 7 days in seconds
+
+  switch (unit) {
+    case 's': return value;
+    case 'm': return value * 60;
+    case 'h': return value * 60 * 60;
+    case 'd': return value * 60 * 60 * 24;
+    default: return value; // Assume seconds if no unit or unknown unit
+  }
+}
 
 /**
  * Generate a JWT token for a user
@@ -30,9 +44,12 @@ export const generateToken = (user: User): string => {
     forcePasswordChange: user.forcePasswordChange,
   };
 
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+  const signOptions: SignOptions = {
+    expiresIn: parseExpiresIn(JWT_EXPIRES_IN_STRING),
+    algorithm: 'HS256'
+  };
+
+  return jwt.sign(payload, JWT_SECRET, signOptions);
 };
 
 /**

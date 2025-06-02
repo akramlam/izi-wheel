@@ -60,4 +60,13 @@ router.get('/profile', authMiddleware, getProfile);
  */
 router.get('/me', authMiddleware, getProfile);
 
+// Add a debug endpoint to check current user info
+router.get('/me/debug', authMiddleware, (req, res) => {
+  // Return full user object for debugging
+  return res.status(200).json({
+    user: req.user,
+    message: 'This is your current user information from the JWT token'
+  });
+});
+
 export default router; 

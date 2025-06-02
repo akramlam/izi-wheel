@@ -70,11 +70,44 @@ export default {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+			"caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" },
+        },
+        'spin-slow': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' }
+        },
+        'gradient-x': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' }
+        },
+        'gradient-move': {
+          '0%': { backgroundPosition: '0% 0%' },
+          '50%': { backgroundPosition: '100% 100%' },
+          '100%': { backgroundPosition: '0% 0%' }
+        },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' }
+        },
+        'pulse-ring': {
+          '0%': { opacity: 0.8, transform: 'scale(0.8)' },
+          '50%': { opacity: 0.4, transform: 'scale(1.1)' },
+          '100%': { opacity: 0.8, transform: 'scale(0.8)' }
+        }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+        'spin-slow': 'spin-slow 8s linear infinite',
+        'gradient-x': 'gradient-x 10s ease infinite',
+        'gradient-move': 'gradient-move 8s ease infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-ring': 'pulse-ring 3s ease-in-out infinite',
+		"caret-blink": "caret-blink 1.25s ease-out infinite"
+
   		}
   	}
   },

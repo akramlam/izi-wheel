@@ -75,7 +75,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Verify password
-    const isPasswordValid = await comparePassword(password, user.password);
+    const isPasswordValid = await comparePassword(password, user.password!);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -262,7 +262,7 @@ export const changePassword = async (req: Request, res: Response) => {
     }
 
     // Verify current password
-    const isPasswordValid = await comparePassword(currentPassword, user.password);
+    const isPasswordValid = await comparePassword(currentPassword, user.password!);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }

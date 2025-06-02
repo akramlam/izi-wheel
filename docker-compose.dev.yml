@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  web:
+    image: node:18
+    working_dir: /app
+    ports:
+      - "3010:3010"
+    volumes:
+      - ./:/app
+    command: bash -c "cd apps/web && npm install && npm run dev -- --port=3010 --host=0.0.0.0"
