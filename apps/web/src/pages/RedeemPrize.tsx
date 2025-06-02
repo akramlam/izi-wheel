@@ -7,7 +7,14 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Loader2, CheckCircle, AlertCircle, Home } from 'lucide-react';
-import { Toast } from '@/components/ui/toast';
+import { useToast } from '../hooks/use-toast';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
+
 import PrizeDebugger from '../components/PrizeDebugger';
 
 type PrizeDetails = {
@@ -22,6 +29,7 @@ type PrizeDetails = {
 };
 
 const RedeemPrize = () => {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const { playId: urlPlayId } = useParams<{ playId: string }>();
   const [pinCode, setPinCode] = useState('');
@@ -50,7 +58,7 @@ const RedeemPrize = () => {
       setIsIdValid(isValid);
       
       if (!isValid) {
-        Toast({
+        toast({
           title: "Format invalide",
           description: "L'identifiant du jeu n'est pas dans un format valide.",
           variant: "destructive"
@@ -60,7 +68,7 @@ const RedeemPrize = () => {
       console.error('No play ID available');
       setIsIdValid(false);
     }
-  }, [urlPlayId]);
+  }, [urlPlayId, toast]);
 
   // Fetch prize details only if we have a valid ID
   const { 
@@ -95,7 +103,7 @@ const RedeemPrize = () => {
     },
     onSuccess: () => {
       setRedemptionStatus('success');
-      Toast({
+      toast({
         title: "Succès!",
         description: "Votre lot a été récupéré avec succès!",
       });
@@ -104,7 +112,7 @@ const RedeemPrize = () => {
     },
     onError: (error: any) => {
       setRedemptionStatus('error');
-      Toast({
+      toast({
         title: "Erreur",
         description: error.message || "Erreur lors de la récupération du lot",
         variant: "destructive"
@@ -114,14 +122,28 @@ const RedeemPrize = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pinCode) {
-      Toast({
-        title: "Code PIN requis",
-        description: "Veuillez entrer le code PIN pour récupérer votre lot",
+    
+    // Improved validation for PIN code
+    if (!pinCode || pinCode.length < 6) {
+      toast({
+        title: "Code PIN invalide",
+        description: "Veuillez entrer un code PIN à 6 chiffres",
         variant: "destructive"
       });
       return;
     }
+
+    // PIN format validation (check if it contains only digits)
+    if (!/^\d+$/.test(pinCode)) {
+      toast({
+        title: "Format incorrect",
+        description: "Le code PIN doit contenir uniquement des chiffres",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Continue with redeeming the prize
     redeemPrize();
   };
 
@@ -202,21 +224,29 @@ const RedeemPrize = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="pin">Entrez votre code PIN</Label>
-                <Input
-                  id="pin"
-                  type="text"
-                  placeholder="Code PIN à 6 chiffres"
-                  value={pinCode}
-                  onChange={(e) => setPinCode(e.target.value)}
-                  className="text-center text-xl tracking-widest"
-                  maxLength={6}
-                />
+                <InputOTP 
+                  maxLength={6} 
+                  value={pinCode} 
+                  onChange={setPinCode}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
               <div className="pt-2">
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90"
-                  disabled={isRedeeming}
+                  disabled={isRedeeming || pinCode.length < 6}
                 >
                   {isRedeeming ? (
                     <>

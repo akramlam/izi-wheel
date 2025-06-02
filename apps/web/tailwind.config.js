@@ -71,6 +71,10 @@ export default {
   					height: '0'
   				}
   			},
+			"caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" },
+        },
         'spin-slow': {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' }
@@ -101,7 +105,9 @@ export default {
         'gradient-x': 'gradient-x 10s ease infinite',
         'gradient-move': 'gradient-move 8s ease infinite',
         'float': 'float 3s ease-in-out infinite',
-        'pulse-ring': 'pulse-ring 3s ease-in-out infinite'
+        'pulse-ring': 'pulse-ring 3s ease-in-out infinite',
+		"caret-blink": "caret-blink 1.25s ease-out infinite"
+
   		}
   	}
   },

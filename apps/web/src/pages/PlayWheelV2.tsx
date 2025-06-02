@@ -85,18 +85,39 @@ const PlayWheelV2 = () => {
         console.log('Original wheel mode:', wheelData.mode);
         console.log('FIXING: Forcing ALL_WIN mode for all segments');
         
+        // Process the segments/slots with their original names
+        const predefinedColors = [
+          '#FF6384', // Pink
+          '#36A2EB', // Blue
+          '#FFCE56', // Yellow
+          '#4BC0C0', // Teal
+          '#9966FF', // Purple
+          '#FF9F40', // Orange
+          '#7CFC00', // Lime Green
+          '#FF4500', // Red-Orange
+          '#1E90FF', // Dodger Blue
+          '#20B2AA'  // Light Sea Green
+        ];
+        
+        const processedSegments = wheelData.slots.map((slot: any, index: number) => {
+          // Use the original label from the wheel data
+          let slotLabel = slot.label || `Lot ${index + 1}`;
+          
+          // If label is empty or just numbers, add a default name
+          if (!slotLabel.trim() || /^\d+$/.test(slotLabel)) {
+            slotLabel = `Lot ${index + 1}`;
+          }
+          
+          return {
+            label: slotLabel,
+            color: slot.color || predefinedColors[index % predefinedColors.length],
+            isWinning: true // Force winning for all segments
+          };
+        });
+        
         setWheelConfig({
           ...wheelConfig,
-          segments: wheelData.slots.map((slot: { 
-            label?: string; 
-            color?: string; 
-            isWinning?: boolean;
-          }) => ({
-            label: slot.label || 'Prize',
-            color: slot.color || '#a5b4fc',
-            // Force ALL segments to be winning no matter what
-            isWinning: true // Force winning for all segments
-          }))
+          segments: processedSegments
         });
       }
     }
@@ -155,11 +176,11 @@ const PlayWheelV2 = () => {
       console.log(`Setting prize index ${slotIndex} for wheel spin`);
       setPrizeIndex(slotIndex);
       setWheelConfig({
+        ...wheelConfig,
         segments: wheelData.slots.map((slot: any) => ({
           label: slot.label,
           isWinning: slot.isWinning || data.play.result === 'WIN'
-        })),
-        prizeIndex: slotIndex
+        }))
       });
       setSpinResult(modifiedData);
 
@@ -260,67 +281,78 @@ const PlayWheelV2 = () => {
   // --- UI ---
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 animate-gradient-move">
-      {/* Animated background gradient */}
+      {/* Enhanced animated background gradient */}
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 blur-2xl opacity-80 animate-gradient-move" />
-      {/* Placeholder logo/brand */}
-      <div className="absolute top-8 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 text-3xl font-extrabold text-indigo-700 drop-shadow-lg select-none">
-        <Sparkles className="h-8 w-8 text-pink-400 animate-bounce" />
+      
+      {/* Improved header with animation */}
+      <div className="absolute top-8 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 drop-shadow-lg select-none">
+        <Sparkles className="h-8 w-8 text-pink-400 animate-pulse" />
         IZI Wheel
       </div>
-      {/* Confetti (Magic UI) */}
-      {showConfetti && (
-        <Confetti
-          options={{
-            particleCount: 160,
-            angle: 90,
-            spread: 120,
-            colors: CONFETTI_COLORS,
-            shapes: ["star", "circle", "square"],
-          }}
-          className="!fixed inset-0 z-[300] pointer-events-none"
-        />
-      )}
-      <div className="z-10 flex w-full max-w-6xl flex-col items-center justify-center gap-12 px-4 py-16 md:flex-row md:gap-20">
-        {/* Wheel Section */}
-        <div className="relative flex flex-col items-center justify-center">
-          {/* Spinning blur/glow behind the wheel */}
-          <div className="absolute z-0 h-[28rem] w-[28rem] rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow" style={{ animationDuration: '12s' }} />
-          <div className="relative rounded-full shadow-2xl overflow-visible">
-            {wheelData && wheelData.slots && wheelData.slots.length > 0 ? (
-              <Wheel3D
-                config={wheelConfig}
-                isSpinning={isSpinning}
-                prizeIndex={prizeIndex}
-                onSpin={handleWheelFinishedSpin}
-                showSpinButton={false}
-              />
-            ) : (
-              <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60 backdrop-blur-2xl">
-                <div className="p-8 text-center">
-                  <p className="text-xl font-bold text-gray-800">La roue n'est pas configurée</p>
-                  <p className="mt-2 text-gray-600">Aucune option n'est disponible pour cette roue.</p>
+
+      {/* Main content container with improved spacing */}
+      <div className="container z-10 px-4 py-20 md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* Wheel section with enhanced card */}
+          <div className="flex justify-center">
+            <div className="relative bg-white/20 rounded-3xl p-8 backdrop-blur-lg border border-white/40 shadow-xl">
+              {wheelData?.slots && wheelData.slots.length > 0 ? (
+                <Wheel3D
+                  config={wheelConfig}
+                  isSpinning={isSpinning}
+                  prizeIndex={prizeIndex}
+                  onSpin={handleWheelFinishedSpin}
+                  showSpinButton={false}
+                />
+              ) : (
+                <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60 backdrop-blur-2xl">
+                  <div className="p-8 text-center">
+                    <p className="text-xl font-bold text-gray-800">La roue n'est pas configurée</p>
+                    <p className="mt-2 text-gray-600">Aucune option n'est disponible pour cette roue.</p>
+                  </div>
                 </div>
+              )}
+              
+              {/* Add informational text under the wheel */}
+              <div className="mt-4 text-center">
+                <p className="text-indigo-700 font-medium px-4 py-2 bg-white/50 rounded-full inline-block">
+                  {isSpinning ? 
+                    "La roue tourne..." : 
+                    "Vous pouvez maintenant tourner la roue pour tenter de gagner un lot !"}
+                </p>
               </div>
-            )}
+            </div>
+          </div>
+          
+          {/* Form Section with enhanced styling */}
+          <div className="w-full max-w-md mx-auto rounded-3xl bg-white/70 shadow-2xl backdrop-blur-2xl p-10 flex flex-col gap-8 border border-indigo-100/60 glassmorphic-card">
+            <div className="text-center mb-2">
+              <h2 className="text-2xl font-bold text-indigo-700">Participez au jeu</h2>
+              <p className="text-gray-600 mt-2">Remplissez le formulaire pour faire tourner la roue et tenter de gagner</p>
+            </div>
+            
+            <PlayerForm
+              fields={formFields}
+              onSubmit={handleFormSubmit}
+              isSubmitting={isSpinningMutation || isSpinning}
+            />
           </div>
         </div>
-        {/* Form Section */}
-        <div className="w-full max-w-md rounded-3xl bg-white/70 shadow-2xl backdrop-blur-2xl p-10 flex flex-col gap-8 border border-indigo-100/60 glassmorphic-card">
-          <PlayerForm 
-            fields={formFields}
-            onSubmit={handleFormSubmit}
-            isSubmitting={isSpinningMutation || isSpinning}
-          />
-        </div>
       </div>
-      {/* Result Modal */}
+
+      {/* Enhanced confetti effect when showing results */}
+      {showConfetti && <Confetti options={{ colors: CONFETTI_COLORS }} />}
+
+      {/* Result Modal with improved styling */}
       <Dialog open={showResultModal} onOpenChange={(open) => { setShowResultModal(open); if (!open) setShowConfetti(false); }}>
         <DialogContent className="sm:max-w-md rounded-3xl bg-white/95 shadow-2xl backdrop-blur-2xl border border-indigo-100/60 animate-fade-in">
           <DialogHeader>
-            <DialogTitle className="text-center text-3xl font-extrabold">
-              {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😅 Pas de chance cette fois'}
+            <DialogTitle className="text-center text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">
+              {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😞 Pas de chance cette fois'}
             </DialogTitle>
           </DialogHeader>
+          
+          {/* Enhanced prize display */}
           <div className="py-6 text-center">
             {spinResult?.play.result === 'WIN' ? (
               <div className="space-y-6">
@@ -329,7 +361,9 @@ const PlayWheelV2 = () => {
                     {wheelConfig.segments[prizeIndex]?.label || spinResult.slot.label}
                   </span>
                 </p>
-                <div className="rounded-xl bg-indigo-50 p-5 shadow-inner">
+                
+                {/* Enhanced PIN code display */}
+                <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-5 shadow-inner">
                   <p className="mb-2 font-semibold">Votre code PIN:</p>
                   <p className="text-3xl font-extrabold tracking-widest text-indigo-600 animate-pulse">
                     {spinResult.play.prize?.pin || generateRandomPin()}
@@ -338,21 +372,25 @@ const PlayWheelV2 = () => {
                     Conservez ce code PIN pour récupérer votre lot
                   </p>
                 </div>
+                
+                {/* Enhanced QR code display */}
                 <div className="mx-auto max-w-xs">
-                  <p className="mb-2 font-semibold">Scannez le QR code pour récupérer votre lot:</p>
-                  <img
-                    src={spinResult.play.prize?.qrLink || 
-                         `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${window.location.origin}/redeem/${spinResult.play.id}`}
-                    alt="QR Code"
-                    className="mx-auto h-44 w-44 rounded-xl shadow-lg border border-indigo-100"
-                    onError={(e) => {
-                      // Fallback if QR code fails to load
-                      console.log('QR code image failed to load, using fallback');
-                      // Create a QR code with the current URL as the base, and the play ID
-                      const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/redeem/' + spinResult.play.id)}`;
-                      e.currentTarget.src = fallbackUrl;
-                    }}
-                  />
+                  <p className="mb-2 font-semibold">Scannez le QR code pour récupérer votre lot:</p> 
+                  <div className="p-2 bg-white rounded-2xl shadow-lg border-2 border-indigo-100 inline-block">
+                    <img
+                      src={spinResult.play.prize?.qrLink ||
+                          `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${window.location.origin}/redeem/${spinResult.play.id}`}
+                      alt="QR Code"
+                      className="h-44 w-44 rounded-xl"
+                      onError={(e) => {
+                        // Fallback if QR code fails to load
+                        console.log('QR code image failed to load, using fallback');
+                        // Create a QR code with the current URL as the base, and the play ID
+                        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/redeem/' + spinResult.play.id)}`;
+                        e.currentTarget.src = fallbackUrl;
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
@@ -362,6 +400,8 @@ const PlayWheelV2 = () => {
               </div>
             )}
           </div>
+          
+          {/* Enhanced buttons */}
           <div className="flex justify-center gap-4">
             <Button
               variant="outline"
@@ -401,7 +441,8 @@ const PlayWheelV2 = () => {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Footer with rules */}
+
+      {/* Enhanced footer with rules */}
       <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30">
         <div className="flex items-center gap-2">
           © {new Date().getFullYear()} IZI Wheel
@@ -413,13 +454,13 @@ const PlayWheelV2 = () => {
         >
           Règles du jeu
         </button>
-        {/* Add more footer links/info here if needed */}
       </footer>
-      {/* Rules Modal */}
+
+      {/* Enhanced rules modal */}
       <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
         <DialogContent className="max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60 animate-fade-in">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold">Règles du jeu</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4 text-gray-700 text-base">
             <ul className="list-disc pl-6 space-y-2">
@@ -439,7 +480,8 @@ const PlayWheelV2 = () => {
           </div>
         </DialogContent>
       </Dialog>
-      {/* Extra: animated gradient shimmer for button */}
+
+      {/* Enhanced animation styles */}
       <style>{`
         .animate-shimmer {
           background-size: 200% 100%;

@@ -51,8 +51,8 @@ const Dashboard = () => {
   // Monthly scan data for the bar chart
   const scanChartData = {
     labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
-    datasets: [
-      {
+        datasets: [
+          {
         data: [5000, 25000, 12000, 30000, 2000, 20000, 7000, 25000, 12000, 30000, 3000, 15000],
         backgroundColor: '#9333EA',
         borderRadius: 4,
@@ -126,29 +126,45 @@ const Dashboard = () => {
   return (
     <div className="h-full overflow-y-auto bg-[#f3f0f9] p-4 md:p-6">
       {/* Header with date filters */}
-      <div className="mb-6 flex justify-between">
+      <div className="mb-6 flex justify-between items-center">
         <h1 className="text-xl font-semibold">Tableau de bord</h1>
-        <div className="flex rounded-md border bg-white">
+        <div className="flex rounded-lg shadow-sm overflow-hidden border border-gray-200">
           <button 
-            className={`px-3 py-1 text-sm ${dateRange === '7' ? 'bg-purple-600 text-white' : 'text-gray-600'}`}
+            className={`px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out ${
+              dateRange === '7' 
+                ? 'bg-purple-600 text-white shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
             onClick={() => setDateRange('7')}
           >
             7 jours
           </button>
           <button 
-            className={`px-3 py-1 text-sm ${dateRange === '30' ? 'bg-purple-600 text-white' : 'text-gray-600'}`}
+            className={`px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out ${
+              dateRange === '30' 
+                ? 'bg-purple-600 text-white shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
             onClick={() => setDateRange('30')}
           >
             30 jours
           </button>
           <button 
-            className={`px-3 py-1 text-sm ${dateRange === '90' ? 'bg-purple-600 text-white' : 'text-gray-600'}`}
+            className={`px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out ${
+              dateRange === '90' 
+                ? 'bg-purple-600 text-white shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
             onClick={() => setDateRange('90')}
           >
             90 jours
           </button>
           <button 
-            className={`px-3 py-1 text-sm ${dateRange === 'all' ? 'bg-purple-600 text-white' : 'text-gray-600'}`}
+            className={`px-4 py-2 text-sm font-medium transition-all duration-200 ease-in-out ${
+              dateRange === 'all' 
+                ? 'bg-purple-600 text-white shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
             onClick={() => setDateRange('all')}
           >
             Toute la période
@@ -209,7 +225,7 @@ const Dashboard = () => {
               <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </div>
+        </div>
         </Card>
 
         {/* Productivity Card */}
@@ -220,13 +236,13 @@ const Dashboard = () => {
             <span className="mt-1 flex items-center text-xs font-medium text-green-600">
               <ArrowUpRight className="mr-1 h-3 w-3" />+4.08%
             </span>
-          </div>
+        </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
             <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
               <path d="M12 4V20" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M18 14L12 20L6 14" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-          </div>
+        </div>
         </Card>
       </div>
 
@@ -254,15 +270,15 @@ const Dashboard = () => {
                 <span className="ml-2 text-sm">100% gagnant</span>
               </div>
               <span className="font-medium">26.4%</span>
-            </div>
-            <div className="flex items-center justify-between">
+        </div>
+                  <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="h-3 w-3 rounded-full bg-[#111827]"></div>
                 <span className="ml-2 text-sm">iPhone</span>
               </div>
               <span className="font-medium">6%</span>
             </div>
-          </div>
+                    </div>
         </Card>
 
         {/* Entreprises section */}
@@ -276,8 +292,8 @@ const Dashboard = () => {
                 className="rounded-md border border-gray-300 pl-8 pr-3 py-1 text-sm"
               />
               <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            </div>
-          </div>
+                    </div>
+                  </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="text-left text-sm text-gray-500">
@@ -323,7 +339,7 @@ const Dashboard = () => {
             </table>
           </div>
         </Card>
-      </div>
+                </div>
 
       {/* Monthly scan chart section */}
       <div className="mt-6">
@@ -336,14 +352,14 @@ const Dashboard = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 text-center text-sm text-gray-500">
+      {/* <div className="mt-8 text-center text-sm text-gray-500">
         © 2025 izi TOUCH
         <div className="mt-2 flex justify-center space-x-4">
           <a href="#" className="hover:text-gray-700">À Propos</a>
           <a href="#" className="hover:text-gray-700">Support</a>
           <a href="#" className="hover:text-gray-700">Contact</a>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -7,6 +7,7 @@ interface AuthHook {
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
+  register: (email: string, password: string) => Promise<void>;
 }
 
 export const useAuth = (): AuthHook => {

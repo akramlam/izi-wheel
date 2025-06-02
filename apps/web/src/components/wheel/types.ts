@@ -1,4 +1,5 @@
 export interface WheelSegment {
+  id?: string;
   label: string;
   color: string;
   iconUrl?: string;

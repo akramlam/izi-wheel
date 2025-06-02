@@ -79,75 +79,185 @@ export const getCompanyUsers = async (req: Request, res: Response) => {
  *                 type: string
  *               isActive:
  *                 type: boolean
+ *               forceUpdate:
+ *                 type: boolean
+ *                 description: If true, will update an existing user's company ID even if they already belong to another company
  *     responses:
  *       201:
  *         description: User invited
+ *       200:
+ *         description: User updated with new company
  *       400:
  *         description: Invalid input
+ *       409:
+ *         description: Email already in use
  */
 export const inviteUser = async (req: Request, res: Response) => {
   try {
+    console.log('--- Starting inviteUser ---');
     const { companyId } = req.params;
-    const { email, role, name } = req.body;
+    const { email, role, name, isActive = true, forceUpdate = false } = req.body;
     const adminUser = req.user; // The current authenticated user
+    
+    console.log('Invite user request:', { 
+      companyId, 
+      email, 
+      role, 
+      name, 
+      isActive,
+      forceUpdate,
+      adminUser: adminUser ? { id: adminUser.id, email: adminUser.email } : null
+    });
+    
+    // Validate required fields
+    if (!email) {
+      console.log('Email validation failed - no email provided');
+      return res.status(400).json({ error: 'Email is required' });
+    }
     
     // Validate role
     if (role !== Role.SUB && role !== Role.ADMIN) {
+      console.log(`Role validation failed - invalid role: ${role}`);
       return res.status(400).json({ 
         error: 'Invalid role. Must be either SUB or ADMIN' 
       });
     }
     
-    // Check if email is already in use in this company
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email,
-        companyId
+    // Check if email is already in use
+    let existingUser;
+    try {
+      existingUser = await prisma.user.findFirst({
+        where: {
+          email
+        }
+      });
+      
+      if (existingUser) {
+        console.log(`Email already in use: ${email}`);
+        
+        // If the user exists but with a different company, update their company ID
+        if (forceUpdate || existingUser.companyId !== companyId) {
+          console.log(`Updating user ${email} to new company ID: ${companyId}`);
+          
+          const updatedUser = await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { 
+              companyId,
+              role, // Update role if provided
+              name: name || existingUser.name, // Update name if provided
+              isActive: true // Ensure user is active
+            }
+          });
+          
+          const { password, ...userWithoutPassword } = updatedUser;
+          
+          return res.status(200).json({
+            user: userWithoutPassword,
+            message: 'User updated with new company successfully.'
+          });
+        }
+        
+        return res.status(409).json({ error: 'Email already in use. Please use a different email address.' });
       }
-    });
-    
-    if (existingUser) {
-      return res.status(409).json({ error: 'Email already in use in this company' });
+    } catch (findError) {
+      console.error('Error checking for existing user:', findError);
+      return res.status(500).json({ error: 'Failed to check for existing users' });
     }
     
     // Check if company exists
-    const company = await prisma.company.findUnique({
-      where: { id: companyId }
-    });
-    
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
+    let company;
+    try {
+      company = await prisma.company.findUnique({
+        where: { id: companyId }
+      });
+      
+      if (!company) {
+        console.log(`Company not found with ID: ${companyId}`);
+        return res.status(404).json({ error: 'Company not found' });
+      }
+      
+      console.log(`Found company: ${company.name} (${company.id})`);
+    } catch (companyError) {
+      console.error('Error finding company:', companyError);
+      return res.status(500).json({ error: 'Failed to find company' });
     }
     
     // Generate a temporary password
-    const tempPassword = generateRandomPassword();
-    const hashedPassword = await hashPassword(tempPassword);
+    let tempPassword, hashedPassword;
+    try {
+      tempPassword = generateRandomPassword();
+      console.log(`Generated temporary password for ${email}`);
+      
+      hashedPassword = await hashPassword(tempPassword);
+      console.log('Password hashed successfully');
+    } catch (passwordError) {
+      console.error('Error generating/hashing password:', passwordError);
+      return res.status(500).json({ error: 'Failed to process password' });
+    }
     
-    // Create the user
-    const user = await prisma.user.create({
-      data: {
-        name: name || "",  // Use provided name or empty string
-        email,
-        password: hashedPassword,
-        role,
-        companyId,
-        isActive: true,
-        forcePasswordChange: true  // Force password change on first login
-      }
+    // Log the user we're about to create
+    console.log('Creating user with data:', { 
+      name: name || "", 
+      email, 
+      role, 
+      companyId, 
+      isActive 
     });
+    
+    let user;
+    try {
+      // Create user with simpler object to avoid any potential issues
+      user = await prisma.user.create({
+        data: {
+          name: name || "",
+          email: email,
+          password: hashedPassword,
+          role: role,
+          companyId: companyId,
+          isActive: true,
+          forcePasswordChange: true
+        }
+      });
+      
+      console.log('User created successfully:', user.id);
+    } catch (dbError) {
+      console.error('Database error creating user:', dbError);
+      // Log the full error details to see what's happening
+      console.error('Full error details:', JSON.stringify(dbError, null, 2));
+      return res.status(500).json({ error: 'Failed to create user in database' });
+    }
     
     // Get admin name from user object if available
     const adminName = adminUser?.name || adminUser?.email?.split('@')[0] || 'L\'administrateur';
     
-    // Send invite email with temporary password
-    await sendInviteEmail(email, tempPassword, company.name, adminName, name);
+    try {
+      // Send invite email with temporary password
+      await sendInviteEmail(email, tempPassword, company.name, adminName, name);
+      console.log('Invitation email sent or logged (test mode)');
+    } catch (emailError) {
+      // Just log the error but don't fail the request - user is already created
+      console.error('Failed to send invitation email:', emailError);
+    }
     
     // Return user without password
-    const { password, ...userWithoutPassword } = user;
-    res.status(201).json({ user: userWithoutPassword });
+    try {
+      const { password, ...userWithoutPassword } = user;
+      console.log('Returning successful response');
+      return res.status(201).json({ 
+        user: userWithoutPassword,
+        emailSent: true,
+        message: 'User created successfully.'
+      });
+    } catch (responseError) {
+      console.error('Error creating response:', responseError);
+      // User is created but we have a problem with the response
+      return res.status(201).json({ 
+        message: 'User created successfully, but response error occurred.'
+      });
+    }
   } catch (error) {
-    console.error('Invite user error:', error);
-    res.status(500).json({ error: 'Failed to invite user' });
+    console.error('Invite user error (outer catch):', error);
+    return res.status(500).json({ error: 'Failed to invite user' });
   }
 };
 

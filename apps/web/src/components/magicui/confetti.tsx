@@ -44,28 +44,51 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
     ...rest
   } = props;
   const instanceRef = useRef<ConfettiInstance | null>(null);
+  const isMounted = useRef(true);
+
+  // Cleanup function to reset the instance
+  const cleanupInstance = useCallback(() => {
+    try {
+      if (instanceRef.current) {
+        instanceRef.current.reset();
+        instanceRef.current = null;
+      }
+    } catch (err) {
+      console.error('Error cleaning up confetti instance:', err);
+    }
+  }, []);
+
+  // Effect to handle cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      cleanupInstance();
+    };
+  }, [cleanupInstance]);
 
   const canvasRef = useCallback(
     (node: HTMLCanvasElement) => {
       if (node !== null) {
         if (instanceRef.current) return;
-        instanceRef.current = confetti.create(node, {
-          ...globalOptions,
-          resize: true,
-        });
-      } else {
-        if (instanceRef.current) {
-          instanceRef.current.reset();
-          instanceRef.current = null;
+        try {
+          instanceRef.current = confetti.create(node, {
+            ...globalOptions,
+            resize: true,
+          });
+        } catch (error) {
+          console.error("Error creating confetti instance:", error);
         }
+      } else {
+        cleanupInstance();
       }
     },
-    [globalOptions],
+    [globalOptions, cleanupInstance],
   );
 
   const fire = useCallback(
     async (opts = {}) => {
       try {
+        if (!isMounted.current) return;
         await instanceRef.current?.({ ...options, ...opts });
       } catch (error) {
         console.error("Confetti error:", error);
@@ -87,7 +110,9 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
     if (!manualstart) {
       (async () => {
         try {
-          await fire();
+          if (isMounted.current) {
+            await fire();
+          }
         } catch (error) {
           console.error("Confetti effect error:", error);
         }

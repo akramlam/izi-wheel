@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { 
   getPublicWheel,
   spinWheel,
@@ -7,19 +7,13 @@ import {
   debugPlayId
 } from '../controllers/public.controller';
 
-const router = Router();
+const router: Router = Router();
 
-// Debug middleware for spin endpoint
-const debugRequestMiddleware = (req, res, next) => {
-  if (req.path.includes('/spin')) {
-    console.log('DEBUG - Spin request received:');
-    console.log('- URL:', req.originalUrl);
-    console.log('- Method:', req.method);
-    console.log('- Body:', JSON.stringify(req.body, null, 2));
-    console.log('- Headers:', JSON.stringify({
-      'content-type': req.headers['content-type'],
-      'content-length': req.headers['content-length'],
-    }, null, 2));
+// Middleware for debugging requests (optional)
+const debugRequestMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
   }
   next();
 };
@@ -28,6 +22,11 @@ const debugRequestMiddleware = (req, res, next) => {
 router.use(debugRequestMiddleware);
 router.get('/companies/:companyId/wheels/:wheelId', getPublicWheel);
 router.post('/companies/:companyId/wheels/:wheelId/spin', spinWheel);
+
+// Fallback route for direct wheel access without company ID
+router.get('/wheels/:wheelId', getPublicWheel);
+// Fallback route for spinning wheels without company ID
+router.post('/wheels/:wheelId/spin', spinWheel);
 
 // Prize redemption endpoints
 router.get('/plays/:playId', getPrizeDetails);

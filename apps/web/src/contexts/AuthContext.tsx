@@ -19,6 +19,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  register: (email: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -28,6 +29,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   login: async () => {},
   logout: () => {},
+  register: async () => {},
   refreshUser: async () => {},
   isAuthenticated: false,
 });
@@ -120,6 +122,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Store user in localStorage for reference
           localStorage.setItem('user', JSON.stringify(response.data.user));
           
+          // Store companyId separately if available
+          if (response.data.user.companyId) {
+            localStorage.setItem('companyId', response.data.user.companyId);
+          }
+          
           // If user has forcePasswordChange flag, redirect to change password page
           if (response.data.user.forcePasswordChange && window.location.pathname !== '/change-password') {
             debugLog('Force password change required, redirecting');
@@ -178,6 +185,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Store the token and user in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // Store companyId separately if available
+      if (user.companyId) {
+        localStorage.setItem('companyId', user.companyId);
+      }
+      
       setToken(token);
       setUser(user);
       
@@ -200,12 +213,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const register = async (email: string, password: string) => {
+    debugLog('Attempting registration', email);
+    
+    try {
+      const response = await apiClient.post('/auth/register', { email, password });
+      debugLog('Registration successful');
+      
+      // Store the token and user in localStorage
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setToken(response.data.token);
+      setUser(response.data.user);
+      
+      // Otherwise, redirect to dashboard
+      debugLog('Redirecting to dashboard');
+      navigate('/dashboard');
+    } catch (error) {
+      debugLog('Registration failed', error);
+      throw new Error('Something went wrong');
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         login,
         logout,
+        register,
         refreshUser,
         isAuthenticated: !!user,
       }}

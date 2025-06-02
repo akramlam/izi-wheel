@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
@@ -59,7 +59,7 @@ const swaggerOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 
 // Create Express app
-export const app = express();
+export const app: Express = express();
 const port = process.env.PORT || 3001;
 
 // Middleware
@@ -100,6 +100,10 @@ app.use('/companies', companyRoutes);
 app.use('/users', userRoutes);
 app.use('/plays', playRoutes);
 app.use('/public', publicRoutes);
+app.use('/wheels', wheelRoutes);
+
+// Add direct access to wheels without requiring public/ prefix
+app.use('/public/wheels', publicRoutes);
 
 // 404 Error handler
 app.use(notFoundHandler);

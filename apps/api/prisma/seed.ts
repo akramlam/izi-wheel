@@ -1,7 +1,11 @@
-import { PrismaClient, Role, WheelMode, Plan, PlayResult } from '@prisma/client';
+import { PrismaClient, Role, WheelMode, Plan } from '@prisma/client';
 import * as crypto from 'crypto';
 
-const prisma = new PrismaClient();
+console.log("SEED SCRIPT DATABASE_URL:", process.env.DATABASE_URL);
+
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error'],
+});
 
 // Simple password hashing function that doesn't require native modules
 function hashPassword(password: string): string {
@@ -80,14 +84,14 @@ async function main() {
 
   // Create 8 slots for the demo wheel
   const slotData = [
-    { label: 'Win $50 Gift Card', probability: 15, prizeCode: 'GC50' },
-    { label: 'Win $100 Gift Card', probability: 5, prizeCode: 'GC100' },
-    { label: 'Free Product Sample', probability: 20, prizeCode: 'SAMPLE' },
-    { label: '10% Discount Code', probability: 20, prizeCode: 'DISC10' },
-    { label: '15% Discount Code', probability: 15, prizeCode: 'DISC15' },
-    { label: '20% Discount Code', probability: 10, prizeCode: 'DISC20' },
-    { label: 'Free Shipping Code', probability: 10, prizeCode: 'SHIP' },
-    { label: 'Premium Membership', probability: 5, prizeCode: 'PREMIUM' },
+    { label: 'Win $50 Gift Card', probability: 15, prizeCode: 'GC50', isWinning: true },
+    { label: 'Win $100 Gift Card', probability: 5, prizeCode: 'GC100', isWinning: true },
+    { label: 'Free Product Sample', probability: 20, prizeCode: 'SAMPLE', isWinning: true },
+    { label: '10% Discount Code', probability: 20, prizeCode: 'DISC10', isWinning: true },
+    { label: '15% Discount Code', probability: 15, prizeCode: 'DISC15', isWinning: true },
+    { label: '20% Discount Code', probability: 10, prizeCode: 'DISC20', isWinning: true },
+    { label: 'Free Shipping Code', probability: 10, prizeCode: 'SHIP', isWinning: true },
+    { label: 'Premium Membership', probability: 5, prizeCode: 'PREMIUM', isWinning: true },
   ];
 
   for (const slot of slotData) {
@@ -101,6 +105,8 @@ async function main() {
         wheelId: demoWheel.id,
         label: slot.label,
         prizeCode: slot.prizeCode,
+        isWinning: slot.isWinning,
+        weight: slot.probability,
       },
     });
   }
@@ -110,9 +116,10 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Error in main:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
+    console.log('Disconnected Prisma Client.');
   }); 

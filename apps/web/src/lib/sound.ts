@@ -13,8 +13,48 @@ const SOUND_PATHS = {
 // Sound instances
 const sounds: Record<string, HTMLAudioElement | null> = {};
 
+// Tracking active sound timers for cleanup
+let activeTimers: number[] = [];
+
+// Cleanup function to stop all sounds and clear timers
+export function stopAllSounds(): void {
+  // Clear all active timers
+  activeTimers.forEach(timerId => window.clearInterval(timerId));
+  activeTimers = [];
+  
+  // Stop all sounds
+  Object.values(sounds).forEach(sound => {
+    if (sound) {
+      sound.pause();
+      sound.currentTime = 0;
+    }
+  });
+}
+
+// Function to clear all registered timers without stopping sounds
+export function clearAllTimers(): void {
+  console.log(`Clearing ${activeTimers.length} active timers`);
+  
+  // Clear all timeouts and intervals
+  activeTimers.forEach(timerId => {
+    try {
+      // Try to clear as both timeout and interval since we might not know which one it is
+      window.clearTimeout(timerId);
+      window.clearInterval(timerId);
+    } catch (e) {
+      console.error(`Error clearing timer ${timerId}:`, e);
+    }
+  });
+  
+  // Reset timer array
+  activeTimers = [];
+}
+
 // Initialize sounds
 export function initSounds(): void {
+  // Stop any existing sounds first
+  stopAllSounds();
+  
   Object.entries(SOUND_PATHS).forEach(([key, path]) => {
     try {
       const audio = new Audio(path);
@@ -59,6 +99,11 @@ export function playSound(name: keyof typeof SOUND_PATHS, volume = 1.0): void {
   }
 }
 
+// Register a timer for cleanup
+export function registerTimer(timerId: number): void {
+  activeTimers.push(timerId);
+}
+
 // Vibration API utility
 export function vibrate(pattern: number | number[]): void {
   if ('vibrate' in navigator) {
@@ -73,5 +118,8 @@ export function vibrate(pattern: number | number[]): void {
 export default {
   init: initSounds,
   play: playSound,
+  stop: stopAllSounds,
+  registerTimer,
   vibrate,
+  clearAllTimers,
 }; 

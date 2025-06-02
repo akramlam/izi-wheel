@@ -4,18 +4,21 @@ import { useAuth } from './hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
-import WheelManager from './pages/WheelManager';
+import Roues from './pages/Roues';
 import WheelEdit from './pages/WheelEdit';
 import Layout from './components/Layout';
-import SuperAdmin from './pages/SuperAdmin';
-import SubAdminManager from './pages/SubAdminManager';
-import Statistics from './pages/Statistics';
+import Entreprises from './pages/Entreprises';
+import SousAdministrateurs from './pages/SousAdministrateurs';
+// import Statistiques from './pages/Statistiques';
+// import Statistics from './pages/Statistics';
 import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
-import PlayWheelV2 from './pages/PlayWheelV2';
+import PlayWheel from './pages/PlayWheel';
 import RedeemPrize from './pages/RedeemPrize';
 import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
+import Register from './pages/Register';
+import Statistiques from './pages/Statistiques';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -79,9 +82,12 @@ function App() {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register-super" element={<RegisterSuper />} />
+      <Route path="/register" element={<Register />} />
       
       {/* Public wheel routes */}
-      <Route path="/play/:companyId/:wheelId" element={<PlayWheelV2 />} />
+      <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
+      {/* Direct wheel access without company ID */}
+      <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
       <Route path="/redeem/:playId" element={<RedeemPrize />} />
       
       <Route path="/change-password" element={
@@ -98,23 +104,28 @@ function App() {
       }>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="wheels" element={<WheelManager />} />
-        <Route path="wheels/:wheelId" element={<WheelEdit />} />
-        <Route path="statistics" element={<Statistics />} />
+        
+        {/* Wheel routes */}
+        <Route path="roues" element={<Roues />} />
+        <Route path="roues/create" element={<WheelEdit />} />
+        <Route path="roues/edit/:id" element={<WheelEdit />} />
+        <Route path="roues/:id" element={<WheelEdit />} />
+        
+        <Route path="statistiques" element={<Statistiques />} />
         <Route path="profile" element={<Profile />} />
         <Route path="account-settings" element={<AccountSettings />} />
         
         {/* Super admin only routes */}
-        <Route path="companies" element={
+        <Route path="entreprises" element={
           <ProtectedRoute allowedRoles={['SUPER']}>
-            <SuperAdmin />
+            <Entreprises />
           </ProtectedRoute>
         } />
         
         {/* Admin and Super admin routes */}
-        <Route path="sub-admins" element={
+        <Route path="sous-administrateurs" element={
           <ProtectedRoute allowedRoles={['SUPER', 'ADMIN']}>
-            <SubAdminManager />
+            <SousAdministrateurs />
           </ProtectedRoute>
         } />
       </Route>

@@ -25,6 +25,21 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   const [hasCompletedSpin, setHasCompletedSpin] = useState(false);
   const wheelRef = useRef<SVGSVGElement>(null);
   
+  // Create default segments if none provided or if single segment (fixes green wheel issue)
+  useEffect(() => {
+    if (!config.segments || config.segments.length <= 1) {
+      console.log('No segments or only one segment found - creating default segments');
+      props.config.segments = [
+        { label: 'Cadeau 1', color: '#FF6384', isWinning: true },
+        { label: 'Cadeau 2', color: '#36A2EB', isWinning: true },
+        { label: 'Cadeau 3', color: '#FFCE56', isWinning: true },
+        { label: 'Cadeau 4', color: '#4BC0C0', isWinning: true },
+        { label: 'Cadeau 5', color: '#9966FF', isWinning: true },
+        { label: 'Cadeau 6', color: '#FF9F40', isWinning: true }
+      ];
+    }
+  }, [config.segments, props.config.segments]);
+
   // Handle spin animation
   useEffect(() => {
     // Declare timers at the top level of the useEffect
@@ -226,11 +241,27 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   };
 
   // Render premium wheel with advanced SVG effects
-  const WHEEL_SIZE = 384;
+  const WHEEL_SIZE = 600; // Increased size for better visualization
   const CENTER = WHEEL_SIZE / 2;
-  const RADIUS = CENTER - 12;
-  const INNER_RADIUS = 48; // Size of center circle
-  const TEXT_RADIUS = (RADIUS + INNER_RADIUS) / 2 + 10; // Adjusted for better text positioning
+  const RADIUS = CENTER - 24;
+  const INNER_RADIUS = RADIUS * 0.4; // Inner radius for better segment distinction
+  const TEXT_RADIUS = (RADIUS + INNER_RADIUS) / 2 + 20; // Adjusted for better text positioning
+
+  // Calculate segment colors - ensure vibrant colors for better UX
+  const segmentColors = config.segments.map((segment, index) => {
+    return segment.color || [
+      '#FF6384', // Pink
+      '#36A2EB', // Blue
+      '#FFCE56', // Yellow
+      '#4BC0C0', // Teal
+      '#9966FF', // Purple
+      '#FF9F40', // Orange
+      '#7CFC00', // Lime
+      '#FF4500', // Red-Orange
+      '#1E90FF', // Dodger Blue
+      '#20B2AA'  // Light Sea Green
+    ][index % 10];
+  });
 
   // Determine which rotation value to use
   const displayRotation = spinning ? rotation : finalRotation;
@@ -294,13 +325,13 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center">
-      {/* Animated background glow */}
+      {/* Enhanced animated background glow */}
       <div 
         className="absolute z-0 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow opacity-70" 
         style={{ animationDuration: '16s' }} 
       />
       
-      {/* Pointer */}
+      {/* Enhanced pointer with animation */}
       <div className="relative z-20 flex justify-center" style={{ height: 64 }}>
         <div
           className={`transition-transform duration-500 ${pointerDropped ? 'translate-y-4' : ''}`}
@@ -330,7 +361,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
         </div>
       </div>
       
-      {/* Premium Wheel SVG */}
+      {/* Premium Wheel SVG with enhanced visual effects */}
       <svg 
         ref={wheelRef}
         width={WHEEL_SIZE} 
@@ -388,6 +419,43 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
             <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.2" />
             <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </linearGradient>
+          
+          {/* Shadow for all text elements for better readability */}
+          <filter id="textShadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000000" floodOpacity="0.9"/>
+          </filter>
+          
+          {/* Gradient for segment highlights */}
+          <linearGradient id="segmentHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#FFFFFF', stopOpacity: 0.5 }} />
+            <stop offset="100%" style={{ stopColor: '#FFFFFF', stopOpacity: 0 }} />
+          </linearGradient>
+          
+          {/* Enhanced center gradient */}
+          <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="70%" stopColor="#f0f0f0" />
+            <stop offset="100%" stopColor="#e0e0e0" />
+          </radialGradient>
+          
+          {/* Highlight effect for wheel */}
+          <linearGradient id="wheelHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#FFFFFF', stopOpacity: 0.4 }} />
+            <stop offset="100%" style={{ stopColor: '#FFFFFF', stopOpacity: 0 }} />
+          </linearGradient>
+          
+          {/* Brand gradient for IZI logo */}
+          <linearGradient id="izi-brand-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#a855f7" />
+            <stop offset="100%" stopColor="#7e22ce" />
+          </linearGradient>
+          
+          {/* Shadow for inner circle */}
+          <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+            <feOffset in="blur" dx="0" dy="1" result="offsetBlur" />
+            <feComposite in="SourceGraphic" in2="offsetBlur" operator="over" />
+          </filter>
         </defs>
         
         {/* Outer rim with metal effect */}
@@ -412,7 +480,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           filter="url(#innerShadow)"
         />
         
-        {/* Segments */}
+        {/* Enhanced segments with 3D effect */}
         {config.segments.map((segment, i) => {
           const segAngle = 360 / config.segments.length;
           const startAngle = i * segAngle;
@@ -445,7 +513,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           
           // Enhanced color handling for alternating segments with 3D effect
           const isAlternate = i % 2 === 0;
-          const baseColor = segment.color || '#7a45d1'; // Default if no color provided
+          const baseColor = segment.color || segmentColors[i]; // Use precomputed colors array
           
           // Create highlight/shadow effect for 3D appearance
           const highlight = isAlternate ? 0.15 : 0.05;
@@ -507,19 +575,36 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
                 style={{ mixBlendMode: 'overlay' }}
               />
               
-              {/* Position text with improved rotation for readability */}
+              {/* Add text background for better contrast */}
               <g transform={`translate(${textX},${textY}) rotate(${textRotation})`}>
+                {/* Text background/shadow for better visibility */}
+                <rect
+                  x="-60"
+                  y="-18"
+                  width="120"
+                  height="36"
+                  rx="6"
+                  ry="6"
+                  fill="rgba(0,0,0,0.7)"
+                  opacity="0.8"
+                  stroke="#FFFFFF"
+                  strokeWidth="1"
+                />
+                
                 <text
                   x="0"
                   y="0"
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="#FFFFFF"
-                  fontWeight="bold"
-                  fontSize={16}
+                  fontWeight="900" // Extra bold
+                  fontSize={24} // Increased font size
                   letterSpacing="0.5px"
                   filter="url(#textShadow)"
-                  style={{ userSelect: 'none' }}
+                  style={{ 
+                    userSelect: 'none',
+                    textShadow: '0px 1px 2px black, 0px -1px 2px black, 1px 0px 2px black, -1px 0px 2px black'
+                  }}
                 >
                   {segment.label}
                 </text>
@@ -541,45 +626,47 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
         })}
         
         {/* Center hub with enhanced metallic effect */}
-        <circle 
-          cx={CENTER} 
-          cy={CENTER} 
-          r={INNER_RADIUS + 5} 
-          fill="url(#metalRim)"
-          stroke="#666666"
-          strokeWidth="1"
-          filter="drop-shadow(0 2px 3px rgba(0,0,0,0.3))"
-        />
-        
-        <circle 
-          cx={CENTER} 
-          cy={CENTER} 
-          r={INNER_RADIUS} 
-          fill="#FFFFFF"
-          stroke="#AAAAAA"
-          strokeWidth="1"
-          filter="url(#innerShadow)"
-        />
-        
-        {/* IZI text in the center */}
-        {!config.centerLogo && (
-          <text
-            x={CENTER}
-            y={CENTER}
-            textAnchor="middle"
-            dominantBaseline="middle"
+        <g>
+          <circle 
+            cx={CENTER}
+            cy={CENTER}
+            r={INNER_RADIUS}
             fill="url(#izi-brand-gradient)"
-            fontWeight="bold"
-            fontSize={24}
-            letterSpacing="1px"
-            style={{
-              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
-              userSelect: 'none'
-            }}
-          >
-            IZI
-          </text>
-        )}
+            filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"
+            stroke="#FFFFFF"
+            strokeWidth="2"
+          />
+          
+          {/* Brand logo or text */}
+          {config.centerImage ? (
+            <image
+              x={CENTER - INNER_RADIUS * 0.7}
+              y={CENTER - INNER_RADIUS * 0.7}
+              width={INNER_RADIUS * 1.4}
+              height={INNER_RADIUS * 1.4}
+              href={config.centerImage}
+              style={{ pointerEvents: 'none' }}
+            />
+          ) : (
+            <text
+              x={CENTER}
+              y={CENTER}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#FFFFFF" // White text on purple background
+              fontWeight="bold"
+              fontSize={36} // Larger font size
+              letterSpacing="1px"
+              filter="url(#textShadow)"
+              style={{ 
+                userSelect: 'none', 
+                textShadow: '0 0 8px rgba(255,255,255,0.8)'
+              }}
+            >
+              IZI
+            </text>
+          )}
+        </g>
         
         {/* Logo in center if available with enhanced styling */}
         {config.centerLogo && (
@@ -619,7 +706,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
         />
       </svg>
       
-      {/* Spin button */}
+      {/* Enhanced spin button */}
       {showSpinButton && (
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -637,7 +724,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           aria-disabled={isSpinning}
           aria-label="Spin the wheel"
         >
-          {isSpinning ? 'Spinning...' : 'Tourner la roue'}
+          {isSpinning ? 'Spinning...' : 'Tourner la roue !'}
         </motion.button>
       )}
     </div>

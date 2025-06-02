@@ -11,16 +11,16 @@ datasource db {
 }
 
 model Company {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  plan      Plan     @default(BASIC)
-  maxWheels Int      @default(5)
+  id        String    @id @default(uuid())
+  name      String    @unique
+  plan      Plan      @default(BASIC)
+  maxWheels Int       @default(5)
   wheels    Wheel[]
   admins    User[]
-  plays     Play[]   // Track plays by company
+  plays     Play[] // Track plays by company
   isActive  Boolean   @default(true)
   deletedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model User {
@@ -39,18 +39,24 @@ model User {
 }
 
 model Wheel {
-  id         String    @id @default(uuid())
-  companyId  String
-  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name       String
-  mode       WheelMode @default(RANDOM_WIN)
-  formSchema Json?     // Schema for the lead capture form
-  isActive   Boolean   @default(true)
-  qrCodeLink String?   // QR code for sharing the wheel
-  slots      Slot[]
-  plays      Play[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id            String         @id @default(uuid())
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name          String
+  mode          WheelMode      @default(RANDOM_WIN)
+  formSchema    Json? // Schema for the lead capture form
+  isActive      Boolean        @default(true)
+  qrCodeLink    String? // QR code for sharing the wheel
+  // New fields for social media redirection
+  socialNetwork SocialNetwork? // Selected social network for redirection
+  redirectUrl   String? // Redirect URL for the selected social network
+  redirectText  String? // Text to show in the redirection popup
+  // New fields for play limits
+  playLimit     PlayLimit      @default(ONCE_PER_DAY) // How often users can play
+  slots         Slot[]
+  plays         Play[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Slot {
@@ -60,7 +66,7 @@ model Slot {
   label       String
   prizeCode   String?
   description String?
-  color       String?  // Hexadecimal color code
+  color       String? // Hexadecimal color code
   weight      Int      @default(1) // Probability weight
   isWinning   Boolean  @default(false)
   position    Int      @default(0) // Display order
@@ -78,10 +84,10 @@ model Play {
   company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   slotId           String
   slot             Slot             @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  leadInfo         Json?            // Store lead data (name, email, phone, etc.)
+  leadInfo         Json? // Store lead data (name, email, phone, etc.)
   result           PlayResult
-  pin              String?          // PIN code for redemption
-  qrLink           String?          // QR code URL for redemption
+  pin              String? // PIN code for redemption
+  qrLink           String? // QR code URL for redemption
   redemptionStatus RedemptionStatus @default(PENDING)
   redeemedAt       DateTime?
   ip               String?
@@ -112,4 +118,26 @@ enum RedemptionStatus {
 enum Plan {
   BASIC
   PREMIUM
-} 
+}
+
+// New enum for social network options
+enum SocialNetwork {
+  GOOGLE
+  INSTAGRAM
+  TIKTOK
+  SNAPCHAT
+  UBER_EATS
+  TRIPADVISOR
+  TRUSTPILOT
+  DELIVEROO
+  PLANITY
+  FACEBOOK
+  OTHER
+}
+
+// New enum for play limit options
+enum PlayLimit {
+  UNLIMITED
+  ONCE_PER_DAY
+  ONCE_PER_MONTH
+}

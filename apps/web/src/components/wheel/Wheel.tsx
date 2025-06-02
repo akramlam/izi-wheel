@@ -11,9 +11,14 @@ interface WheelProps {
 }
 
 // Constants for wheel dimensions
-const WHEEL_SIZE = 384;
+const WHEEL_SIZE = 500;
 const CENTER = WHEEL_SIZE / 2;
-const RADIUS = CENTER - 24;
+const RADIUS = CENTER - 30;
+const TEXT_DISTANCE = RADIUS * 0.75;
+const NEW_FONT_SIZE = 22;
+const TEXT_RECT_MIN_WIDTH = NEW_FONT_SIZE * 2.5;
+const TEXT_RECT_MAX_WIDTH = 120;
+const TEXT_RECT_HEIGHT = NEW_FONT_SIZE + 12;
 
 // Default brand colors
 const DEFAULT_COLORS = {
@@ -22,7 +27,8 @@ const DEFAULT_COLORS = {
   border: '#ffffff',
   background: 'rgba(255, 255, 255, 0.1)',
   pointer: '#ffffff',
-  pointerBorder: '#a25afd'
+  pointerBorder: '#a25afd',
+  textColor: '#ffffff'  // Default text color
 };
 
 // Helper functions for SVG path calculations
@@ -46,6 +52,15 @@ function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
   };
 }
 
+// Calculate position for segment text
+function getTextPosition(cx: number, cy: number, radius: number, angle: number) {
+  const rad = (angle - 90) * Math.PI / 180.0;
+  return {
+    x: cx + radius * Math.cos(rad),
+    y: cy + radius * Math.sin(rad),
+  };
+}
+
 // Main Wheel component
 const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false }) => {
   // State for animation and interaction
@@ -58,8 +73,17 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   const pointerRef = useRef<HTMLDivElement>(null);
   const segmentRefs = useRef<(SVGPathElement | null)[]>([]);
   
+  // Add default segments if segments are empty or invalid
+  const segments = (!config.segments || config.segments.length === 0) 
+    ? [
+        { label: 'Prix 1', color: '#FF6384', isWinning: true },
+        { label: 'Prix 2', color: '#36A2EB', isWinning: false },
+        { label: 'Prix 3', color: '#FFCE56', isWinning: false }
+      ] 
+    : config.segments;
+    
   // Calculate segment angle and prepare refs array
-  const segAngle = 360 / config.segments.length;
+  const segAngle = 360 / segments.length;
   let startAngle = 0;
   
   // Initialize sound system
@@ -70,6 +94,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   // Handle spin animation with physics-based easing
   useEffect(() => {
     if (isSpinning && !spinning) {
+      // Stop any previous sounds and timers first
+      soundUtils.stop();
+      
       // Set spinning state to prevent multiple animations
       setSpinning(true);
       setPointerDropped(false);
@@ -111,8 +138,18 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
             tickInterval = window.setInterval(() => {
               soundUtils.play('tick', 0.3);
             }, tickDelay);
+            
+            // Register the timer for cleanup
+            if (tickInterval) {
+              soundUtils.registerTimer(tickInterval);
+            }
           }
         }, tickDelay);
+        
+        // Register the timer for cleanup
+        if (tickInterval) {
+          soundUtils.registerTimer(tickInterval);
+        }
       }
       
       // Trigger haptic feedback if enabled and supported
@@ -121,15 +158,16 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       }
       
       // Drop pointer at the end of spin animation
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         // Clear tick interval
         if (tickInterval) clearInterval(tickInterval);
         
         // Drop pointer
         setPointerDropped(true);
         
-        // Play win/lose sound
-        if (config.segments[prizeIndex]?.isWinning) {
+        // Play win/lose sound - Handle case where segments might be empty
+        const winningSegment = segments.length > prizeIndex ? segments[prizeIndex] : null;
+        if (winningSegment?.isWinning) {
           soundUtils.play('win', 0.8);
         } else {
           soundUtils.play('lose', 0.5);
@@ -141,18 +179,45 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         }
         
         // Reset spinning state
-        setTimeout(() => {
+        const resetTimeout = setTimeout(() => {
           setSpinning(false);
         }, 500);
+        
+        // Register the timeout for cleanup
+        soundUtils.registerTimer(resetTimeout as any);
       }, duration * 1000);
+      
+      // Register the timeout for cleanup
+      soundUtils.registerTimer(timeoutId as any);
     }
     
     // Reset pointer if not spinning
     if (!isSpinning) {
       setPointerDropped(false);
     }
+    
+    // Cleanup function
+    return () => {
+      // Stop all sounds when component unmounts or when isSpinning changes
+      soundUtils.stop();
+    };
   }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning, 
-      config.hapticFeedback, config.segments, config.sounds]);
+      config.hapticFeedback, segments, config.sounds]);
+  
+  // Additional cleanup effect to ensure all resources are freed when component unmounts
+  useEffect(() => {
+    // Initialize sound system on component mount
+    soundUtils.init();
+    
+    // Complete cleanup on unmount
+    return () => {
+      console.log('Wheel component unmounting - performing cleanup');
+      soundUtils.stop(); // Stop all sounds
+      soundUtils.clearAllTimers(); // Clear all registered timers
+      setSpinning(false); // Reset spinning state
+      setPointerDropped(false); // Reset pointer state
+    };
+  }, []);
   
   // Handle spin button click
   const handleSpinClick = () => {
@@ -166,7 +231,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   const colors = { ...DEFAULT_COLORS, ...config.colors };
   
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center">
+    <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center">
       {/* Animated background glow */}
       <div className="absolute z-0 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow opacity-70" 
         style={{ animationDuration: '16s' }} />
@@ -236,7 +301,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           
           {/* Text shadow for better contrast */}
           <filter id="textShadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.5" />
+            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.75" />
           </filter>
         </defs>
         
@@ -262,67 +327,71 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           pointerEvents="none"
         />
         
-        {/* Segments */}
-        {config.segments.map((seg, i) => {
-          const endAngle = startAngle + segAngle;
-          const path = getArcPath(CENTER, CENTER, RADIUS, startAngle, endAngle);
+        {/* Render all segments */}
+        {segments.map((segment, index) => {
+          const angle = segAngle;
+          const endAngle = startAngle + angle;
+          const arcPath = getArcPath(CENTER, CENTER, RADIUS, startAngle, endAngle);
           
-          // Calculate position for labels and icons
-          const labelAngle = startAngle + segAngle / 2;
-          const labelDistance = RADIUS - 60;
-          const labelPos = polarToCartesian(CENTER, CENTER, labelDistance, labelAngle);
+          const midAngle = startAngle + angle / 2;
+          const textPos = getTextPosition(CENTER, CENTER, TEXT_DISTANCE, midAngle);
           
-          // Create segment element
-          const segEl = (
-            <g key={i} className="segment-group">
-              <path 
-                ref={el => segmentRefs.current[i] = el}
-                d={path} 
-                fill={seg.color || `hsl(${(i * 137.5) % 360}, 75%, 65%)`} 
-                stroke={colors.border} 
-                strokeWidth={2}
-                className="segment"
-                data-segment-index={i}
-                data-segment-label={seg.label}
-                filter="drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))"
-              />
-              
-              {/* Icon */}
-              {seg.iconUrl && (
-                <image 
-                  href={seg.iconUrl} 
-                  x={labelPos.x - 18} 
-                  y={labelPos.y - (seg.label ? 24 : 12)} 
-                  width={36} 
-                  height={36} 
-                  filter="drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15))"
-                />
-              )}
-              
-              {/* Label */}
-              <text
-                x={labelPos.x}
-                y={labelPos.y + (seg.iconUrl ? 28 : 0)}
-                fontSize={18}
-                fontWeight="bold"
-                fill="#fff"
-                textAnchor="middle"
-                alignmentBaseline="middle"
-                filter="url(#textShadow)"
-                style={{ 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.05em',
-                  userSelect: 'none'
-                }}
-              >
-                {seg.label}
-              </text>
-            </g>
+          const thisAngle = startAngle;
+          startAngle = endAngle;
+          
+          const segmentColor = segment.color || 
+            (segment.isWinning ? '#28a745' : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'][index % 4]);
+          
+          let textRotation = midAngle + 90;
+          if (midAngle > 90 && midAngle < 270) { 
+            textRotation += 180;
+          }
+
+          const labelText = segment.label || `Prix ${index + 1}`;
+          // Estimate text width: (num_chars * font_size * avg_char_width_ratio) + padding
+          const estimatedTextRenderWidth = labelText.length * NEW_FONT_SIZE * 0.55; // 0.55 is an empirical avg width factor
+          const currentTextRectWidth = Math.min(
+            TEXT_RECT_MAX_WIDTH,
+            Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextRenderWidth + 20) // Add 10px padding each side
           );
           
-          // Increment angle for next segment
-          startAngle = endAngle;
-          return segEl;
+          return (
+            <g key={index}>
+              <path
+                ref={el => segmentRefs.current[index] = el}
+                d={arcPath}
+                fill={segmentColor}
+                stroke={colors.border}
+                strokeWidth={2}
+              />
+              
+              <g transform={`translate(${textPos.x}, ${textPos.y}) rotate(${textRotation})`}>
+                <rect 
+                  x={-currentTextRectWidth / 2} // Use dynamic width
+                  y={-TEXT_RECT_HEIGHT / 2}
+                  width={currentTextRectWidth} // Use dynamic width
+                  height={TEXT_RECT_HEIGHT}
+                  fill="rgba(0,0,0,0.7)" 
+                  rx="5"
+                  stroke="rgba(255,255,255,0.7)"
+                  strokeWidth="1"
+                />
+                <text
+                  x="0"
+                  y="0"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={colors.textColor}
+                  fontSize={NEW_FONT_SIZE}
+                  fontWeight="900"
+                  filter="url(#textShadow)"
+                  className="select-none"
+                >
+                  {labelText}
+                </text>
+              </g>
+            </g>
+          );
         })}
         
         {/* Center logo or brand */}
@@ -349,7 +418,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           <text 
             x={CENTER} 
             y={CENTER} 
-            fontSize={22} 
+            fontSize={28}
             fontWeight="bold" 
             fill={colors.primaryGradient} 
             textAnchor="middle" 

@@ -106,15 +106,17 @@ async function createTestAccounts() {
         slots: {
           create: [
             {
-              label: 'Prize 1',
-              probability: 50,
-              prizeCode: 'PRIZE1'
+              label: 'Lot 1',
+              weight: 50,
+              prizeCode: 'P1_W1',
+              color: '#FF6384',
             },
             {
-              label: 'Prize 2',
-              probability: 50,
-              prizeCode: 'PRIZE2'
-            }
+              label: 'Lot 2',
+              weight: 50,
+              prizeCode: 'P1_W2',
+              color: '#36A2EB',
+            },
           ]
         }
       }
@@ -131,15 +133,17 @@ async function createTestAccounts() {
         slots: {
           create: [
             {
-              label: 'Prize A',
-              probability: 50,
-              prizeCode: 'PRIZEA'
+              label: 'Prix A',
+              weight: 50,
+              prizeCode: 'P2_WA',
+              color: '#FFCE56',
             },
             {
-              label: 'Prize B',
-              probability: 50,
-              prizeCode: 'PRIZEB'
-            }
+              label: 'Prix B',
+              weight: 50,
+              prizeCode: 'P2_WB',
+              color: '#4BC0C0',
+            },
           ]
         }
       }

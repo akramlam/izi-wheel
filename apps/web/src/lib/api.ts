@@ -202,13 +202,43 @@ export const api = {
   },
   
   createUser: async (data: any) => {
-    if (!data.companyId) return { data: null };
-    return apiClient.post(`/companies/${data.companyId}/users`, {
-      name: data.name,
-      email: data.email,
-      isActive: data.isActive,
-      role: data.role,
-    });
+    if (!data.companyId) {
+      console.error('Cannot create user: Missing companyId');
+      return Promise.reject(new Error('Missing companyId'));
+    }
+    
+    try {
+      // Ensure all required fields are present for the inviteUser endpoint
+      const payload = {
+        name: data.name || '',  // Name is optional but should be included
+        email: data.email,      // Email is required
+        role: data.role || 'SUB', // Role is required and must be ADMIN or SUB
+        isActive: data.isActive !== undefined ? data.isActive : true
+      };
+      
+      console.log(`Creating user for company ${data.companyId}:`, payload);
+      
+      // This endpoint actually calls the inviteUser controller function
+      const response = await apiClient.post(`/companies/${data.companyId}/users`, payload);
+      
+      // Log success response
+      console.log(`User created successfully for ${data.email}:`, response.data);
+      
+      return response;
+    } catch (error: any) {
+      console.error('Error in createUser API function:', error);
+      
+      // Add more context to the error
+      if (error.response && error.response.data) {
+        console.error('Server response:', error.response.data);
+        
+        // Enhance error message with server details if available
+        const serverError = error.response.data.error || 'Unknown server error';
+        error.message = `API Error: ${serverError}`;
+      }
+      
+      return Promise.reject(error);
+    }
   },
   
   updateUser: async (userId: string, data: any) => {
@@ -252,7 +282,83 @@ export const api = {
   
   // Public wheel endpoints
   getPublicWheel: async (companyId: string, wheelId: string) => {
-    return apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
+    try {
+      // Add logging for debugging
+      console.log(`getPublicWheel called with companyId: ${companyId}, wheelId: ${wheelId}`);
+      
+      // Validate the inputs
+      if (!wheelId) {
+        console.error('No wheelId provided to getPublicWheel');
+        throw new Error('Wheel ID is required');
+      }
+
+      // Validate the companyId - if it's "company" or a non-UUID, use a fallback
+      const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
+      
+      if (!isValidUuid) {
+        // If the companyId is invalid, try to get a valid company ID
+        console.warn(`Invalid companyId format: "${companyId}". Attempting to get a valid company ID.`);
+        
+        try {
+          // Try to get a valid company ID from localStorage or the API
+          const validCompanyId = await getValidCompanyId();
+          
+          if (validCompanyId) {
+            console.log(`Using valid companyId: ${validCompanyId}`);
+            
+            try {
+              const response = await apiClient.get(`/public/companies/${validCompanyId}/wheels/${wheelId}`);
+              console.log('Response received using valid companyId:', response.status);
+              
+              if (!response.data || !response.data.wheel) {
+                console.error('No wheel data in response using valid companyId:', response);
+                throw new Error('No wheel data returned from API');
+              }
+              
+              return response;
+            } catch (companyError) {
+              console.error('Error using valid companyId:', companyError);
+              // Fall through to the fallback approach
+            }
+          }
+        } catch (e) {
+          console.error('Error getting valid companyId:', e);
+        }
+        
+        // If we still don't have a valid company ID, just use the wheelId directly as a fallback
+        console.warn('Using fallback route - requesting wheel directly by ID');
+        
+        try {
+          const response = await apiClient.get(`/public/wheels/${wheelId}`);
+          console.log('Response received using fallback route:', response.status);
+          
+          if (!response.data || !response.data.wheel) {
+            console.error('No wheel data in response using fallback route:', response);
+            throw new Error('No wheel data returned from API');
+          }
+          
+          return response;
+        } catch (fallbackError) {
+          console.error('Error using fallback route:', fallbackError);
+          throw fallbackError;
+        }
+      }
+      
+      // If the companyId is valid, use the standard endpoint
+      console.log(`Making standard request to /public/companies/${companyId}/wheels/${wheelId}`);
+      const response = await apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
+      
+      if (!response.data || !response.data.wheel) {
+        console.error('No wheel data in response from standard endpoint:', response);
+        throw new Error('No wheel data returned from API');
+      }
+      
+      console.log(`Successfully retrieved wheel data with ${response.data.wheel.slots?.length || 0} slots`);
+      return response;
+    } catch (error) {
+      console.error('Error in getPublicWheel:', error);
+      throw error;
+    }
   },
   
   spinWheel: async (companyId: string, wheelId: string, data: { lead: Record<string, string> }) => {
@@ -262,25 +368,74 @@ export const api = {
       throw new Error('Invalid lead data for wheel spin');
     }
     
+    // Check if companyId is "company" (special case from URL)
+    if (companyId === 'company') {
+      console.warn('Using special "company" ID. Trying to get valid company ID from localStorage...');
+      
+      try {
+        // Try to get a valid company ID from localStorage
+        const storedCompanyId = localStorage.getItem('companyId');
+        
+        if (storedCompanyId && storedCompanyId !== 'null') {
+          console.log(`Using company ID from localStorage: ${storedCompanyId}`);
+          companyId = storedCompanyId;
+        } else {
+          // If no valid company ID in localStorage, use direct wheel endpoint
+          console.warn('No valid company ID found in localStorage. Using direct wheel endpoint.');
+          return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
+        }
+      } catch (e) {
+        console.error('Error handling company ID:', e);
+        // Fallback to direct wheel endpoint
+        return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
+      }
+    }
+    
     // Log the request being made
     console.log('Sending wheel spin request:', {
       url: `/public/companies/${companyId}/wheels/${wheelId}/spin`,
       data: data
     });
     
-    const response = await apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
+    // Check if companyId is valid UUID (if not 'company' which we handled above)
+    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
     
-    // Add a cache-busting parameter to QR code URL if it exists
-    if (response.data?.play?.prize?.qrLink) {
-      const qrLink = response.data.play.prize.qrLink;
-      // Add a cache-busting parameter
-      const cacheBuster = `?t=${Date.now()}`;
-      response.data.play.prize.qrLink = qrLink.includes('?') 
-        ? `${qrLink}&t=${Date.now()}` 
-        : `${qrLink}${cacheBuster}`;
+    if (!isValidUuid) {
+      // If companyId is invalid, use the direct wheel endpoint
+      console.warn(`Invalid companyId: "${companyId}". Using direct wheel endpoint.`);
+      return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
     }
     
-    return response;
+    try {
+      const response = await apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
+      
+      // Add a cache-busting parameter to QR code URL if it exists
+      if (response.data?.play?.prize?.qrLink) {
+        const qrLink = response.data.play.prize.qrLink;
+        
+        // Ensure the URL is absolute
+        let fullQrLink = qrLink;
+        if (!qrLink.startsWith('http://') && !qrLink.startsWith('https://')) {
+          const baseUrl = API_URL;
+          fullQrLink = `${baseUrl}${qrLink.startsWith('/') ? '' : '/'}${qrLink}`;
+        }
+        
+        // Add a cache-busting parameter
+        const cacheBuster = `t=${Date.now()}`;
+        response.data.play.prize.qrLink = fullQrLink.includes('?') 
+          ? `${fullQrLink}&${cacheBuster}` 
+          : `${fullQrLink}${cacheBuster}`;
+        
+        console.log('Processed QR link:', response.data.play.prize.qrLink);
+      } else if (response.data?.play?.result === 'WIN') {
+        console.warn('Winning result but no QR link provided in response');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error in spinWheel:', error);
+      throw error;
+    }
   },
   
   getPrizeDetails: async (playId: string) => {
@@ -350,5 +505,11 @@ export const api = {
       console.error('Error redeeming prize:', error);
       throw error;
     }
+  },
+  
+  // Add a new function to fix wheels
+  fixWheel: async (wheelId: string) => {
+    const response = await apiClient.post(`/wheels/${wheelId}/fix`);
+    return response;
   },
 }; 
