@@ -721,7 +721,7 @@ const PlayWheel = () => {
     // If we have a PIN but no QR link, create a fallback QR code
     if (prize.pin) {
       // Use Google Charts API for QR code generation
-      const text = `${window.location.origin}/redeem/${spinResult.play.id}`;
+      const text = `https://roue.izikado.fr/redeem/${spinResult.play.id}`;
       return `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(text)}&choe=UTF-8`;
     }
     

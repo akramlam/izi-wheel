@@ -359,7 +359,7 @@ export const createWheel = async (req: Request, res: Response) => {
 
     // Generate QR code for the wheel
     try {
-      const wheelUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/play/${companyId}/${wheel.id}`;
+      const wheelUrl = `https://roue.izikado.fr/play/${companyId}/${wheel.id}`;
       const qrCodePath = await generateQRCode(wheelUrl);
       
       // Update wheel with QR code link

@@ -352,7 +352,7 @@ export const spinWheel = async (req: Request, res: Response) => {
     if (isWin) {
       pin = generatePIN();
       // Use the playId format instead of wheelId_pin for redemption
-      const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+      const baseUrl = 'https://roue.izikado.fr';
       
       try {
         // We'll create a temporary placeholder for the playId that will be replaced after creation

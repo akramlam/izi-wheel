@@ -76,7 +76,30 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, all
   return children;
 };
 
+// Function to detect if we're on the public wheel domain
+const isPublicWheelDomain = () => {
+  return window.location.hostname === 'roue.izikado.fr';
+};
+
 function App() {
+  // If we're on roue.izikado.fr domain, only show the public wheel routes
+  if (isPublicWheelDomain()) {
+    return (
+      <Routes>
+        {/* Public wheel routes */}
+        <Route path="/" element={<Navigate to="/play" replace />} />
+        <Route path="/play" element={<PlayWheel />} />
+        <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
+        <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
+        <Route path="/redeem/:playId" element={<RedeemPrize />} />
+        
+        {/* Not found route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+  
+  // Regular routes for dashboard.izikado.fr
   return (
     <Routes>
       {/* Public routes */}

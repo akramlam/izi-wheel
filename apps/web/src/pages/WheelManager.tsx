@@ -292,8 +292,7 @@ const WheelManager = () => {
   };
 
   const getPublicWheelUrl = (wheelId: string) => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/play/${companyId}/${wheelId}`;
+    return `https://roue.izikado.fr/play/${companyId}/${wheelId}`;
   };
   
   const copyPublicUrl = (wheelId: string) => {
