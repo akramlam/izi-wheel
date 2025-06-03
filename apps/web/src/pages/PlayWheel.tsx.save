@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+
+
+
+
+ccc
+ nano vite.config.tsimport { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -711,7 +716,7 @@ const PlayWheel = () => {
       }
       
       // Otherwise, it's a relative URL - append to API base URL
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const qrUrl = new URL(prize.qrLink, apiBaseUrl).toString();
       const cacheBuster = `t=${Date.now()}`;
       const separator = qrUrl.includes('?') ? '&' : '?';
