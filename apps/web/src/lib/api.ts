@@ -338,6 +338,41 @@ export const api = {
         } catch (e) {
           console.error('Error getting valid companyId:', e);
         }
+        
+        // If we still don't have a valid company ID, just use the wheelId directly as a fallback
+        console.warn('Using fallback route - requesting wheel directly by ID');
+        
+        try {
+          const response = await apiClient.get(`/public/wheels/${wheelId}`);
+          console.log('Response received using fallback route:', response.status);
+          
+          if (!response.data || !response.data.wheel) {
+            console.error('No wheel data in response using fallback route:', response);
+            throw new Error('No wheel data returned from API');
+          }
+          
+          return response;
+        } catch (fallbackError) {
+          console.error('Error using fallback route:', fallbackError);
+          
+          // Try the original request anyway as a last resort
+          console.log(`Proceeding with original companyId as last resort: "${companyId}"`);
+          
+          try {
+            const response = await apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
+            console.log('Response received using original companyId:', response.status);
+            
+            if (!response.data || !response.data.wheel) {
+              console.error('No wheel data in response using original companyId:', response);
+              throw new Error('No wheel data returned from API');
+            }
+            
+            return response;
+          } catch (originalError) {
+            console.error('Error using original companyId:', originalError);
+            throw originalError;
+          }
+        }
       }
       
       // If the companyId is valid, use the standard endpoint

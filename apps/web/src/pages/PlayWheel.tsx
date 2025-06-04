@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, apiClient } from '../lib/api';
 import { 
   Dialog, 
   DialogContent, 
@@ -267,6 +267,18 @@ const SocialRedirectDialog = ({
 const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
+  
+  // Add debug logging for route parameters
+  useEffect(() => {
+    console.log('PlayWheel mounted with params:', { companyId, wheelId });
+    console.log('Current URL:', window.location.href);
+    console.log('Route match debug:', { 
+      isCompany: companyId === 'company',
+      companyIdType: typeof companyId,
+      wheelIdType: typeof wheelId
+    });
+  }, [companyId, wheelId]);
+  
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeIndex, setPrizeIndex] = useState(0);
@@ -308,16 +320,16 @@ const PlayWheel = () => {
         
         // Special handling for "company" in the URL path
         if (companyId === 'company') {
-          console.log('Detected "company" in URL path, using direct wheel access');
+          console.log('Detected "company" in URL path, using special company route');
           try {
-            // Try to fetch the wheel directly without company ID
-            const directResponse = await api.getPublicWheel('', wheelId || '');
+            // Use the special company route
+            const directResponse = await apiClient.get(`/public/company/${wheelId}`);
             if (directResponse.data && directResponse.data.wheel) {
-              console.log('Successfully fetched wheel data via direct access');
+              console.log('Successfully fetched wheel data via company route');
               return directResponse.data.wheel;
             }
           } catch (directError) {
-            console.error('Error fetching wheel via direct access:', directError);
+            console.error('Error fetching wheel via company route:', directError);
             // Continue to standard flow
           }
         }
