@@ -345,7 +345,7 @@ const Roues: React.FC = () => {
 
   const handleCopyLink = (id: string) => {
     // Create the link to the wheel
-    const wheelLink = `${window.location.origin}/play/company/${id}`
+    const wheelLink = `https://roue.izikado.fr/play/company/${id}`
     
     navigator.clipboard.writeText(wheelLink)
       .then(() => {
@@ -579,12 +579,12 @@ const Roues: React.FC = () => {
                             onClick={() => handleCopyLink(roue.id)}
                           />
                         </div>
-                        <span 
+                        {/* <span 
                           className="text-purple-600 hover:underline cursor-pointer"
                           onClick={() => handleCopyLink(roue.id)}
                         >
                           {roue.liens}
-                        </span>
+                        </span> */}
                     </div>
                   </TableCell>
                   <TableCell>
