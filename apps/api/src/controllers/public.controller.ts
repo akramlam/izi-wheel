@@ -20,6 +20,56 @@ export const getPublicWheel = async (req: Request, res: Response) => {
 
     console.log(`Looking for wheel ${wheelId}${companyId ? ` and company ${companyId}` : ' without company ID'}`);
 
+    // Special case: If companyId is 'company', treat it as a direct wheel lookup
+    if (companyId === 'company') {
+      console.log(`Special case: companyId is 'company', using direct wheel lookup for ${wheelId}`);
+      // Use the direct wheel lookup logic
+      const wheel = await prisma.wheel.findUnique({
+        where: {
+          id: wheelId,
+          isActive: true
+        },
+        include: {
+          company: true,
+          slots: {
+            where: { isActive: true },
+            orderBy: { position: 'asc' }
+          }
+        }
+      });
+
+      if (!wheel) {
+        console.log(`Wheel not found: ${wheelId}`);
+        return res.status(404).json({ error: 'Wheel not found' });
+      }
+
+      // Verify the wheel's company is active
+      if (!wheel.company || !wheel.company.isActive) {
+        return res.status(403).json({ error: 'Company is not active' });
+      }
+
+      // Return only necessary data for public view
+      return res.status(200).json({
+        wheel: {
+          id: wheel.id,
+          name: wheel.name,
+          formSchema: wheel.formSchema,
+          socialNetwork: wheel.socialNetwork,
+          redirectUrl: wheel.redirectUrl,
+          redirectText: wheel.redirectText,
+          playLimit: wheel.playLimit,
+          slots: wheel.slots.map(slot => ({
+            id: slot.id,
+            label: slot.label,
+            color: slot.color,
+            weight: slot.weight,
+            isWinning: slot.isWinning,
+            position: slot.position
+          }))
+        }
+      });
+    }
+
     // Check if we're using the fallback route (no companyId provided)
     if (!companyId || companyId === 'undefined' || companyId === 'null') {
       console.log(`No valid company ID provided, using direct wheel lookup`);
@@ -614,6 +664,73 @@ export const debugPlayId = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in play ID debug endpoint:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Get wheel data for the special /company/:wheelId route
+ */
+export const getCompanyWheel = async (req: Request, res: Response) => {
+  try {
+    const { wheelId } = req.params;
+
+    // Validate wheel ID - this is always required
+    if (!wheelId) {
+      return res.status(400).json({
+        error: 'Wheel ID is required'
+      });
+    }
+
+    console.log(`Looking for wheel ${wheelId} using company route`);
+
+    // Find the wheel without requiring a specific company
+    const wheel = await prisma.wheel.findUnique({
+      where: {
+        id: wheelId,
+        isActive: true
+      },
+      include: {
+        company: true,
+        slots: {
+          where: { isActive: true },
+          orderBy: { position: 'asc' }
+        }
+      }
+    });
+
+    if (!wheel) {
+      console.log(`Wheel not found: ${wheelId}`);
+      return res.status(404).json({ error: 'Wheel not found' });
+    }
+
+    // Verify the wheel's company is active
+    if (!wheel.company || !wheel.company.isActive) {
+      return res.status(403).json({ error: 'Company is not active' });
+    }
+
+    // Return only necessary data for public view
+    return res.status(200).json({
+      wheel: {
+        id: wheel.id,
+        name: wheel.name,
+        formSchema: wheel.formSchema,
+        socialNetwork: wheel.socialNetwork,
+        redirectUrl: wheel.redirectUrl,
+        redirectText: wheel.redirectText,
+        playLimit: wheel.playLimit,
+        slots: wheel.slots.map(slot => ({
+          id: slot.id,
+          label: slot.label,
+          color: slot.color,
+          weight: slot.weight,
+          isWinning: slot.isWinning,
+          position: slot.position
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching company wheel:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }; 

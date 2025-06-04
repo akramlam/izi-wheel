@@ -12,6 +12,7 @@ import { useToast } from "../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
 import { apiClient, api } from "@/services/api"
 import { useAuth } from "../hooks/useAuth"
+import UpgradePlanModal from "../components/UpgradePlanModal"
 
 interface Roue {
   id: string
@@ -42,11 +43,17 @@ const Roues: React.FC = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("")
   
   // Add state for wheel limits
-  const [wheelsLimit, setWheelsLimit] = useState<number>(3) // Default value
+  const [wheelsLimit, setWheelsLimit] = useState<number>(1) // Default to 1 for free plan
   const [wheelsUsed, setWheelsUsed] = useState<number>(0)
   
   // Add a state variable to store the company name for display
   const [displayCompanyName, setDisplayCompanyName] = useState<string>("Votre entreprise");
+  
+  // Free plan state
+  const [isFreePlan, setIsFreePlan] = useState<boolean>(false)
+  const [remainingPlays, setRemainingPlays] = useState<number>(0)
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false)
+  const [upgradeModalType, setUpgradeModalType] = useState<'wheel' | 'play'>('wheel')
   
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -71,6 +78,46 @@ const Roues: React.FC = () => {
     // Final fallback
     return "Votre entreprise";
   };
+
+  // Fetch user profile and company data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const profileResponse = await api.getProfile();
+        
+        if (profileResponse.data.user.company) {
+          setSelectedCompanyId(profileResponse.data.user.company.id);
+          setDisplayCompanyName(profileResponse.data.user.company.name);
+          
+          // Set wheel limits
+          if (profileResponse.data.user.company.maxWheels) {
+            setWheelsLimit(profileResponse.data.user.company.maxWheels);
+          }
+          
+          // Check if user is on free plan
+          setIsFreePlan(profileResponse.data.user.company.plan === 'FREE');
+          setRemainingPlays(profileResponse.data.user.company.remainingPlays || 0);
+          
+          // Fetch wheels for this company
+          fetchWheels(profileResponse.data.user.company.id);
+        }
+        
+        // If user is SUPER, fetch all companies
+        if (profileResponse.data.user.role === 'SUPER') {
+          fetchCompanies();
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load user profile',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    fetchUserProfile();
+  }, []);
 
   // Modified useEffect to only fetch company/wheels once and avoid infinite loops
   useEffect(() => {
@@ -292,14 +339,15 @@ const Roues: React.FC = () => {
     }
   };
 
-  const handleCreateRoue = () => {
-    // For super admin, include the company ID in navigation state
-    if (isSuperAdmin && selectedCompanyId) {
-      navigate("/roues/create", { state: { companyId: selectedCompanyId } })
+  const handleCreateWheel = () => {
+    // Check if wheel limit reached for free plan
+    if (isFreePlan && wheelsUsed >= wheelsLimit) {
+      setUpgradeModalType('wheel');
+      setShowUpgradeModal(true);
     } else {
-      navigate("/roues/create")
+      navigate('/roues/create');
     }
-  }
+  };
 
   const handleEditRoue = (id: string) => {
     navigate(`/roues/edit/${id}`)
@@ -447,7 +495,7 @@ const Roues: React.FC = () => {
             <div className="text-sm text-gray-500 dark:text-gray-400">
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
-            <Button className="flex items-center space-x-2" onClick={handleCreateRoue}>
+            <Button className="flex items-center space-x-2" onClick={handleCreateWheel}>
               <Plus className="h-4 w-4" />
               <span>Nouvelle roue</span>
             </Button>
@@ -487,7 +535,7 @@ const Roues: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* Only show add button if not super admin or if super admin has selected a company */}
             {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
-              <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateRoue}>
+              <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateWheel}>
               <Plus className="h-4 w-4" />
               <span>Ajouter</span>
             </Button>
@@ -655,6 +703,14 @@ const Roues: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Modal */}
+      <UpgradePlanModal 
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        limitType={upgradeModalType}
+        remainingPlays={remainingPlays}
+      />
 
       {/* Pagination */}
       <div className="flex items-center justify-center space-x-2">
