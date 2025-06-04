@@ -264,6 +264,46 @@ const SocialRedirectDialog = ({
   );
 };
 
+// Add error display component
+const ErrorDisplay = ({ error }: { error: any }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  
+  return (
+    <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md flex flex-col items-center space-y-4">
+      <div className="flex items-center justify-center h-16 w-16 rounded-full bg-red-100">
+        <AlertCircle className="h-8 w-8 text-red-600" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900">Something went wrong</h2>
+      <p className="text-gray-500 text-center">
+        We couldn't load the wheel. Please try again later or contact support.
+      </p>
+      <button 
+        onClick={() => setShowDetails(!showDetails)}
+        className="text-sm text-blue-500 hover:text-blue-700"
+      >
+        {showDetails ? 'Hide' : 'Show'} technical details
+      </button>
+      
+      {showDetails && (
+        <div className="w-full bg-gray-100 p-4 rounded text-left overflow-auto text-xs">
+          <p><strong>Error:</strong> {error?.message || String(error)}</p>
+          <p><strong>URL:</strong> {window.location.href}</p>
+          <p><strong>Company ID:</strong> {companyId || 'null'}</p>
+          <p><strong>Wheel ID:</strong> {wheelId || 'null'}</p>
+        </div>
+      )}
+      
+      <button 
+        onClick={() => refetch()}
+        className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center"
+      >
+        <RefreshCw className="h-4 w-4 mr-2" />
+        Try Again
+      </button>
+    </div>
+  );
+};
+
 const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
@@ -277,6 +317,45 @@ const PlayWheel = () => {
       companyIdType: typeof companyId,
       wheelIdType: typeof wheelId
     });
+    
+    // Additional debug logging
+    const debugInfo = {
+      apiBaseUrl: import.meta.env.VITE_API_URL || 'https://api.izikado.fr',
+      hostname: window.location.hostname,
+      pathname: window.location.pathname,
+      isPublicDomain: window.location.hostname === 'roue.izikado.fr',
+      fullWheelId: wheelId,
+      fullCompanyId: companyId
+    };
+    console.log('Extended debug info:', debugInfo);
+    
+    // Add visual debug info in development
+    if (import.meta.env.DEV) {
+      const debugElement = document.createElement('div');
+      debugElement.style.position = 'fixed';
+      debugElement.style.bottom = '10px';
+      debugElement.style.right = '10px';
+      debugElement.style.backgroundColor = 'rgba(0,0,0,0.8)';
+      debugElement.style.color = 'white';
+      debugElement.style.padding = '10px';
+      debugElement.style.borderRadius = '5px';
+      debugElement.style.zIndex = '9999';
+      debugElement.style.fontSize = '12px';
+      debugElement.style.maxWidth = '400px';
+      debugElement.style.overflow = 'auto';
+      debugElement.innerHTML = `
+        <strong>Debug Info:</strong><br>
+        URL: ${window.location.href}<br>
+        companyId: ${companyId || 'null'}<br>
+        wheelId: ${wheelId || 'null'}<br>
+        isCompany: ${companyId === 'company'}<br>
+      `;
+      document.body.appendChild(debugElement);
+      
+      return () => {
+        document.body.removeChild(debugElement);
+      };
+    }
   }, [companyId, wheelId]);
   
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -321,19 +400,45 @@ const PlayWheel = () => {
         // Special handling for "company" in the URL path
         if (companyId === 'company') {
           console.log('Detected "company" in URL path, using special company route');
+          
+          // Make a direct fetch call to avoid any middleware issues
+          const directUrl = `${import.meta.env.VITE_API_URL || 'https://api.izikado.fr'}/public/company/${wheelId}`;
+          console.log('Fetching directly from URL:', directUrl);
+          
           try {
-            // Use the special company route
-            const directResponse = await apiClient.get(`/public/company/${wheelId}`);
-            if (directResponse.data && directResponse.data.wheel) {
-              console.log('Successfully fetched wheel data via company route');
-              return directResponse.data.wheel;
+            // Use fetch instead of axios for a direct approach
+            const directResponse = await fetch(directUrl);
+            
+            if (!directResponse.ok) {
+              throw new Error(`Direct API call failed with status: ${directResponse.status}`);
+            }
+            
+            const responseData = await directResponse.json();
+            console.log('Direct fetch response:', responseData);
+            
+            if (responseData && responseData.wheel) {
+              console.log('Successfully fetched wheel data via direct fetch');
+              return responseData.wheel;
+            } else {
+              throw new Error('No wheel data in response');
             }
           } catch (directError) {
-            console.error('Error fetching wheel via company route:', directError);
-            // Continue to standard flow
+            console.error('Error fetching wheel via direct fetch:', directError);
+            
+            // Try the apiClient as fallback
+            console.log('Trying apiClient as fallback');
+            const apiResponse = await apiClient.get(`/public/company/${wheelId}`);
+            
+            if (apiResponse.data && apiResponse.data.wheel) {
+              console.log('Successfully fetched wheel data via apiClient');
+              return apiResponse.data.wheel;
+            }
+            
+            throw directError;
           }
         }
         
+        // Standard approach for other routes
         const response = await api.getPublicWheel(companyId || '', wheelId || '');
         
         if (!response.data || !response.data.wheel) {
@@ -930,7 +1035,11 @@ const PlayWheel = () => {
     );
   }
 
-  if (wheelError || !wheelData) {
+  if (wheelError) {
+    return <ErrorDisplay error={wheelError} />;
+  }
+
+  if (!wheelData) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
         <h1 className="text-3xl font-bold text-indigo-700 mb-8">Oops!</h1>
