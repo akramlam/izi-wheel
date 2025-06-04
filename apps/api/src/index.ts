@@ -63,7 +63,17 @@ export const app: Express = express();
 const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://dashboard.izikado.fr',
+    'https://roue.izikado.fr',
+    'http://dashboard.izikado.fr',
+    'http://roue.izikado.fr',
+    'https://api.izikado,fr',
+    'http://api.izikado.fr'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Swagger Documentation
