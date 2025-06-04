@@ -292,7 +292,21 @@ export const api = {
         throw new Error('Wheel ID is required');
       }
 
-      // Validate the companyId - if it's "company" or a non-UUID, use a fallback
+      // Special case for 'company' in the URL path
+      if (companyId === 'company') {
+        console.log('Using direct wheel access for "company" path parameter');
+        try {
+          // Use the direct wheel endpoint without company ID
+          const response = await apiClient.get(`/public/wheels/${wheelId}`);
+          console.log('Response received from direct wheel endpoint:', response.status);
+          return response;
+        } catch (directError) {
+          console.error('Error using direct wheel access:', directError);
+          // Fall through to the standard approach
+        }
+      }
+
+      // Validate the companyId - if it's not a UUID, use a fallback
       const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
       
       if (!isValidUuid) {
@@ -323,24 +337,6 @@ export const api = {
           }
         } catch (e) {
           console.error('Error getting valid companyId:', e);
-        }
-        
-        // If we still don't have a valid company ID, just use the wheelId directly as a fallback
-        console.warn('Using fallback route - requesting wheel directly by ID');
-        
-        try {
-          const response = await apiClient.get(`/public/wheels/${wheelId}`);
-          console.log('Response received using fallback route:', response.status);
-          
-          if (!response.data || !response.data.wheel) {
-            console.error('No wheel data in response using fallback route:', response);
-            throw new Error('No wheel data returned from API');
-          }
-          
-          return response;
-        } catch (fallbackError) {
-          console.error('Error using fallback route:', fallbackError);
-          throw fallbackError;
         }
       }
       

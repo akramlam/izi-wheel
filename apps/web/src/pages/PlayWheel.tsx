@@ -305,6 +305,23 @@ const PlayWheel = () => {
     queryFn: async () => {
       try {
         console.log(`Fetching wheel data for companyId: ${companyId}, wheelId: ${wheelId}`);
+        
+        // Special handling for "company" in the URL path
+        if (companyId === 'company') {
+          console.log('Detected "company" in URL path, using direct wheel access');
+          try {
+            // Try to fetch the wheel directly without company ID
+            const directResponse = await api.getPublicWheel('', wheelId || '');
+            if (directResponse.data && directResponse.data.wheel) {
+              console.log('Successfully fetched wheel data via direct access');
+              return directResponse.data.wheel;
+            }
+          } catch (directError) {
+            console.error('Error fetching wheel via direct access:', directError);
+            // Continue to standard flow
+          }
+        }
+        
         const response = await api.getPublicWheel(companyId || '', wheelId || '');
         
         if (!response.data || !response.data.wheel) {
