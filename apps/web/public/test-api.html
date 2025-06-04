@@ -6,124 +6,95 @@
   <title>API Test</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      line-height: 1.6;
-      padding: 20px;
+      font-family: Arial, sans-serif;
       max-width: 800px;
       margin: 0 auto;
+      padding: 20px;
     }
-    h1 {
-      color: #4f46e5;
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      white-space: pre-wrap;
+      overflow-x: auto;
     }
     button {
-      background-color: #4f46e5;
+      padding: 8px 16px;
+      background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
-      margin: 10px 0;
-    }
-    button:hover {
-      background-color: #4338ca;
-    }
-    pre {
-      background-color: #f3f4f6;
-      padding: 15px;
-      border-radius: 5px;
-      overflow: auto;
-    }
-    .error {
-      color: #dc2626;
-      font-weight: bold;
-    }
-    .success {
-      color: #059669;
-      font-weight: bold;
+      margin-right: 10px;
     }
     input {
       padding: 8px;
-      width: 100%;
       margin-bottom: 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 5px;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
+      width: 100%;
+      box-sizing: border-box;
     }
   </style>
 </head>
 <body>
-  <h1>IZI Wheel API Test</h1>
+  <h1>API Test Tool</h1>
   
   <div>
-    <label for="wheelId">Wheel ID:</label>
-    <input type="text" id="wheelId" value="6f7e9495-e7b7-4f82-9078-c6adb83ca0a1">
-    
-    <label for="apiUrl">API Base URL:</label>
-    <input type="text" id="apiUrl" value="https://api.izikado.fr">
-    
+    <h2>Test Wheel API</h2>
+    <input type="text" id="wheelId" placeholder="Enter wheel ID" value="6f7e9495-e7b7-4f82-9078-c6adb83ca0a1">
     <div>
-      <button id="testCompanyRoute">Test /company/:wheelId Route</button>
-      <button id="testWheelsRoute">Test /wheels/:wheelId Route</button>
+      <button onclick="testCompanyWheel()">Test /company/:wheelId</button>
+      <button onclick="testDirectWheel()">Test /wheels/:wheelId</button>
     </div>
-    
-    <h2>Response:</h2>
-    <pre id="response">Click a button to test the API...</pre>
+    <div class="result" id="wheelResult">Results will appear here...</div>
   </div>
 
   <script>
-    document.getElementById('testCompanyRoute').addEventListener('click', async () => {
-      const wheelId = document.getElementById('wheelId').value;
-      const apiUrl = document.getElementById('apiUrl').value;
-      const responseEl = document.getElementById('response');
-      
-      if (!wheelId) {
-        responseEl.innerHTML = '<span class="error">Please enter a wheel ID</span>';
-        return;
-      }
-      
-      try {
-        responseEl.innerHTML = 'Loading...';
-        const url = `${apiUrl}/public/company/${wheelId}`;
-        console.log('Fetching:', url);
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        responseEl.innerHTML = `<span class="success">Status: ${response.status} ${response.statusText}</span>\n\n${JSON.stringify(data, null, 2)}`;
-      } catch (error) {
-        responseEl.innerHTML = `<span class="error">Error: ${error.message}</span>`;
-        console.error('API Error:', error);
-      }
-    });
+    // Get the API URL from the environment or use a default
+    const API_URL = 'https://api.izikado.fr';
     
-    document.getElementById('testWheelsRoute').addEventListener('click', async () => {
+    async function testCompanyWheel() {
       const wheelId = document.getElementById('wheelId').value;
-      const apiUrl = document.getElementById('apiUrl').value;
-      const responseEl = document.getElementById('response');
+      const resultDiv = document.getElementById('wheelResult');
       
-      if (!wheelId) {
-        responseEl.innerHTML = '<span class="error">Please enter a wheel ID</span>';
-        return;
-      }
+      resultDiv.textContent = 'Loading...';
       
       try {
-        responseEl.innerHTML = 'Loading...';
-        const url = `${apiUrl}/public/wheels/${wheelId}`;
-        console.log('Fetching:', url);
+        const response = await fetch(`${API_URL}/public/company/${wheelId}`);
         
-        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
-        responseEl.innerHTML = `<span class="success">Status: ${response.status} ${response.statusText}</span>\n\n${JSON.stringify(data, null, 2)}`;
+        resultDiv.textContent = JSON.stringify(data, null, 2);
       } catch (error) {
-        responseEl.innerHTML = `<span class="error">Error: ${error.message}</span>`;
-        console.error('API Error:', error);
+        resultDiv.textContent = `Error: ${error.message}`;
       }
-    });
+    }
+    
+    async function testDirectWheel() {
+      const wheelId = document.getElementById('wheelId').value;
+      const resultDiv = document.getElementById('wheelResult');
+      
+      resultDiv.textContent = 'Loading...';
+      
+      try {
+        const response = await fetch(`${API_URL}/public/wheels/${wheelId}`);
+        
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        resultDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    }
   </script>
 </body>
 </html> 

@@ -89,9 +89,10 @@ function App() {
         {/* Public wheel routes */}
         <Route path="/" element={<Navigate to="/play" replace />} />
         <Route path="/play" element={<PlayWheel />} />
-        <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
-        <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
+        {/* Specific route must come before parameterized route */}
         <Route path="/play/company/:wheelId" element={<PlayWheel />} />
+        <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
+        <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
         <Route path="/redeem/:playId" element={<RedeemPrize />} />
         
         {/* Not found route */}

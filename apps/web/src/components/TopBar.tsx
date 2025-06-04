@@ -170,7 +170,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
           </div>
           
           {/* Theme toggle */}
-          <button
+          {/* <button
             onClick={toggleTheme}
             className="relative p-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-full transition-colors duration-200"
             aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -180,7 +180,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
             ) : (
               <Moon className="h-5 w-5 text-indigo-500" />
             )}
-          </button>
+          </button> */}
           
           {/* Notifications Dropdown */}
           <DropdownMenu>

@@ -312,8 +312,24 @@ const PlayWheel = () => {
   useEffect(() => {
     console.log('PlayWheel mounted with params:', { companyId, wheelId });
     console.log('Current URL:', window.location.href);
+    
+    // Special handling for the /play/company/:wheelId route pattern
+    const url = new URL(window.location.href);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    
+    // Check if we're on the /play/company/:wheelId route
+    if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
+      console.log('Detected company route pattern, setting companyId to "company"');
+      // We need to manually set the companyId since React Router isn't handling it correctly
+      const actualWheelId = pathParts[2];
+      
+      // Store these values for use in the query function
+      window.sessionStorage.setItem('manual_companyId', 'company');
+      window.sessionStorage.setItem('manual_wheelId', actualWheelId);
+    }
+    
     console.log('Route match debug:', { 
-      isCompany: companyId === 'company',
+      isCompany: pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company',
       companyIdType: typeof companyId,
       wheelIdType: typeof wheelId
     });
@@ -397,13 +413,25 @@ const PlayWheel = () => {
       try {
         console.log(`Fetching wheel data for companyId: ${companyId}, wheelId: ${wheelId}`);
         
+        // Get manually stored parameters if available
+        const manualCompanyId = window.sessionStorage.getItem('manual_companyId');
+        const manualWheelId = window.sessionStorage.getItem('manual_wheelId');
+        
         // Special handling for "company" in the URL path
-        if (companyId === 'company') {
+        // Check both the route param and our manual detection
+        if (companyId === 'company' || manualCompanyId === 'company') {
           console.log('Detected "company" in URL path, using special company route');
+          
+          // Use the correct wheelId (either from route or manual detection)
+          const actualWheelId = wheelId || manualWheelId;
+          
+          if (!actualWheelId) {
+            throw new Error('No wheel ID found for company route');
+          }
           
           // Make a direct fetch call to the proper API endpoint
           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
-          const directUrl = `${apiUrl}/public/company/${wheelId}`;
+          const directUrl = `${apiUrl}/public/company/${actualWheelId}`;
           console.log('Fetching from URL:', directUrl);
           
           try {
@@ -453,7 +481,8 @@ const PlayWheel = () => {
         throw error;
       }
     },
-    enabled: !!companyId && !!wheelId,
+    enabled: !!(companyId || window.sessionStorage.getItem('manual_companyId')) && 
+            !!(wheelId || window.sessionStorage.getItem('manual_wheelId')),
     retry: 3,
     retryDelay: attempt => Math.min(attempt > 1 ? 2000 : 1000, 30 * 1000),
     staleTime: 30000, // Data is fresh for 30 seconds
