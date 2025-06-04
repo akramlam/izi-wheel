@@ -121,7 +121,7 @@ const WheelEdit = () => {
     companyId: '',
     socialNetwork: undefined,
     redirectUrl: '',
-    redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
+    redirectText: '',
     playLimit: 'ONCE_PER_DAY',
   });
   

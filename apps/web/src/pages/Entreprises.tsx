@@ -119,7 +119,7 @@ const Entreprises: React.FC = () => {
     setFormData({
       name: '',
       isActive: true,
-      plan: 'BASIC',
+      plan: 'FREE',
       maxWheels: 1
     });
     setAdminsToInvite([]);

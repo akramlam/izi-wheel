@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { WheelMode, SocialNetwork, PlayLimit } from '@prisma/client';
+import { WheelMode, SocialNetwork, PlayLimit, Plan } from '@prisma/client';
 import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
@@ -317,73 +317,95 @@ export const getWheel = async (req: Request, res: Response) => {
  *         description: Company not found
  */
 /**
- * Create a new wheel for a company
+ * Create a new wheel
  */
 export const createWheel = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
-    
+    const { name, mode, formSchema, isActive, socialNetwork, redirectUrl, redirectText, playLimit } = req.body;
+
     // Validate companyId
     if (!companyId) {
-      return res.status(400).json({ error: 'Invalid or missing companyId in URL.' });
+      return res.status(400).json({ error: 'Company ID is required' });
     }
 
-    // Log the raw request body for debugging
-    console.log('Raw wheel creation request body:', JSON.stringify(req.body, null, 2));
+    // Find company
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        _count: {
+          select: { wheels: true }
+        }
+      }
+    });
 
-    // Validate wheel data
-    const validationResult = wheelSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      console.error('Wheel validation failed:', validationResult.error);
-      return res.status(400).json({ 
-        error: 'Invalid wheel data', 
-        details: validationResult.error.format() 
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    // Check if company is on the free plan and has reached wheel limit
+    if (company.plan === Plan.FREE && company._count.wheels >= company.maxWheels) {
+      return res.status(403).json({
+        error: 'Free plan limit reached',
+        message: 'You have reached the maximum number of wheels allowed on the free plan. Please upgrade to create more wheels.',
+        code: 'FREE_PLAN_WHEEL_LIMIT'
       });
     }
-    
-    // Log the validated data to help with debugging
-    const validatedData = validationResult.data;
-    console.log('Creating wheel with validated data:', JSON.stringify(validatedData, null, 2));
-    console.log('Wheel mode:', validatedData.mode);
-    
-    // Remove probability field if it exists (not in schema)
-    const { probability, ...wheelDataForDb } = validatedData;
-    
-    // Create wheel in database
+
+    // Check if company has reached their wheel limit (for any plan)
+    if (company._count.wheels >= company.maxWheels) {
+      return res.status(403).json({ 
+        error: 'Maximum wheels limit reached',
+        message: `Your company is limited to ${company.maxWheels} wheels. Please delete an existing wheel or contact support to increase your limit.`,
+        code: 'MAX_WHEELS_LIMIT'
+      });
+    }
+
+    // Create wheel
     const wheel = await prisma.wheel.create({
       data: {
-        ...wheelDataForDb,
-        companyId,
+        name,
+        mode: mode || WheelMode.RANDOM_WIN,
+        formSchema: formSchema || {},
+        isActive: isActive !== undefined ? isActive : false,
+        company: {
+          connect: { id: companyId }
+        },
+        // Add new fields if provided
+        socialNetwork,
+        redirectUrl,
+        redirectText,
+        playLimit: playLimit || PlayLimit.ONCE_PER_DAY,
       },
     });
 
     // Generate QR code for the wheel
+    const baseUrl = process.env.FRONTEND_URL || 'https://roue.izikado.fr';
+    const wheelUrl = `${baseUrl}/play/company/${wheel.id}`;
+    
     try {
-      const wheelUrl = `https://roue.izikado.fr/play/${companyId}/${wheel.id}`;
-      const qrCodePath = await generateQRCode(wheelUrl);
+      const qrCodeLink = await generateQRCode(wheelUrl);
       
       // Update wheel with QR code link
       await prisma.wheel.update({
         where: { id: wheel.id },
-        data: { qrCodeLink: qrCodePath }
+        data: { qrCodeLink }
       });
       
-      wheel.qrCodeLink = qrCodePath;
+      // Include QR code in the response
+      wheel.qrCodeLink = qrCodeLink;
     } catch (qrError) {
-      console.error('Error generating QR code:', qrError);
-      // Continue without QR code
+      console.error('Failed to generate QR code:', qrError);
+      // Continue without QR code - it's not critical
     }
 
     res.status(201).json({ wheel });
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(error instanceof z.ZodError ? 400 : 500).json({ 
-        error: error.message,
-        details: error instanceof z.ZodError ? error.format() : undefined
-      });
-    } else {
-      res.status(500).json({ error: 'An unexpected error occurred' });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.format() });
     }
+    console.error('Create wheel error:', error);
+    res.status(500).json({ error: 'Failed to create wheel' });
   }
 };
 
