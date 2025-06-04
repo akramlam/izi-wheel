@@ -401,40 +401,31 @@ const PlayWheel = () => {
         if (companyId === 'company') {
           console.log('Detected "company" in URL path, using special company route');
           
-          // Make a direct fetch call to avoid any middleware issues
-          const directUrl = `${import.meta.env.VITE_API_URL || 'https://api.izikado.fr'}/public/company/${wheelId}`;
-          console.log('Fetching directly from URL:', directUrl);
+          // Make a direct fetch call to the proper API endpoint
+          const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
+          const directUrl = `${apiUrl}/public/company/${wheelId}`;
+          console.log('Fetching from URL:', directUrl);
           
           try {
-            // Use fetch instead of axios for a direct approach
-            const directResponse = await fetch(directUrl);
+            // Use fetch for direct approach
+            const response = await fetch(directUrl);
             
-            if (!directResponse.ok) {
-              throw new Error(`Direct API call failed with status: ${directResponse.status}`);
+            if (!response.ok) {
+              console.error(`API call failed with status: ${response.status}`);
+              throw new Error(`API call failed with status: ${response.status}`);
             }
             
-            const responseData = await directResponse.json();
-            console.log('Direct fetch response:', responseData);
+            const data = await response.json();
+            console.log('API response data:', data);
             
-            if (responseData && responseData.wheel) {
-              console.log('Successfully fetched wheel data via direct fetch');
-              return responseData.wheel;
+            if (data && data.wheel) {
+              return data.wheel;
             } else {
               throw new Error('No wheel data in response');
             }
-          } catch (directError) {
-            console.error('Error fetching wheel via direct fetch:', directError);
-            
-            // Try the apiClient as fallback
-            console.log('Trying apiClient as fallback');
-            const apiResponse = await apiClient.get(`/public/company/${wheelId}`);
-            
-            if (apiResponse.data && apiResponse.data.wheel) {
-              console.log('Successfully fetched wheel data via apiClient');
-              return apiResponse.data.wheel;
-            }
-            
-            throw directError;
+          } catch (error) {
+            console.error('Error fetching wheel data:', error);
+            throw error;
           }
         }
         

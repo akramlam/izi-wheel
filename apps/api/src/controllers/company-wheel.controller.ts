@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
+import { ensureWheelHasSlots } from '../utils/db-init';
 
 /**
  * Get wheel data for the /company/:wheelId route
@@ -49,6 +50,51 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
     // Verify the wheel's company is active
     if (!wheel.company || !wheel.company.isActive) {
       return res.status(403).json({ error: 'Company is not active' });
+    }
+    
+    // If wheel has no slots, create default ones
+    if (!wheel.slots || wheel.slots.length === 0) {
+      console.log(`Wheel ${wheelId} has no slots. Creating default slots...`);
+      await ensureWheelHasSlots(wheelId);
+      
+      // Fetch the wheel again with the new slots
+      const updatedWheel = await prisma.wheel.findUnique({
+        where: {
+          id: wheelId,
+          isActive: true
+        },
+        include: {
+          slots: {
+            where: { isActive: true },
+            orderBy: { position: 'asc' }
+          }
+        }
+      });
+      
+      if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
+        return res.status(500).json({ error: 'Failed to create default slots for wheel' });
+      }
+      
+      // Return updated wheel with the new slots
+      return res.status(200).json({
+        wheel: {
+          id: updatedWheel.id,
+          name: updatedWheel.name,
+          formSchema: updatedWheel.formSchema,
+          socialNetwork: updatedWheel.socialNetwork,
+          redirectUrl: updatedWheel.redirectUrl,
+          redirectText: updatedWheel.redirectText,
+          playLimit: updatedWheel.playLimit,
+          slots: updatedWheel.slots.map(slot => ({
+            id: slot.id,
+            label: slot.label,
+            color: slot.color,
+            weight: slot.weight,
+            isWinning: slot.isWinning,
+            position: slot.position
+          }))
+        }
+      });
     }
 
     // Return only necessary data for public view
