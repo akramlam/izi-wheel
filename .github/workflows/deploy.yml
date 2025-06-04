@@ -1,26 +1,20 @@
-name: Deploy to Production
+name: Deploy to VPS
 
 on:
   push:
-    branches: [ main ]  # Or your main branch name (master, etc.)
+    branches: [ main ]  # Change to your main branch name if different
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
-
-      - name: Add server to known hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to production
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "cd /var/www/iziwheel && ./deploy.sh"
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /var/www/iziwheel
+            bash deploy.sh
