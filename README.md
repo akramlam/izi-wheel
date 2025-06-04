@@ -2,6 +2,8 @@
 
 A prize wheel platform for companies to create customized wheels for their marketing campaigns.
 
+> **Note**: This project now uses CI/CD for automatic deployments!
+
 ## Project Structure
 
 This is a monorepo using pnpm workspaces with the following structure:
