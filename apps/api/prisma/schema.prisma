@@ -13,8 +13,8 @@ datasource db {
 model Company {
   id            String    @id @default(uuid())
   name          String    @unique
-  plan          Plan      @default(FREE)
-  maxWheels     Int       @default(1)
+  plan          Plan      @default(BASIC)
+  maxWheels     Int       @default(5)
   remainingPlays Int      @default(50)
   wheels        Wheel[]
   admins        User[]
@@ -117,7 +117,6 @@ enum RedemptionStatus {
 }
 
 enum Plan {
-  FREE
   BASIC
   PREMIUM
 }

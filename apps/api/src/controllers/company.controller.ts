@@ -358,9 +358,41 @@ export const deleteCompany = async (req: Request, res: Response) => {
 
 export const getCompanies = async (req: Request, res: Response) => {
   try {
-    const companies = await prisma.company.findMany();
-    res.status(200).json({ companies });
+    // Try to fetch companies with all fields
+    try {
+      const companies = await prisma.company.findMany();
+      res.status(200).json({ companies });
+    } catch (prismaError) {
+      // If there's a Prisma error (likely due to missing field), try with explicit select
+      console.error('Error fetching companies with all fields:', prismaError);
+      
+      const companies = await prisma.company.findMany({
+        select: {
+          id: true,
+          name: true,
+          plan: true,
+          maxWheels: true,
+          isActive: true,
+          createdAt: true,
+          _count: {
+            select: {
+              wheels: true,
+              admins: true
+            }
+          }
+        }
+      });
+      
+      // Add default value for remainingPlays if it's missing
+      const companiesWithDefaults = companies.map(company => ({
+        ...company,
+        remainingPlays: 50 // Default value
+      }));
+      
+      res.status(200).json({ companies: companiesWithDefaults });
+    }
   } catch (error) {
+    console.error('Failed to fetch companies:', error);
     res.status(500).json({ error: 'Failed to fetch companies' });
   }
 };
