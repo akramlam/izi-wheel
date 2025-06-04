@@ -33,5 +33,6 @@ cd ../..
 
 # Restart API service
 pm2 restart iziwheel-api
+pm2 restart iziwheel-frontend
 
 echo "Deployment completed successfully at $(date)"
