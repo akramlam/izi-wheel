@@ -35,7 +35,6 @@ interface TopBarProps {
 
 const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth()
-  const { isDark, toggleTheme } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
   
@@ -45,29 +44,29 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true)
   
   // Get current page title based on the URL
-  const getPageTitle = () => {
-    const pathSegments = location.pathname.split('/').filter(Boolean)
-    const firstSegment = pathSegments[0]?.toLowerCase() || 'dashboard'
+  // const getPageTitle = () => {
+  //   const pathSegments = location.pathname.split('/').filter(Boolean)
+  //   const firstSegment = pathSegments[0]?.toLowerCase() || 'dashboard'
     
-    const titles: Record<string, string> = {
-      'dashboard': 'Tableau de bord',
-      'roues': 'Gestion des Roues',
-      'statistiques': 'Statistiques',
-      'entreprises': 'Entreprises',
-      'sous-administrateurs': 'Sous-administrateurs',
-      'profile': 'Mon Profil',
-      'account-settings': 'Paramètres du compte'
-    }
+  //   const titles: Record<string, string> = {
+  //     'dashboard': 'Tableau de bord',
+  //     'roues': 'Gestion des Roues',
+  //     'statistiques': 'Statistiques',
+  //     'entreprises': 'Entreprises',
+  //     'sous-administrateurs': 'Sous-administrateurs',
+  //     'profile': 'Mon Profil',
+  //     'account-settings': 'Paramètres du compte'
+  //   }
     
-    // Fallback for dynamic routes like roues/edit/:id or roues/create
-    if (firstSegment === 'roues') {
-      if (pathSegments[1] === 'create') return "Créer une nouvelle roue";
-      if (pathSegments[1] === 'edit' && pathSegments[2]) return "Modifier la roue"; // Covers roues/edit/:id
-      // If just /roues, it's already covered by titles.roues
-    }
+  //   // Fallback for dynamic routes like roues/edit/:id or roues/create
+  //   if (firstSegment === 'roues') {
+  //     if (pathSegments[1] === 'create') return "Créer une nouvelle roue";
+  //     if (pathSegments[1] === 'edit' && pathSegments[2]) return "Modifier la roue"; // Covers roues/edit/:id
+  //     // If just /roues, it's already covered by titles.roues
+  //   }
 
-    return titles[firstSegment] || pathSegments.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Tableau de bord'
-  }
+  //   return titles[firstSegment] || pathSegments.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Tableau de bord'
+  // }
   
   const goBack = () => {
     navigate(-1)
@@ -153,7 +152,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
             </button>
           )}
           
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1>
+          {/* <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1> */}
         </div>
         
         <div className="flex items-center space-x-3">

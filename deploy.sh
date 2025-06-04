@@ -18,6 +18,15 @@ cd ../..
 # Run database migrations
 cd apps/api
 npx prisma generate
+
+# Check if fix-enum.js exists and run it if needed
+if [ -f "fix-enum.js" ]; then
+  echo "Running fix-enum.js to fix enum issues..."
+  node fix-enum.js
+  echo "Enum fix completed."
+fi
+
+# Continue with migrations
 npx prisma migrate deploy
 cd ../..
 
