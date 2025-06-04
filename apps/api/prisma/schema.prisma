@@ -117,6 +117,7 @@ enum RedemptionStatus {
 }
 
 enum Plan {
+  FREE
   BASIC
   PREMIUM
 }

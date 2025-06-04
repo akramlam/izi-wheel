@@ -11,7 +11,7 @@ async function addFreePlan() {
     `;
     
     // Use environment variables from .env file
-    const envFile = require('fs').readFileSync('./apps/api/.env', 'utf8');
+    const envFile = require('fs').readFileSync('.env', 'utf8');
     const dbUrl = envFile.split('\n')
       .find(line => line.startsWith('DATABASE_URL='))
       ?.split('=')[1]
