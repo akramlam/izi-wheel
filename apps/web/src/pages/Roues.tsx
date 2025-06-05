@@ -99,7 +99,7 @@ const Roues: React.FC = () => {
           setRemainingPlays(profileResponse.data.user.company.remainingPlays || 0);
           
           // Fetch wheels for this company
-          fetchWheels(profileResponse.data.user.company.id);
+          fetchRoues(profileResponse.data.user.company.id);
         }
         
         // If user is SUPER, fetch all companies
