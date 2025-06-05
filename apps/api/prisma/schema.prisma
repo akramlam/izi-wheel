@@ -57,6 +57,7 @@ model Wheel {
   // New fields for customization
   gameRules     String?        // Customizable game rules text
   footerText    String?        // Customizable footer text
+  mainTitle     String?        // Customizable main title
   slots         Slot[]
   plays         Play[]
   createdAt     DateTime       @default(now())

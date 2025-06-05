@@ -58,6 +58,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           redirectUrl: wheel.redirectUrl,
           redirectText: wheel.redirectText,
           playLimit: wheel.playLimit,
+          gameRules: wheel.gameRules,
+          footerText: wheel.footerText,
+          mainTitle: wheel.mainTitle,
           slots: wheel.slots.map(slot => ({
             id: slot.id,
             label: slot.label,
@@ -132,6 +135,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
             redirectUrl: updatedWheel.redirectUrl,
             redirectText: updatedWheel.redirectText,
             playLimit: updatedWheel.playLimit,
+            gameRules: updatedWheel.gameRules,
+            footerText: updatedWheel.footerText,
+            mainTitle: updatedWheel.mainTitle,
             slots: updatedWheel.slots.map(slot => ({
               id: slot.id,
               label: slot.label,
@@ -154,6 +160,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           redirectUrl: wheel.redirectUrl,
           redirectText: wheel.redirectText,
           playLimit: wheel.playLimit,
+          gameRules: wheel.gameRules,
+          footerText: wheel.footerText,
+          mainTitle: wheel.mainTitle,
           slots: wheel.slots.map(slot => ({
             id: slot.id,
             label: slot.label,
@@ -238,6 +247,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           redirectUrl: updatedWheel.redirectUrl,
           redirectText: updatedWheel.redirectText,
           playLimit: updatedWheel.playLimit,
+          gameRules: updatedWheel.gameRules,
+          footerText: updatedWheel.footerText,
+          mainTitle: updatedWheel.mainTitle,
           slots: updatedWheel.slots.map(slot => ({
             id: slot.id,
             label: slot.label,
@@ -260,6 +272,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
         redirectUrl: wheel.redirectUrl,
         redirectText: wheel.redirectText,
         playLimit: wheel.playLimit,
+        gameRules: wheel.gameRules,
+        footerText: wheel.footerText,
+        mainTitle: wheel.mainTitle,
         slots: wheel.slots.map(slot => ({
           id: slot.id,
           label: slot.label,
@@ -719,6 +734,9 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
         redirectUrl: wheel.redirectUrl,
         redirectText: wheel.redirectText,
         playLimit: wheel.playLimit,
+        gameRules: wheel.gameRules,
+        footerText: wheel.footerText,
+        mainTitle: wheel.mainTitle,
         slots: wheel.slots.map(slot => ({
           id: slot.id,
           label: slot.label,

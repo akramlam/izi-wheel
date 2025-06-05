@@ -282,6 +282,9 @@ const WheelEdit = () => {
             redirectUrl: wheelFromApi.redirectUrl || '',
             redirectText: wheelFromApi.redirectText || 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
             playLimit: wheelFromApi.playLimit || 'ONCE_PER_DAY',
+            gameRules: wheelFromApi.gameRules || 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
+            footerText: wheelFromApi.footerText || `© ${new Date().getFullYear()} IZI Wheel`,
+            mainTitle: wheelFromApi.mainTitle || '',
             slots: []
           };
           

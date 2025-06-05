@@ -8,6 +8,7 @@ const slotSchema = z.object({
   label: z.string().min(1).max(100),
   weight: z.number().int().min(1),
   prizeCode: z.string().min(1).max(50),
+  color: z.string().optional(),
 });
 
 // Validation schema for bulk slot creation/update
