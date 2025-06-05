@@ -110,6 +110,9 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
         redirectUrl: wheel.redirectUrl,
         redirectText: wheel.redirectText,
         playLimit: wheel.playLimit,
+        gameRules: wheel.gameRules,
+        footerText: wheel.footerText,
+        mainTitle: wheel.mainTitle,
         slots: wheel.slots.map(slot => ({
           id: slot.id,
           label: slot.label,
