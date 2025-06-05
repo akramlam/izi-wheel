@@ -36,6 +36,7 @@ type WheelData = {
   playLimit?: string;
   gameRules?: string;
   footerText?: string;
+  mainTitle?: string;
 };
 
 type PlayResponse = {
@@ -1125,9 +1126,11 @@ const PlayWheel = () => {
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
       {/* Logo */}
-      <h1 className="text-4xl font-extrabold text-indigo-700 drop-shadow-lg mb-4 flex items-center gap-2">
-        <span className="text-pink-500">IZI</span> Wheel
-      </h1>
+      {wheelData && (
+        <h1 className="text-4xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600">
+          {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
+        </h1>
+      )}
       
       {/* Debug info (only in development) */}
       {import.meta.env.DEV && debugInfo && (
