@@ -53,6 +53,7 @@ type WheelData = {
   playLimit?: string;
   gameRules?: string;
   footerText?: string;
+  mainTitle?: string;
 };
 
 type Company = {
@@ -117,7 +118,7 @@ const WheelEdit = () => {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [wheel, setWheel] = useState<WheelData>({
     name: '',
-    type: 'RANDOM_WIN', // Default to RANDOM_WIN API enum value
+    type: 'RANDOM_WIN',
     statut: 'Inactif',
     slots: [],
     companyId: '',
@@ -127,7 +128,8 @@ const WheelEdit = () => {
     playLimit: 'ONCE_PER_DAY',
     gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
     footerText: `© ${new Date().getFullYear()} IZI Wheel`,
-    });
+    mainTitle: '',
+  });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [totalProbability, setTotalProbability] = useState(0);
@@ -191,6 +193,7 @@ const WheelEdit = () => {
         playLimit: 'ONCE_PER_DAY',
         gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
         footerText: `© ${new Date().getFullYear()} IZI Wheel`,
+        mainTitle: '',
       });
       setIsLoading(false);
     }
@@ -796,6 +799,7 @@ const WheelEdit = () => {
       playLimit: wheel.playLimit,
       gameRules: wheel.gameRules,
       footerText: wheel.footerText,
+      mainTitle: wheel.mainTitle,
       formSchema: {},
     };
 
@@ -1415,6 +1419,16 @@ const WheelEdit = () => {
              */}
             <TabsContent value="custom" className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="mainTitle">Titre principal</Label>
+                <Input
+                  id="mainTitle"
+                  placeholder="Titre affiché au-dessus de la roue (ex: Votre marque, Votre événement...)"
+                  value={wheel.mainTitle || ''}
+                  onChange={(e) => setWheel({ ...wheel, mainTitle: e.target.value })}
+                />
+                <p className="text-xs text-gray-500">Personnalisez le titre affiché en haut de la page de jeu.</p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="gameRules">Règles du jeu</Label>
                 <Textarea
                   id="gameRules"
@@ -1425,7 +1439,6 @@ const WheelEdit = () => {
                 />
                 <p className="text-xs text-gray-500">Personnalisez les règles qui seront affichées aux joueurs.</p>
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="footerText">Texte du pied de page</Label>
                 <Input
