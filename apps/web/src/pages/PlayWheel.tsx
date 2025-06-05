@@ -415,11 +415,11 @@ const PlayWheel = () => {
   const [hasCompletedSocialAction, setHasCompletedSocialAction] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showClaimForm, setShowClaimForm] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'initial' | 'socialRedirect' | 'spinWheel' | 'showPrize' | 'claimForm'>('initial');
+  const [currentStep, setCurrentStep] = useState<'spinWheel' | 'showPrize' | 'claimForm'>('spinWheel');
   const [claimFormData, setClaimFormData] = useState<Record<string, string>>({});
   const [showThankyouMessage, setShowThankyouMessage] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
-  const [userFlowState, setUserFlowState] = useState<'initial' | 'completedSocial' | 'spinning' | 'won' | 'claimed'>('initial');
+  const [userFlowState, setUserFlowState] = useState<'completedSocial' | 'spinning' | 'won' | 'claimed'>('completedSocial');
   const retryCount = useRef<number>(0);
 
   // Add a confetti ref to control it
@@ -690,7 +690,7 @@ const PlayWheel = () => {
         console.error("CRITICAL: PlayWheel.tsx - wheelConfig.segments is empty or undefined during spinWheel onSuccess.");
         toast({ title: "Erreur Roue", description: "Configuration de la roue invalide.", variant: "destructive"});
         // Potentially reset state or disable further interaction
-        setUserFlowState('initial'); // Reset flow
+        setUserFlowState('completedSocial'); // Reset flow
         return;
       }
       if (!data || !data.slot || !data.slot.id) {
@@ -715,7 +715,7 @@ const PlayWheel = () => {
         
         // If we can't create a fallback, show error and reset
         toast({ title: "Erreur Serveur", description: "Réponse du serveur invalide.", variant: "destructive"});
-        setUserFlowState('initial'); // Reset flow
+        setUserFlowState('completedSocial'); // Reset flow
         return;
       }
       
@@ -729,8 +729,8 @@ const PlayWheel = () => {
         description: 'Failed to spin the wheel. Please try again.',
         variant: 'destructive'
       });
-      setCurrentStep('initial');
-      setUserFlowState('initial');
+      setCurrentStep('completedSocial');
+      setUserFlowState('completedSocial');
     }
   });
 
@@ -792,7 +792,7 @@ const PlayWheel = () => {
       if (data.play.result === 'WIN') {
         setCurrentStep('showPrize');
       } else {
-        setCurrentStep('initial');
+        setCurrentStep('completedSocial');
       }
     }, 5500); // Slightly longer than spin duration
   };
@@ -811,8 +811,8 @@ const PlayWheel = () => {
     } else {
       // Otherwise reset to initial state
       console.log('Resetting to initial state');
-      setCurrentStep('initial');
-      setUserFlowState('initial');
+      setCurrentStep('spinWheel');
+      setUserFlowState('completedSocial');
     }
   };
 
@@ -848,12 +848,12 @@ const PlayWheel = () => {
       setTimeout(() => {
         setShowResultModal(false);
         setShowThankyouMessage(false);
-        setCurrentStep('initial');
+        setCurrentStep('spinWheel');
         // Reset states to allow playing again
         setMustSpin(false);
         setSpinResult(null);
         setShowConfetti(false);
-        setUserFlowState('initial');
+        setUserFlowState('completedSocial');
       }, 3000);
     }
   };
@@ -1069,6 +1069,16 @@ const PlayWheel = () => {
 
   const [showRulesModal, setShowRulesModal] = useState(false);
 
+  // Show social popup on mount if needed
+  useEffect(() => {
+    if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
+      setShowSocialRedirect(true);
+      setUserFlowState('completedSocial');
+    } else {
+      setUserFlowState('completedSocial');
+    }
+  }, [wheelData]);
+
   if (isLoadingWheel) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
@@ -1271,19 +1281,6 @@ const PlayWheel = () => {
               <Button onClick={() => navigate(-1)} variant="outline">Retour</Button>
             </div>
           </div>
-        ) : currentStep === 'initial' ? (
-          // Initial state with start button
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">{wheelData.name || "Tentez votre chance"}</h2>
-            <p className="text-gray-600 mb-8">Cliquez sur le bouton ci-dessous pour tenter de gagner un lot.</p>
-            
-            <Button 
-              onClick={handleStartProcess}
-              className="px-10 py-6 text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
-            >
-              Tourner la roue
-            </Button>
-          </div>
         ) : currentStep === 'spinWheel' ? (
           // Wheel View - needs a spin button if social is completed
           <div className="relative p-8 flex flex-col items-center justify-start">
@@ -1324,18 +1321,28 @@ const PlayWheel = () => {
           </div>
         )}
             
-            {/* Message if waiting for social action (should ideally not happen here if flow is correct) */}
+            {/* Message if waiting for social action */}
             {userFlowState !== 'completedSocial' && !mustSpin && wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-center max-w-xs w-full">
-                    <p>Veuillez d\'abord compléter l\'action sociale.</p>
+                    <p>Veuillez d'abord compléter l'action sociale.</p>
                 </div>
+            )}
+            {/* Social popup always rendered if needed */}
+            {wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
+              <SocialRedirectDialog
+                open={showSocialRedirect}
+                onClose={handleSocialRedirectClose}
+                network={wheelData.socialNetwork}
+                redirectUrl={wheelData.redirectUrl}
+                redirectText={wheelData.redirectText}
+              />
             )}
           </div>
         ) : (
           // Fallback
           <div className="p-6 text-center">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Étape en cours...</h2>
-            <Button onClick={() => setCurrentStep('initial')} variant="outline">Recommencer</Button>
+            <Button onClick={() => setCurrentStep('spinWheel')} variant="outline">Recommencer</Button>
           </div>
         )}
         {/* </div> */}
