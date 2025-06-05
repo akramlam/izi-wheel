@@ -126,8 +126,8 @@ const WheelEdit = () => {
     redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
     playLimit: 'ONCE_PER_DAY',
     gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
-    footerText: `© ${new Date().getFullYear()} IZI Wheel`,
-    });
+    footerText: `© ${new Date().getFullYear()} ${wheel.name}`,
+  });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [totalProbability, setTotalProbability] = useState(0);
@@ -151,13 +151,14 @@ const WheelEdit = () => {
     if (!isNew) {
       fetchWheelData();
     } else {
-      // Use default name
-      const wheelName = 'Nouvelle roue';
-      
       // Calculate equal probability for each slot
       const slotCount = 3; // Default number of slots
       const equalProbability = Math.floor(100 / slotCount);
       const remainder = 100 - (equalProbability * slotCount);
+      
+      // Use default name only if not provided in state
+      const wheelName = wheel.name && wheel.name.trim() !== '' ? 
+        wheel.name : 'Nouvelle roue';
       
       // Initialize new wheel with 3 default slots with balanced probabilities
       setWheel({
@@ -190,7 +191,7 @@ const WheelEdit = () => {
         redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
         playLimit: 'ONCE_PER_DAY',
         gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
-        footerText: `© ${new Date().getFullYear()} IZI Wheel`,
+        footerText: `© ${new Date().getFullYear()} ${wheelName}`,
       });
       setIsLoading(false);
     }
@@ -791,8 +792,6 @@ const WheelEdit = () => {
         color: slot.color,
       })),
       playLimit: wheel.playLimit,
-      gameRules: wheel.gameRules,
-      footerText: wheel.footerText,
       formSchema: {},
     };
 
