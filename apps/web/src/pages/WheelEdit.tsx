@@ -357,9 +357,14 @@ const WheelEdit = () => {
       }
       
       // Combine data
+      // Ensure every slot has a color
+      const normalizedSlots = (slots || []).map((slot, idx) => ({
+        ...slot,
+        color: slot.color || PRESET_COLORS[idx % PRESET_COLORS.length],
+      }));
       setWheel({
         ...wheelData,
-        slots: slots || [],
+        slots: normalizedSlots,
       });
 
       // If super admin and wheelData has a companyId, set it as selected
@@ -578,44 +583,42 @@ const WheelEdit = () => {
     }
     // Get a random color from our predefined colors
     const randomColor = PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)];
-    
     // Add the new slot
     const updatedSlots = [
       ...wheel.slots,
-      { 
-        label: `Lot ${wheel.slots.length + 1}`, 
+      {
+        label: `Lot ${wheel.slots.length + 1}`,
         weight: 0, // Temporary weight, will be adjusted
         prizeCode: `PRIZE${wheel.slots.length + 1}`,
-          color: randomColor
-        },
+        color: randomColor,
+      },
     ];
-    
+    // Ensure every slot has a color
+    const normalizedSlots = updatedSlots.map((slot, idx) => ({
+      ...slot,
+      color: slot.color || PRESET_COLORS[idx % PRESET_COLORS.length],
+    }));
     // Calculate new weights to maintain 100% total
-    const newSlotCount = updatedSlots.length;
+    const newSlotCount = normalizedSlots.length;
     if (newSlotCount > 0) {
       // Distribute evenly if possible
       const equalWeight = Math.floor(100 / newSlotCount);
       const remainder = 100 - (equalWeight * newSlotCount);
-      
       for (let i = 0; i < newSlotCount; i++) {
-        updatedSlots[i].weight = equalWeight;
-        
-        // Add remainder to first slot
+        normalizedSlots[i].weight = equalWeight;
         if (i === 0) {
-          updatedSlots[i].weight += remainder;
+          normalizedSlots[i].weight += remainder;
         }
       }
     }
-    
     // Verify total is exactly 100%
-    const total = updatedSlots.reduce((sum, slot) => sum + slot.weight, 0);
-    if (total !== 100 && updatedSlots.length > 0) {
-      updatedSlots[0].weight += (100 - total);
+    const total = normalizedSlots.reduce((sum, slot) => sum + slot.weight, 0);
+    if (total !== 100 && normalizedSlots.length > 0) {
+      normalizedSlots[0].weight += (100 - total);
     }
-    
     setWheel(prev => ({
       ...prev,
-      slots: updatedSlots,
+      slots: normalizedSlots,
     }));
   };
 
