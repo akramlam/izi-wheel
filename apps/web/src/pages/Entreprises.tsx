@@ -49,7 +49,7 @@ const Entreprises: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     isActive: true,
-    plan: 'BASIC',
+    plan: 'FREE',
     maxWheels: 1
   });
 
@@ -294,6 +294,7 @@ const Entreprises: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="BASIC">Basic</SelectItem>
                   <SelectItem value="PREMIUM">Premium</SelectItem>
+                  <SelectItem value="FREE">Free</SelectItem>
                 </SelectContent>
               </Select>
             </div>
