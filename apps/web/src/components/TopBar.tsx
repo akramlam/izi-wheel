@@ -129,7 +129,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
     setUnreadCount(0)
     // api.markAllNotificationsAsRead()
   }
-  
+
   return (
     <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm px-4 py-3">
       <div className="flex items-center justify-between">
@@ -154,7 +154,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
           
           {/* <h1 className="text-lg font-semibold text-gray-900 dark:text-white">{getPageTitle()}</h1> */}
         </div>
-        
+
         <div className="flex items-center space-x-3">
           {/* Search */}
           <div className="relative hidden md:block">
@@ -167,7 +167,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
               className="pl-10 pr-4 py-2 w-64 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
             />
           </div>
-          
+
           {/* Theme toggle */}
           {/* <button
             onClick={toggleTheme}
@@ -227,7 +227,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
                               className="ml-auto p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
                             >
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            </button>
+          </button>
                           )}
                         </div>
                     );
@@ -267,7 +267,7 @@ const TopBar: React.FC<TopBarProps> = ({ onMenuClick }) => {
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {user.role === "SUPER" ? "Super Admin" : user.role === "ADMIN" ? "Admin" : "Utilisateur"}
                     </span>
-                  </div>
+            </div>
                   <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-purple-500 dark:ring-offset-gray-800">
                     <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-medium">
                       {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}

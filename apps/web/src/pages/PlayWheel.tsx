@@ -34,6 +34,8 @@ type WheelData = {
   redirectUrl?: string;
   redirectText?: string;
   playLimit?: string;
+  gameRules?: string;
+  footerText?: string;
 };
 
 type PlayResponse = {
@@ -300,6 +302,23 @@ const ErrorDisplay = ({ error }: { error: any }) => {
         <RefreshCw className="h-4 w-4 mr-2" />
         Try Again
       </button>
+      {/* Footer */}
+      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30 mt-6">
+        <div className="flex items-center gap-2">
+          {wheelData?.footerText ? (
+            <span>{wheelData.footerText}</span>
+          ) : (
+            <span>© {new Date().getFullYear()} IZI Wheel</span>
+          )}
+        </div>
+        <button
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors"
+          onClick={() => setShowRulesModal(true)}
+          type="button"
+        >
+          Règles du jeu
+        </button>
+      </footer>
     </div>
   );
 };
@@ -546,26 +565,26 @@ const PlayWheel = () => {
         if (!hasWinningSlot && sortedSlots.length > 0) {
           sortedSlots[0].isWinning = true;
           console.log('No winning slot found, marking first slot as winning');
-        }
-        
-        // Set wheel colors and prepare segments configuration
+      }
+      
+      // Set wheel colors and prepare segments configuration
         const segments = sortedSlots.map(slot => ({
           id: slot.id,
-          label: slot.label,
-          color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
-          isWinning: slot.isWinning
-        }));
+        label: slot.label,
+        color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
+        isWinning: slot.isWinning
+      }));
         
         console.log('Setting wheel configuration with segments:', segments);
-        
-        setWheelConfig({
-          ...wheelConfig,
-          segments,
-          colors: {
-            primaryGradient: BRAND.primaryGradient,
-            secondaryGradient: BRAND.secondaryGradient
-          }
-        });
+      
+      setWheelConfig({
+        ...wheelConfig,
+        segments,
+        colors: {
+          primaryGradient: BRAND.primaryGradient,
+          secondaryGradient: BRAND.secondaryGradient
+        }
+      });
         
         // setDebugInfo(`Loaded ${segments.length} wheel segments successfully`);
       }
@@ -591,26 +610,32 @@ const PlayWheel = () => {
     }
   }, [wheelData]);
 
-  // Handle the initial button click to start the process
+  // Modify the handleStartProcess function
   const handleStartProcess = () => {
-    // Log the current wheel data and social network settings for debugging
-    console.log('Starting process with wheel data:', wheelData);
-    console.log('Social network configured:', wheelData?.socialNetwork);
+    // When button is clicked first time and social network is configured,
+    // show the social popup immediately
+    if (currentStep === 'initial') {
+      if (wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
+        // Show social popup immediately on first button click
+        setCurrentStep('socialRedirect');
+        setShowSocialRedirect(true);
+        setDebugInfo(`Showing social popup for: ${wheelData.socialNetwork}`);
+      } else {
+        // If no social network, proceed directly to allow spinning
+        setCurrentStep('spinWheel');
+        setUserFlowState('completedSocial');
+        setDebugInfo('No social network configured, ready to spin');
+        // Proceed with spinning
+        handleSpinClick();
+      }
+      return;
+    }
     
-    // Check if social network is configured
-    if (wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
-      console.log('Social network detected, showing redirect dialog:', wheelData.socialNetwork);
-      setCurrentStep('socialRedirect');
-      setShowSocialRedirect(true);
-      
-      // Debug info to confirm social popup is triggered
-      setDebugInfo(`Showing social popup for: ${wheelData.socialNetwork}`);
-    } else {
-      // If no social network, go directly to spin
-      console.log('No social network configured, proceeding directly to spin');
-      setCurrentStep('spinWheel');
-      setUserFlowState('completedSocial'); // Skip social step if not required
-      setDebugInfo('No social network configured, ready to spin');
+    // If we've shown the social prompt and user has completed the action,
+    // now we can actually spin the wheel
+    if (currentStep === 'spinWheel' && userFlowState === 'completedSocial') {
+      // Proceed with spinning
+      handleSpinClick();
     }
   };
 
@@ -621,9 +646,6 @@ const PlayWheel = () => {
     setHasCompletedSocialAction(true);
     setUserFlowState('completedSocial');
     setCurrentStep('spinWheel');
-    
-    // After closing the social popup, the user should now be able to spin the wheel
-    // but we don't automatically spin it - they must click the button again
     setDebugInfo('Social action completed. Click "Tourner la roue" to spin!');
   };
 
@@ -1045,6 +1067,8 @@ const PlayWheel = () => {
     // ... existing code ...
   };
 
+  const [showRulesModal, setShowRulesModal] = useState(false);
+
   if (isLoadingWheel) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
@@ -1089,7 +1113,7 @@ const PlayWheel = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-center p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
+    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
       {/* Logo */}
       <h1 className="text-4xl font-extrabold text-indigo-700 drop-shadow-lg mb-4 flex items-center gap-2">
         <span className="text-pink-500">IZI</span> Wheel
@@ -1146,12 +1170,12 @@ const PlayWheel = () => {
             </DialogHeader>
             
             <div className="py-4">
-              <PlayerForm 
-                fields={formFields}
+            <PlayerForm 
+              fields={formFields}
                 onSubmit={handleClaimFormSubmit}
                 isSubmitting={false}
-              />
-            </div>
+            />
+          </div>
           </DialogContent>
         </Dialog>
       )}
@@ -1173,6 +1197,30 @@ const PlayWheel = () => {
         </Dialog>
       )}
       
+      {/* Rules modal */}
+      <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
+        <DialogContent className="max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4 text-gray-700 text-base">
+            {wheelData?.gameRules ? (
+              <div className="whitespace-pre-wrap">{wheelData.gameRules}</div>
+            ) : (
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Une seule participation par personne est autorisée, sauf indication contraire de l'organisateur.</li>
+                <li>Les informations saisies doivent être exactes pour valider la participation et la remise du lot.</li>
+                <li>En cas de gain, un code PIN et un QR code seront fournis pour récupérer votre lot.</li>
+                <li>Les lots ne sont ni échangeables, ni remboursables.</li>
+                <li>L'organisateur se réserve le droit de modifier ou d'annuler le jeu à tout moment.</li>
+                <li>La participation implique l'acceptation pleine et entière du règlement.</li>
+              </ul>
+            )}
+            <p className="text-xs text-gray-400 mt-2">Pour toute question, contactez l'organisateur ou consultez les mentions légales.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Main Content Card - This will be centered by the parent flex container */}
       <div className="w-full max-w-xl bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-4">
         {/* <div className="w-full max-w-md bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-4"> */}
@@ -1241,10 +1289,10 @@ const PlayWheel = () => {
           <div className="relative p-8 flex flex-col items-center justify-start">
             {/* Use a fixed size container with manual transform to adjust wheel position */}
             <div className="relative w-[492px] h-[560px] mx-auto flex items-center justify-center">
-              <Wheel
-                config={wheelConfig}
-                isSpinning={mustSpin}
-                prizeIndex={prizeIndex}
+            <Wheel
+              config={wheelConfig}
+              isSpinning={mustSpin}
+              prizeIndex={prizeIndex}
                 onSpin={handleSpinClick}
                 showSpinButton={false} // The main button is now handled below
               />
@@ -1273,8 +1321,8 @@ const PlayWheel = () => {
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-center max-w-xs w-full">
                   <p>Vous pouvez maintenant tourner la roue pour tenter de gagner un lot !</p>
                 </div>
-              </div>
-            )}
+          </div>
+        )}
             
             {/* Message if waiting for social action (should ideally not happen here if flow is correct) */}
             {userFlowState !== 'completedSocial' && !mustSpin && wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
@@ -1332,7 +1380,7 @@ const PlayWheel = () => {
                 <div className="flex justify-center bg-white p-1 border rounded mx-auto" style={{ maxWidth: '200px' }}>
                   <img 
                     src={getQRCodeUrl()}
-                    alt="Prize QR Code"
+                      alt="Prize QR Code" 
                     className="w-full h-auto"
                     onError={(e) => {
                       // If image fails to load, try to reload with a different approach
@@ -1365,7 +1413,7 @@ const PlayWheel = () => {
                 
                     <Button 
                   className="mt-4 w-full"
-                  variant="outline"
+                      variant="outline" 
                       onClick={handleDownloadQR}
                     >
                   Télécharger le QR
@@ -1385,13 +1433,31 @@ const PlayWheel = () => {
                 Récupérer mon lot
               </Button>
             )}
-          </div>
+            </div>
           
           <Button variant="outline" onClick={handleResultModalClose}>
             {spinResult?.play.result === 'WIN' ? 'Plus tard' : 'Fermer'}
           </Button>
         </DialogContent>
       </Dialog>
+      
+      {/* Footer */}
+      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30 mt-6">
+        <div className="flex items-center gap-2">
+          {wheelData?.footerText ? (
+            <span>{wheelData.footerText}</span>
+          ) : (
+            <span>© {new Date().getFullYear()} IZI Wheel</span>
+          )}
+        </div>
+        <button
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors"
+          onClick={() => setShowRulesModal(true)}
+          type="button"
+        >
+          Règles du jeu
+        </button>
+      </footer>
     </div>
   );
 };

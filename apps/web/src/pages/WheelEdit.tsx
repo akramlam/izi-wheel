@@ -51,6 +51,10 @@ type WheelData = {
   redirectUrl?: string;
   redirectText?: string;
   playLimit?: string;
+  gameRules?: string;
+  footerText?: string;
+  gameRules?: string;
+  footerText?: string;
 };
 
 type Company = {
@@ -121,8 +125,10 @@ const WheelEdit = () => {
     companyId: '',
     socialNetwork: undefined,
     redirectUrl: '',
-    redirectText: '',
+    redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
     playLimit: 'ONCE_PER_DAY',
+    gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
+    footerText: `© ${new Date().getFullYear()} ${wheel.name}`,
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -186,6 +192,8 @@ const WheelEdit = () => {
         redirectUrl: '',
         redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
         playLimit: 'ONCE_PER_DAY',
+        gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
+        footerText: `© ${new Date().getFullYear()} ${wheelName}`,
       });
       setIsLoading(false);
     }
@@ -1236,6 +1244,7 @@ const WheelEdit = () => {
             <TabsList className="mb-4">
               <TabsTrigger value="social">Réseau social</TabsTrigger>
               <TabsTrigger value="limit">Limite de jeu</TabsTrigger>
+              <TabsTrigger value="custom">Personnalisation</TabsTrigger>
             </TabsList>
             
             <TabsContent value="social" className="space-y-4">
@@ -1318,6 +1327,56 @@ const WheelEdit = () => {
                   </SelectContent>
                 </Select>
         </div>
+                          </TabsContent>
+              
+              <TabsContent value="custom" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gameRules">Règles du jeu</Label>
+                  <Textarea
+                    id="gameRules"
+                    placeholder="Règles et instructions du jeu..."
+                    value={wheel.gameRules || ''}
+                    onChange={(e) => setWheel({ ...wheel, gameRules: e.target.value })}
+                    rows={5}
+                  />
+                  <p className="text-xs text-gray-500">Personnalisez les règles qui seront affichées aux joueurs.</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="footerText">Texte du pied de page</Label>
+                  <Input
+                    id="footerText"
+                    placeholder="© 2024 Votre Entreprise"
+                    value={wheel.footerText || ''}
+                    onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page.</p>
+                        </div>
+            </TabsContent>
+            
+            <TabsContent value="custom" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="gameRules">Règles du jeu</Label>
+                <Textarea
+                  id="gameRules"
+                  placeholder="Règles et instructions du jeu..."
+                  value={wheel.gameRules || ''}
+                  onChange={(e) => setWheel({ ...wheel, gameRules: e.target.value })}
+                  rows={5}
+                />
+                <p className="text-xs text-gray-500">Personnalisez les règles qui seront affichées aux joueurs.</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="footerText">Texte du pied de page</Label>
+                <Input
+                  id="footerText"
+                  placeholder="© 2024 Votre Entreprise"
+                  value={wheel.footerText || ''}
+                  onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
+                />
+                <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page.</p>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>

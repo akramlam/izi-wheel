@@ -54,6 +54,9 @@ model Wheel {
   redirectText  String? // Text to show in the redirection popup
   // New fields for play limits
   playLimit     PlayLimit      @default(ONCE_PER_DAY) // How often users can play
+  // New fields for customization
+  gameRules     String?        // Customizable game rules text
+  footerText    String?        // Customizable footer text
   slots         Slot[]
   plays         Play[]
   createdAt     DateTime       @default(now())

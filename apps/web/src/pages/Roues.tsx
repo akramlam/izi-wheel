@@ -496,10 +496,10 @@ const Roues: React.FC = () => {
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
             <Button className="flex items-center space-x-2" onClick={handleCreateWheel}>
-              <Plus className="h-4 w-4" />
-              <span>Nouvelle roue</span>
-            </Button>
-          </div>
+          <Plus className="h-4 w-4" />
+          <span>Nouvelle roue</span>
+        </Button>
+      </div>
         )}
       </div>
 

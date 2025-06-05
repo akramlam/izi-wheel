@@ -18,6 +18,9 @@ const wheelSchema = z.object({
   redirectText: z.string().max(500).optional(),
   // New field for play limit
   playLimit: z.nativeEnum(PlayLimit).optional().default(PlayLimit.ONCE_PER_DAY),
+  // New fields for customization
+  gameRules: z.string().max(2000).optional(),
+  footerText: z.string().max(500).optional(),
 });
 
 /**
