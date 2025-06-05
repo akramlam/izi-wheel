@@ -1227,6 +1227,31 @@ const WheelEdit = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Color picker for slot */}
+                <div className="mt-4">
+                  <Label htmlFor={`slot-${index}-color`}>Couleur</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      id={`slot-${index}-color`}
+                      type="color"
+                      value={slot.color || PRESET_COLORS[index % PRESET_COLORS.length]}
+                      onChange={(e) => handleSlotChange(index, 'color', e.target.value)}
+                      className="w-10 h-10 p-1 border rounded cursor-pointer"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_COLORS.map((color, colorIndex) => (
+                        <div
+                          key={colorIndex}
+                          className="w-6 h-6 rounded-full border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                          style={{ backgroundColor: color }}
+                          onClick={() => handleSlotChange(index, 'color', color)}
+                          title={`Couleur ${colorIndex + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
             </div>

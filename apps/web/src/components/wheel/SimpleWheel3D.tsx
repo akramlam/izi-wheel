@@ -25,10 +25,10 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   const [hasCompletedSpin, setHasCompletedSpin] = useState(false);
   const wheelRef = useRef<SVGSVGElement>(null);
   
-  // Create default segments if none provided or if single segment (fixes green wheel issue)
+  // Create default segments if none provided (fixes green wheel issue if segments are empty)
   useEffect(() => {
-    if (!config.segments || config.segments.length <= 1) {
-      console.log('No segments or only one segment found - creating default segments');
+    if (!config.segments || config.segments.length === 0) {
+      console.log('No segments found - creating default segments');
       props.config.segments = [
         { label: 'Cadeau 1', color: '#FF6384', isWinning: true },
         { label: 'Cadeau 2', color: '#36A2EB', isWinning: true },

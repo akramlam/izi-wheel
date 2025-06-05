@@ -9,8 +9,6 @@ import WheelEdit from './pages/WheelEdit';
 import Layout from './components/Layout';
 import Entreprises from './pages/Entreprises';
 import SousAdministrateurs from './pages/SousAdministrateurs';
-// import Statistiques from './pages/Statistiques';
-// import Statistics from './pages/Statistics';
 import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
 import PlayWheel from './pages/PlayWheel';
