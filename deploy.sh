@@ -19,11 +19,11 @@ cd ../..
 cd apps/api
 npx prisma generate
 
-# Check if fix-enum.js exists and run it if needed
-if [ -f "fix-enum.js" ]; then
-  echo "Running fix-enum.js to fix enum issues..."
-  node fix-enum.js
-  echo "Enum fix completed."
+# Run direct-fix.js to fix database schema issues
+if [ -f "direct-fix.js" ]; then
+  echo "Running direct-fix.js to fix database schema issues..."
+  node direct-fix.js
+  echo "Database schema fix completed."
 fi
 
 # Continue with migrations
