@@ -1109,26 +1109,49 @@ const WheelEdit = () => {
           </CardHeader>
           <CardContent className="flex justify-center items-center p-4">
             <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-              {/* Simple visual representation of the wheel */}
-              <div className="relative w-full h-full">
+              {/* SVG wheel representation */}
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                {/* Segments */}
                 {wheel.slots.map((slot, index) => {
-                  const angle = (360 / wheel.slots.length) * index;
+                  const segmentCount = wheel.slots.length;
+                  const segmentAngle = 360 / segmentCount;
+                  const startAngle = segmentAngle * index;
+                  const endAngle = startAngle + segmentAngle;
+                  
+                  // Convert angles to radians for calculations
+                  const startRad = (startAngle - 90) * (Math.PI / 180);
+                  const endRad = (endAngle - 90) * (Math.PI / 180);
+                  
+                  // Calculate points for the segment path
+                  const x1 = 50;
+                  const y1 = 50;
+                  const x2 = 50 + 50 * Math.cos(startRad);
+                  const y2 = 50 + 50 * Math.sin(startRad);
+                  const x3 = 50 + 50 * Math.cos(endRad);
+                  const y3 = 50 + 50 * Math.sin(endRad);
+                  
+                  // Create SVG path for the segment
+                  const largeArcFlag = segmentAngle > 180 ? 1 : 0;
+                  
+                  // Special case for single segment - draw a complete circle
+                  const pathData = segmentCount === 1 
+                    ? "M50,50 m0,-45 a45,45 0 1,0 0.1,0 a45,45 0 1,0 -0.1,0 Z"
+                    : `M${x1},${y1} L${x2},${y2} A50,50 0 ${largeArcFlag},1 ${x3},${y3} Z`;
+                  
                   return (
-                    <div
+                    <path
                       key={index}
-                      className="absolute inset-0"
-                      style={{
-                        clipPath: `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.cos((angle + 360 / wheel.slots.length) * Math.PI / 180)}% ${50 - 50 * Math.sin((angle + 360 / wheel.slots.length) * Math.PI / 180)}%, 50% 50%)`,
-                        transform: `rotate(${angle}deg)`,
-                        backgroundColor: slot.color || PRESET_COLORS[index % PRESET_COLORS.length],
-                      }}
+                      d={pathData}
+                      fill={slot.color || PRESET_COLORS[index % PRESET_COLORS.length]}
+                      stroke="#ffffff"
+                      strokeWidth="0.5"
                     />
                   );
                 })}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 bg-white rounded-full border-4 border-gray-300"></div>
-            </div>
-            </div>
+                
+                {/* Center circle */}
+                <circle cx="50" cy="50" r="4" fill="white" stroke="#cccccc" strokeWidth="1" />
+              </svg>
             </div>
           </CardContent>
         </Card>

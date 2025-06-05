@@ -498,6 +498,11 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
             'Z'
           ].join(' ');
           
+          // Special case for single segment - draw a complete circle
+          const finalPath = config.segments.length === 1 
+            ? `M ${CENTER} ${CENTER} m 0 ${-RADIUS} a ${RADIUS} ${RADIUS} 0 1 0 0.1 0 a ${RADIUS} ${RADIUS} 0 1 0 -0.1 0 Z`
+            : arcPath;
+          
           // Calculate midpoint for text placement
           const midAngle = (startAngle + endAngle) / 2 - 90;
           const midRad = midAngle * (Math.PI / 180);
@@ -559,7 +564,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
             <g key={i}>
               {/* Draw segment with 3D effect */}
               <path 
-                d={arcPath} 
+                d={finalPath} 
                 fill={segmentColor}
                 stroke="#FFFFFF"
                 strokeWidth="1.5"
@@ -569,7 +574,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
               
               {/* Add highlight gradient for 3D effect */}
               <path
-                d={arcPath}
+                d={finalPath}
                 fill="url(#segmentHighlight)"
                 opacity={isAlternate ? 0.7 : 0.4}
                 style={{ mixBlendMode: 'overlay' }}
