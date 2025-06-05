@@ -1337,7 +1337,7 @@ const WheelEdit = () => {
         </div>
                           </TabsContent>
               
-              <TabsContent value="custom" className="space-y-4">
+              {/* <TabsContent value="custom" className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="gameRules">Règles du jeu</Label>
                   <Textarea
@@ -1361,7 +1361,7 @@ const WheelEdit = () => {
                   <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page.</p>
                         </div>
             </TabsContent>
-            
+             */}
             <TabsContent value="custom" className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="gameRules">Règles du jeu</Label>
