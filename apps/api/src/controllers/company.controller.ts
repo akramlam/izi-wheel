@@ -1,11 +1,19 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
 import { subDays, format } from 'date-fns';
-import { Plan, Role } from '@prisma/client';
+import { Plan as PrismaClientPlan, Role } from '@prisma/client';
 import { hashPassword, generateRandomPassword } from '../utils/auth';
 import { sendInviteEmail } from '../utils/mailer';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
+
+// Define a local version of the Plan enum that includes FREE
+// This is necessary until Prisma client is regenerated with the updated schema
+enum Plan {
+  FREE = 'FREE',
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM'
+}
 
 export const getCompanyStatistics = async (req: Request, res: Response) => {
   try {
@@ -218,9 +226,9 @@ export const updateCompany = async (req: Request, res: Response) => {
 
     // Validate the plan value if provided
     if (plan !== undefined) {
-      if (!(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+      if (!(plan === Plan.BASIC || plan === Plan.PREMIUM || plan === Plan.FREE)) {
         return res.status(400).json({
-          error: 'Invalid plan value. Must be one of: BASIC, PREMIUM' 
+          error: 'Invalid plan value. Must be one of: FREE, BASIC, PREMIUM' 
         });
       }
     }
@@ -250,9 +258,9 @@ export const createCompany = async (req: Request, res: Response) => {
     const { name, plan, maxWheels, admins } = req.body;
 
     // Validate plan
-    if (plan && !(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+    if (plan && !(plan === Plan.BASIC || plan === Plan.PREMIUM || plan === Plan.FREE)) {
       return res.status(400).json({
-        error: 'Invalid plan. Must be BASIC or PREMIUM.'
+        error: 'Invalid plan. Must be one of: FREE, BASIC, PREMIUM.'
       });
     }
 
@@ -358,39 +366,31 @@ export const deleteCompany = async (req: Request, res: Response) => {
 
 export const getCompanies = async (req: Request, res: Response) => {
   try {
-    // Try to fetch companies with all fields
-    try {
-      const companies = await prisma.company.findMany();
-      res.status(200).json({ companies });
-    } catch (prismaError) {
-      // If there's a Prisma error (likely due to missing field), try with explicit select
-      console.error('Error fetching companies with all fields:', prismaError);
-      
-      const companies = await prisma.company.findMany({
-        select: {
-          id: true,
-          name: true,
-          plan: true,
-          maxWheels: true,
-          isActive: true,
-          createdAt: true,
-          _count: {
-            select: {
-              wheels: true,
-              admins: true
-            }
+    // Use explicit select to avoid issues with schema changes
+    const companies = await prisma.company.findMany({
+      select: {
+        id: true,
+        name: true,
+        plan: true,
+        maxWheels: true,
+        isActive: true,
+        createdAt: true,
+        _count: {
+          select: {
+            wheels: true,
+            admins: true
           }
         }
-      });
-      
-      // Add default value for remainingPlays if it's missing
-      const companiesWithDefaults = companies.map(company => ({
-        ...company,
-        remainingPlays: 50 // Default value
-      }));
-      
-      res.status(200).json({ companies: companiesWithDefaults });
-    }
+      }
+    });
+    
+    // Add default value for remainingPlays
+    const companiesWithDefaults = companies.map(company => ({
+      ...company,
+      remainingPlays: 50 // Default value
+    }));
+    
+    res.status(200).json({ companies: companiesWithDefaults });
   } catch (error) {
     console.error('Failed to fetch companies:', error);
     res.status(500).json({ error: 'Failed to fetch companies' });
@@ -560,9 +560,9 @@ export const updateCompanyPlan = async (req: Request, res: Response) => {
     const { companyId } = req.params;
     const { plan } = req.body;
 
-    if (!(plan === Plan.BASIC || plan === Plan.PREMIUM)) {
+    if (!(plan === Plan.BASIC || plan === Plan.PREMIUM || plan === Plan.FREE)) {
       return res.status(400).json({
-        error: 'Invalid plan. Must be BASIC or PREMIUM.'
+        error: 'Invalid plan. Must be one of: FREE, BASIC, PREMIUM'
       });
     }
 
