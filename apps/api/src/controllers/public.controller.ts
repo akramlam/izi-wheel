@@ -3,6 +3,7 @@ import prisma, { checkPlayExists } from '../utils/db';
 import { generateQRCode } from '../utils/qrcode';
 import { generatePIN } from '../utils/pin';
 import { ensureWheelHasSlots } from '../utils/db-init';
+import { sendPrizeEmail } from '../utils/mailer';
 
 /**
  * Get public wheel data
@@ -605,6 +606,87 @@ export const redeemPrize = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error redeeming prize:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Claim a prize by submitting contact information
+ */
+export const claimPrize = async (req: Request, res: Response) => {
+  try {
+    const { playId } = req.params;
+    const { name, email, phone, birthDate } = req.body;
+
+    if (!playId) {
+      return res.status(400).json({ error: 'Play ID is required' });
+    }
+
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+
+    // Find the play
+    const play = await prisma.play.findUnique({
+      where: { id: playId },
+      include: {
+        slot: true
+      }
+    });
+
+    if (!play) {
+      return res.status(404).json({ error: 'Play not found' });
+    }
+
+    // Only winning plays can be claimed
+    if (play.result !== 'WIN') {
+      return res.status(400).json({ error: 'This play did not result in a prize' });
+    }
+
+    // Check if already claimed
+    if (play.redemptionStatus === 'CLAIMED') {
+      return res.status(400).json({ error: 'Prize already claimed' });
+    }
+
+    // Update the play with lead information and mark as claimed
+    const claimData = {
+      name,
+      email,
+      phone: phone || undefined,
+      birthDate: birthDate || undefined
+    };
+
+    const updatedPlay = await prisma.play.update({
+      where: { id: playId },
+      data: { 
+        leadInfo: claimData,
+        redemptionStatus: 'CLAIMED',
+        claimedAt: new Date()
+      }
+    });
+
+    // Send prize notification email
+    try {
+      await sendPrizeEmail(
+        email,
+        play.slot.label || 'Your Prize',
+        play.qrLink || '',
+        play.pin || ''
+      );
+      console.log(`Prize notification email sent to ${email} for play ${playId}`);
+    } catch (emailError) {
+      console.error('Failed to send prize email:', emailError);
+      // Don't fail the request if email fails - the prize is still claimed
+    }
+
+    return res.status(200).json({
+      id: updatedPlay.id,
+      status: updatedPlay.redemptionStatus,
+      claimedAt: updatedPlay.claimedAt,
+      message: 'Prize claimed successfully! You will receive an email with redemption details.'
+    });
+  } catch (error) {
+    console.error('Error claiming prize:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

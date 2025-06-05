@@ -818,7 +818,7 @@ const PlayWheel = () => {
   };
 
   // Handle claim form submission
-  const handleClaimFormSubmit = (data: PlayerFormData) => {
+  const handleClaimFormSubmit = async (data: PlayerFormData) => {
     console.log('Claim form submitted:', data);
     
     // Stop confetti immediately
@@ -835,15 +835,57 @@ const PlayWheel = () => {
       timestamp: new Date().toISOString()
     });
     
-    // Set user flow to claimed
-    setUserFlowState('claimed');
-    
-    // Call API to update lead info if needed
+    // Call API to claim the prize and send email
     if (spinResult?.play.id) {
-      // Here you would normally update the play record with complete user info
-      // For now, just show thank you message
-      setShowClaimForm(false);
-      setShowThankyouMessage(true);
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
+        const response = await fetch(`${apiBaseUrl}/plays/${spinResult.play.id}/claim`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+            phone: data.phone || undefined,
+            birthDate: data.birthDate || undefined
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Prize claimed successfully:', result);
+          
+          // Set user flow to claimed
+          setUserFlowState('claimed');
+          setShowClaimForm(false);
+          setShowThankyouMessage(true);
+          
+          toast({
+            title: "Prix réclamé avec succès !",
+            description: "Vous recevrez un email avec les détails de votre prix.",
+          });
+        } else {
+          const error = await response.json();
+          console.error('Failed to claim prize:', error);
+          
+          toast({
+            title: "Erreur",
+            description: error.error || "Impossible de réclamer le prix. Veuillez réessayer.",
+            variant: "destructive"
+          });
+          return; // Don't proceed if API call failed
+        }
+      } catch (error) {
+        console.error('Error claiming prize:', error);
+        
+        toast({
+          title: "Erreur de connexion",
+          description: "Impossible de contacter le serveur. Veuillez vérifier votre connexion.",
+          variant: "destructive"
+        });
+        return; // Don't proceed if API call failed
+      }
       
       // Show thank you message for 3 seconds then reset
       setTimeout(() => {

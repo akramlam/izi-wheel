@@ -95,6 +95,7 @@ model Play {
   qrLink           String? // QR code URL for redemption
   redemptionStatus RedemptionStatus @default(PENDING)
   redeemedAt       DateTime?
+  claimedAt        DateTime?
   ip               String?
   createdAt        DateTime         @default(now())
 }
@@ -117,6 +118,7 @@ enum PlayResult {
 
 enum RedemptionStatus {
   PENDING
+  CLAIMED
   REDEEMED
 }
 

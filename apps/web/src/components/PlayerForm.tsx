@@ -132,7 +132,7 @@ export function PlayerForm({ fields, onSubmit, isSubmitting = false }: PlayerFor
                 Chargement...
               </>
             ) : (
-              "Tournez la roue !"
+              "Récupérer mon prix"
             )}
           </Button>
         </form>

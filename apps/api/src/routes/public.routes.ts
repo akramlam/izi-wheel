@@ -4,6 +4,7 @@ import {
   spinWheel,
   getPrizeDetails,
   redeemPrize,
+  claimPrize,
   debugPlayId
 } from '../controllers/public.controller';
 
@@ -41,6 +42,7 @@ router.post('/wheels/:wheelId/spin', spinWheel);
 // Prize redemption endpoints
 router.get('/plays/:playId', getPrizeDetails);
 router.post('/plays/:playId/redeem', redeemPrize);
+router.post('/plays/:playId/claim', claimPrize);
 
 // Diagnostic endpoints
 router.get('/debug/plays/:playId', debugPlayId);

@@ -126,17 +126,41 @@ export const sendPrizeEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
       to: email,
-      subject: `Congratulations! You won a prize on IZI Wheel`,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Wheel`,
       html: `
-        <h1>Congratulations!</h1>
-        <p>You have won <strong>${prizeName}</strong> on IZI Wheel.</p>
-        <p>To redeem your prize, use one of the following methods:</p>
-        <ul>
-          <li>Scan this QR code: <img src="${qrCode}" alt="QR Code" /></li>
-          <li>Or use this PIN code: <strong>${pin}</strong></li>
-        </ul>
-        <p>Thank you for participating!</p>
-        <p>The IZI Wheel Team</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #4f46e5;">🎉 Félicitations !</h1>
+          </div>
+          
+          <p>Vous avez gagné <strong>${prizeName}</strong> sur IZI Wheel !</p>
+          
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold;">Pour récupérer votre prix, vous avez deux options :</p>
+            <ul style="padding-left: 20px;">
+              <li><strong>Code PIN :</strong> ${pin}</li>
+              ${qrCode ? `<li><strong>Code QR :</strong> Scannez le code ci-dessous</li>` : ''}
+            </ul>
+          </div>
+          
+          ${qrCode ? `
+          <div style="text-align: center; margin: 20px 0;">
+            <img src="${qrCode}" alt="Code QR pour récupérer votre prix" style="max-width: 200px; height: auto;" />
+          </div>
+          ` : ''}
+          
+          <p><strong>Comment récupérer votre prix :</strong></p>
+          <ol>
+            <li>Présentez-vous au point de vente</li>
+            <li>Montrez ce code PIN : <strong>${pin}</strong> ${qrCode ? 'ou scannez le code QR' : ''}</li>
+            <li>Profitez de votre prix !</li>
+          </ol>
+          
+          <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+            Merci d'avoir participé !<br>
+            L'équipe IZI Wheel
+          </p>
+        </div>
       `,
     };
 

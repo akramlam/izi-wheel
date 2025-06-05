@@ -27,14 +27,14 @@ describe('PlayerForm', () => {
     expect(screen.getByLabelText(/Date de naissance/i)).toBeInTheDocument();
     
     // Check if the submit button is rendered
-    expect(screen.getByRole('button', { name: /Tournez la roue/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Récupérer mon prix/i })).toBeInTheDocument();
   });
 
   it('displays validation errors for invalid inputs', async () => {
     render(<PlayerForm fields={mockFields} onSubmit={mockSubmit} />);
     
     // Try to submit with empty fields
-    fireEvent.click(screen.getByRole('button', { name: /Tournez la roue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Récupérer mon prix/i }));
     
     // Wait for validation messages
     await waitFor(() => {
@@ -54,7 +54,7 @@ describe('PlayerForm', () => {
     fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'john@example.com' } });
     
     // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /Tournez la roue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Récupérer mon prix/i }));
     
     // Wait for the submission
     await waitFor(() => {
