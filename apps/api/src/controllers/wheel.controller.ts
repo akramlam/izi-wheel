@@ -22,6 +22,9 @@ const wheelSchema = z.object({
   gameRules: z.string().max(2000).optional(),
   footerText: z.string().max(500).optional(),
   mainTitle: z.string().max(100).optional(),
+  // New fields for visual customization
+  bannerImage: z.string().url().optional(),
+  backgroundImage: z.string().url().optional(),
 });
 
 /**

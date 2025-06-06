@@ -54,6 +54,8 @@ type WheelData = {
   gameRules?: string;
   footerText?: string;
   mainTitle?: string;
+  bannerImage?: string;
+  backgroundImage?: string;
 };
 
 type Company = {
@@ -129,6 +131,8 @@ const WheelEdit = () => {
     gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
     footerText: `© ${new Date().getFullYear()} IZI Wheel`,
     mainTitle: '',
+    bannerImage: '',
+    backgroundImage: '',
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -194,6 +198,8 @@ const WheelEdit = () => {
         gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
         footerText: `© ${new Date().getFullYear()} IZI Wheel`,
         mainTitle: '',
+        bannerImage: '',
+        backgroundImage: '',
       });
       setIsLoading(false);
     }
@@ -285,7 +291,9 @@ const WheelEdit = () => {
             gameRules: wheelFromApi.gameRules || 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
             footerText: wheelFromApi.footerText || `© ${new Date().getFullYear()} IZI Wheel`,
             mainTitle: wheelFromApi.mainTitle || '',
-            slots: []
+            slots: [],
+            bannerImage: wheelFromApi.bannerImage || '',
+            backgroundImage: wheelFromApi.backgroundImage || '',
           };
           
           console.log('Processed wheel data:', wheelData);
@@ -310,7 +318,9 @@ const WheelEdit = () => {
           type: 'RANDOM_WIN', // Default enum value
           statut: 'Inactif',
           companyId: 'demo-company-id',
-          slots: []
+          slots: [],
+          bannerImage: '',
+          backgroundImage: '',
         };
         setHasApiError(true);
       }
@@ -418,6 +428,8 @@ const WheelEdit = () => {
             color: PRESET_COLORS[2]
           },
         ],
+        bannerImage: '',
+        backgroundImage: '',
       });
     } finally {
       setIsLoading(false);
@@ -803,6 +815,8 @@ const WheelEdit = () => {
       gameRules: wheel.gameRules,
       footerText: wheel.footerText,
       mainTitle: wheel.mainTitle,
+      bannerImage: wheel.bannerImage,
+      backgroundImage: wheel.backgroundImage,
       formSchema: {},
     };
 
@@ -1431,6 +1445,61 @@ const WheelEdit = () => {
                 />
                 <p className="text-xs text-gray-500">Personnalisez le titre affiché en haut de la page de jeu.</p>
               </div>
+              
+              {/* Banner Image */}
+              <div className="space-y-2">
+                <Label htmlFor="bannerImage">Image de bannière</Label>
+                <Input
+                  id="bannerImage"
+                  type="url"
+                  placeholder="https://example.com/votre-banniere.jpg"
+                  value={wheel.bannerImage || ''}
+                  onChange={(e) => setWheel({ ...wheel, bannerImage: e.target.value })}
+                />
+                <p className="text-xs text-gray-500">URL d'une image de bannière à afficher en haut de la page (recommandé: 1200x300px).</p>
+                {wheel.bannerImage && (
+                  <div className="mt-2 p-2 border rounded-lg bg-gray-50">
+                    <img 
+                      src={wheel.bannerImage} 
+                      alt="Aperçu bannière" 
+                      className="w-full h-20 object-cover rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden text-red-500 text-sm mt-1">❌ Impossible de charger l'image</div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Background Image */}
+              <div className="space-y-2">
+                <Label htmlFor="backgroundImage">Image de fond</Label>
+                <Input
+                  id="backgroundImage"
+                  type="url"
+                  placeholder="https://example.com/votre-fond.jpg"
+                  value={wheel.backgroundImage || ''}
+                  onChange={(e) => setWheel({ ...wheel, backgroundImage: e.target.value })}
+                />
+                <p className="text-xs text-gray-500">URL d'une image de fond pour personnaliser l'arrière-plan de la page (recommandé: 1920x1080px).</p>
+                {wheel.backgroundImage && (
+                  <div className="mt-2 p-2 border rounded-lg bg-gray-50">
+                    <img 
+                      src={wheel.backgroundImage} 
+                      alt="Aperçu fond" 
+                      className="w-full h-32 object-cover rounded"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden text-red-500 text-sm mt-1">❌ Impossible de charger l'image</div>
+                  </div>
+                )}
+              </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="gameRules">Règles du jeu</Label>
                 <Textarea

@@ -58,6 +58,9 @@ model Wheel {
   gameRules     String?        // Customizable game rules text
   footerText    String?        // Customizable footer text
   mainTitle     String?        // Customizable main title
+  // New fields for visual customization
+  bannerImage   String?        // URL for banner image
+  backgroundImage String?      // URL for background image
   slots         Slot[]
   plays         Play[]
   createdAt     DateTime       @default(now())

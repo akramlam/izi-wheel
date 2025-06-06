@@ -37,6 +37,8 @@ type WheelData = {
   gameRules?: string;
   footerText?: string;
   mainTitle?: string;
+  bannerImage?: string;
+  backgroundImage?: string;
 };
 
 type PlayResponse = {
@@ -1146,11 +1148,35 @@ const PlayWheel = () => {
   }
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
+    <div 
+      className="min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100"
+      style={{
+        backgroundImage: wheelData?.backgroundImage 
+          ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${wheelData.backgroundImage})`
+          : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Banner Image */}
+      {wheelData?.bannerImage && (
+        <div className="w-full">
+          <img 
+            src={wheelData.bannerImage} 
+            alt="Banner" 
+            className="w-full h-24 sm:h-32 md:h-40 lg:h-48 object-cover shadow-lg"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
       {/* Logo - Mobile responsive */}
       {wheelData && (
         <div className="w-full flex justify-center px-2 py-2 sm:py-4">
-          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 max-w-full break-words px-2">
+          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 max-w-full break-words px-2 drop-shadow-lg">
             {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
           </h1>
         </div>
