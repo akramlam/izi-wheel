@@ -7,6 +7,7 @@ import { Role } from '@prisma/client';
 import playRoutes from './play.routes';
 import express from 'express';
 import prisma from '../utils/db';
+import multer from 'multer';
 
 // Add type annotation for router
 const router: Router = Router({ mergeParams: true });
@@ -19,6 +20,22 @@ router.use(authMiddleware);
 
 // TEMPORARILY DISABLE COMPANY GUARD TO FIX WHEEL UPDATE ISSUE
 // router.use(companyGuard);
+
+// Configure multer for image uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Check if file is an image
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  },
+});
 
 // Wheel routes
 /**
@@ -271,5 +288,8 @@ specialRouter.post('/:wheelId/fix', authMiddleware, roleGuard([Role.ADMIN, Role.
 
 // Add this route after getting a specific wheel
 router.post('/:wheelId/fix', authMiddleware, wheelController.fixWheel);
+
+// Image upload endpoint
+router.post('/upload-image', upload.single('image'), wheelController.uploadWheelImage);
 
 export default router; 

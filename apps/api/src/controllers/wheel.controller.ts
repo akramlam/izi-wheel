@@ -4,6 +4,7 @@ import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
 import { generateQRCode } from '../utils/qrcode';
+import { uploadAsset } from '../utils/uploader';
 
 // Validation schema for creating/updating a wheel
 const wheelSchema = z.object({
@@ -728,5 +729,50 @@ export const fixWheel = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fixing wheel:', error);
     return res.status(500).json({ error: 'Failed to fix wheel' });
+  }
+};
+
+/**
+ * Upload wheel image to Cloudinary
+ */
+export const uploadWheelImage = async (req: any, res: Response) => {
+  try {
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    // Validate file type
+    if (!req.file.mimetype.startsWith('image/')) {
+      return res.status(400).json({ error: 'File must be an image' });
+    }
+
+    // Get image type from query params
+    const imageType = req.query.type as string;
+    if (!imageType || !['banner', 'background'].includes(imageType)) {
+      return res.status(400).json({ error: 'Image type must be "banner" or "background"' });
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const filename = `wheel-${imageType}-${timestamp}`;
+    const folder = `iziwheel/wheels/${imageType}s`;
+
+    // Upload to Cloudinary
+    const uploadResult = await uploadAsset(req.file.buffer, folder, filename);
+
+    res.status(200).json({
+      success: true,
+      url: uploadResult.secure_url,
+      publicId: uploadResult.public_id,
+      type: imageType
+    });
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload image', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
   }
 }; 

@@ -12,6 +12,7 @@ import { Textarea } from '../components/ui/textarea';
 import { useAuth } from '../hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { ImageUpload } from '../components/ui/ImageUpload';
 
 // Predefined colors for slots
 const PRESET_COLORS = [
@@ -1447,58 +1448,24 @@ const WheelEdit = () => {
               </div>
               
               {/* Banner Image */}
-              <div className="space-y-2">
-                <Label htmlFor="bannerImage">Image de bannière</Label>
-                <Input
-                  id="bannerImage"
-                  type="url"
-                  placeholder="https://example.com/votre-banniere.jpg"
-                  value={wheel.bannerImage || ''}
-                  onChange={(e) => setWheel({ ...wheel, bannerImage: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">URL d'une image de bannière à afficher en haut de la page (recommandé: 1200x300px).</p>
-                {wheel.bannerImage && (
-                  <div className="mt-2 p-2 border rounded-lg bg-gray-50">
-                    <img 
-                      src={wheel.bannerImage} 
-                      alt="Aperçu bannière" 
-                      className="w-full h-20 object-cover rounded"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                    <div className="hidden text-red-500 text-sm mt-1">❌ Impossible de charger l'image</div>
-                  </div>
-                )}
-              </div>
+              <ImageUpload
+                onImageUpload={(url) => setWheel({ ...wheel, bannerImage: url })}
+                currentImageUrl={wheel.bannerImage}
+                imageType="banner"
+                title="Image de bannière"
+                description="Image de bannière à afficher en haut de la page"
+                recommendedSize="1200x300px"
+              />
               
               {/* Background Image */}
-              <div className="space-y-2">
-                <Label htmlFor="backgroundImage">Image de fond</Label>
-                <Input
-                  id="backgroundImage"
-                  type="url"
-                  placeholder="https://example.com/votre-fond.jpg"
-                  value={wheel.backgroundImage || ''}
-                  onChange={(e) => setWheel({ ...wheel, backgroundImage: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">URL d'une image de fond pour personnaliser l'arrière-plan de la page (recommandé: 1920x1080px).</p>
-                {wheel.backgroundImage && (
-                  <div className="mt-2 p-2 border rounded-lg bg-gray-50">
-                    <img 
-                      src={wheel.backgroundImage} 
-                      alt="Aperçu fond" 
-                      className="w-full h-32 object-cover rounded"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                    <div className="hidden text-red-500 text-sm mt-1">❌ Impossible de charger l'image</div>
-                  </div>
-                )}
-              </div>
+              <ImageUpload
+                onImageUpload={(url) => setWheel({ ...wheel, backgroundImage: url })}
+                currentImageUrl={wheel.backgroundImage}
+                imageType="background"
+                title="Image de fond"
+                description="Image de fond pour personnaliser l'arrière-plan de la page"
+                recommendedSize="1920x1080px"
+              />
               
               <div className="space-y-2">
                 <Label htmlFor="gameRules">Règles du jeu</Label>
