@@ -1411,10 +1411,10 @@ const PlayWheel = () => {
             </div>
           </div>
         ) : currentStep === 'spinWheel' ? (
-          // Wheel View - Mobile optimized wheel container
-          <div className="w-full max-w-[320px] sm:max-w-[380px] md:max-w-[450px] lg:max-w-[520px] mx-auto flex flex-col items-center justify-center">
-            {/* Mobile optimized wheel container */}
-            <div className="relative w-[280px] h-[300px] sm:w-[320px] sm:h-[340px] md:w-[380px] md:h-[400px] lg:w-[450px] lg:h-[480px] mx-auto flex items-center justify-center overflow-hidden">
+          // Wheel View - Fixed mobile wheel container
+          <div className="w-full flex flex-col items-center justify-center">
+            {/* Larger mobile wheel container */}
+            <div className="relative w-[350px] h-[380px] sm:w-[400px] sm:h-[430px] md:w-[450px] md:h-[480px] lg:w-[500px] lg:h-[530px] mx-auto flex items-center justify-center">
               <Wheel
                 config={wheelConfig}
                 isSpinning={mustSpin}
@@ -1426,18 +1426,18 @@ const PlayWheel = () => {
             
             {/* Spin button and message area - Mobile responsive */}
             {!mustSpin && userFlowState === 'completedSocial' && (
-              <div className="mt-3 sm:mt-4 w-full max-w-[280px] sm:max-w-[320px] flex flex-col items-center space-y-2">
-                <p className="text-xs sm:text-sm text-indigo-700 font-medium text-center px-3 py-1.5 bg-white/50 rounded-full">
+              <div className="mt-4 w-full max-w-[350px] flex flex-col items-center space-y-3">
+                <p className="text-sm text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
                   Vous pouvez maintenant tenter de gagner
                 </p>
                 <Button 
                   onClick={handleSpinClick}
-                  className="w-full px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
+                  className="w-full px-6 py-3 text-base bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
                   disabled={isSpinning}
                 >
                   {isSpinning ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
