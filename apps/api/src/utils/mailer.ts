@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 
 // Get SMTP configuration from environment variables
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.smtp.com';
@@ -9,6 +11,47 @@ const SMTP_PASS = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
 
 // Check if SMTP configuration is valid
 const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
+
+// Create a development file transport for testing
+const createFileTransport = () => {
+  const emailsDir = path.join(process.cwd(), 'emails');
+  if (!fs.existsSync(emailsDir)) {
+    fs.mkdirSync(emailsDir, { recursive: true });
+  }
+  
+  return {
+    sendMail: async (mailOptions: any) => {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `email-${timestamp}.html`;
+      const filepath = path.join(emailsDir, filename);
+      
+      const emailContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>${mailOptions.subject}</title>
+</head>
+<body>
+    <h2>Email Details</h2>
+    <p><strong>To:</strong> ${mailOptions.to}</p>
+    <p><strong>From:</strong> ${mailOptions.from}</p>
+    <p><strong>Subject:</strong> ${mailOptions.subject}</p>
+    <hr>
+    <div>
+        ${mailOptions.html || mailOptions.text || 'No content'}
+    </div>
+</body>
+</html>`;
+      
+      fs.writeFileSync(filepath, emailContent);
+      console.log(`[EMAIL] 📁 Email saved to file: ${filepath}`);
+      console.log(`[EMAIL] 📧 Would send to: ${mailOptions.to}`);
+      console.log(`[EMAIL] 📝 Subject: ${mailOptions.subject}`);
+      
+      return { messageId: `file-${timestamp}` };
+    }
+  };
+};
 
 // Create a test/fallback transport when SMTP is not configured
 const testTransport = {
@@ -31,10 +74,16 @@ const transporter = isSmtpConfigured ? nodemailer.createTransport({
     user: SMTP_USER,
     pass: SMTP_PASS,
   },
-}) : testTransport;
+}) : (process.env.NODE_ENV === 'development' ? createFileTransport() : testTransport);
 
 // Log SMTP configuration status on startup
-console.log(`Mailer initialized: ${isSmtpConfigured ? 'Using SMTP configuration' : 'Using test transport (emails will be logged but not sent)'}`);
+if (isSmtpConfigured) {
+  console.log(`Mailer initialized: Using SMTP configuration (${SMTP_HOST}:${SMTP_PORT})`);
+} else if (process.env.NODE_ENV === 'development') {
+  console.log(`Mailer initialized: Using file transport (emails saved to ./emails/ folder)`);
+} else {
+  console.log(`Mailer initialized: Using test transport (emails will be logged but not sent)`);
+}
 
 /**
  * Send an invitation email to a new user
@@ -123,6 +172,10 @@ export const sendPrizeEmail = async (
   pin: string
 ): Promise<void> => {
   try {
+    console.log(`[EMAIL] Attempting to send prize email to: ${email}`);
+    console.log(`[EMAIL] Prize: ${prizeName}, PIN: ${pin}`);
+    console.log(`[EMAIL] SMTP Config - Host: ${SMTP_HOST}, Port: ${SMTP_PORT}, User: ${SMTP_USER}`);
+    
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
       to: email,
@@ -164,10 +217,27 @@ export const sendPrizeEmail = async (
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Prize notification email sent to ${email}`);
+    console.log(`[EMAIL] Mail options prepared for: ${email}`);
+    
+    if (!isSmtpConfigured) {
+      console.log(`[EMAIL] SMTP not configured - would send email to ${email}`);
+      console.log(`[EMAIL] Subject: ${mailOptions.subject}`);
+      console.log(`[EMAIL] Missing config - Host: ${SMTP_HOST}, User: ${SMTP_USER}, Pass: ${SMTP_PASS ? '[SET]' : '[MISSING]'}`);
+      return;
+    }
+
+    console.log(`[EMAIL] Sending via SMTP...`);
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] ✅ Prize notification email sent successfully to ${email}`);
+    console.log(`[EMAIL] Message ID: ${result.messageId}`);
   } catch (error) {
-    console.error('Failed to send prize email:', error);
+    console.error(`[EMAIL] ❌ Failed to send prize email to ${email}:`, error);
+    console.error(`[EMAIL] Error details:`, {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code,
+      command: (error as any)?.command,
+      response: (error as any)?.response
+    });
     // Don't throw the error, just log it
   }
 };

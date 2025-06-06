@@ -833,4 +833,7 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
     console.error('Error fetching company wheel:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
-}; 
+};
+
+// Export sendPrizeEmail for testing
+export { sendPrizeEmail }; 

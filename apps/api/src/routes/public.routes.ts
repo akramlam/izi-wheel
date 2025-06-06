@@ -5,7 +5,8 @@ import {
   getPrizeDetails,
   redeemPrize,
   claimPrize,
-  debugPlayId
+  debugPlayId,
+  sendPrizeEmail
 } from '../controllers/public.controller';
 
 import {
@@ -43,6 +44,40 @@ router.post('/wheels/:wheelId/spin', spinWheel);
 router.get('/plays/:playId', getPrizeDetails);
 router.post('/plays/:playId/redeem', redeemPrize);
 router.post('/plays/:playId/claim', claimPrize);
+
+// Test email endpoint (development only)
+router.post('/test-email', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Test endpoint not available in production' });
+  }
+  
+  try {
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    console.log('Testing email send to:', email);
+    await sendPrizeEmail(
+      email,
+      'Test Prize - ' + (name || 'Test User'),
+      'https://example.com/test-qr',
+      '123456'
+    );
+    
+    res.json({ 
+      success: true, 
+      message: `Test email sent to ${email}`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Test email failed:', error);
+    res.status(500).json({ 
+      error: 'Failed to send test email', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // Diagnostic endpoints
 router.get('/debug/plays/:playId', debugPlayId);
