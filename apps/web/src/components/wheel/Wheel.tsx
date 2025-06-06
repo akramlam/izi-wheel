@@ -10,15 +10,40 @@ interface WheelProps {
   showSpinButton?: boolean;
 }
 
-// Constants for wheel dimensions
-const WHEEL_SIZE = 500;
+// Constants for wheel dimensions - Made responsive
+const getWheelSize = () => {
+  if (typeof window !== 'undefined') {
+    const screenWidth = window.innerWidth;
+    // Scale wheel size based on screen width
+    if (screenWidth < 480) return 280; // Mobile phones
+    if (screenWidth < 768) return 350; // Small tablets
+    if (screenWidth < 1024) return 400; // Tablets
+    return 500; // Desktop
+  }
+  return 500; // Default for SSR
+};
+
+const WHEEL_SIZE = 500; // Base size for viewBox calculations
 const CENTER = WHEEL_SIZE / 2;
 const RADIUS = CENTER - 30;
 const TEXT_DISTANCE = RADIUS * 0.75;
+
+// Responsive font size
+const getResponsiveFontSize = () => {
+  if (typeof window !== 'undefined') {
+    const screenWidth = window.innerWidth;
+    if (screenWidth < 480) return 16; // Mobile phones
+    if (screenWidth < 768) return 18; // Small tablets
+    if (screenWidth < 1024) return 20; // Tablets
+    return 22; // Desktop
+  }
+  return 22; // Default for SSR
+};
+
 const NEW_FONT_SIZE = 22;
-const TEXT_RECT_MIN_WIDTH = NEW_FONT_SIZE * 2.5;
+const TEXT_RECT_MIN_WIDTH = 40;
 const TEXT_RECT_MAX_WIDTH = 120;
-const TEXT_RECT_HEIGHT = NEW_FONT_SIZE + 12;
+const TEXT_RECT_HEIGHT = 34;
 
 // Default brand colors
 const DEFAULT_COLORS = {
@@ -89,6 +114,24 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   // Initialize sound system
   useEffect(() => {
     soundUtils.init();
+  }, []);
+  
+  // Add responsive wheel size state
+  const [wheelDisplaySize, setWheelDisplaySize] = useState(getWheelSize());
+  const [responsiveFontSize, setResponsiveFontSize] = useState(getResponsiveFontSize());
+
+  // Update wheel size on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWheelDisplaySize(getWheelSize());
+      setResponsiveFontSize(getResponsiveFontSize());
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Set initial size
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
   
   // Handle spin animation with physics-based easing
@@ -231,13 +274,19 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   const colors = { ...DEFAULT_COLORS, ...config.colors };
   
   return (
-    <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center">
-      {/* Animated background glow */}
-      <div className="absolute z-0 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow opacity-70" 
-        style={{ animationDuration: '16s' }} />
+    <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center touch-none select-none">
+      {/* Animated background glow - Made responsive */}
+      <div 
+        className="absolute z-0 rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow opacity-70" 
+        style={{ 
+          animationDuration: '16s',
+          width: `${wheelDisplaySize + 50}px`,
+          height: `${wheelDisplaySize + 50}px`
+        }} 
+      />
       
-      {/* Pointer */}
-      <div className="relative z-10 flex justify-center" style={{ height: 64 }}>
+      {/* Pointer - Made responsive */}
+      <div className="relative z-10 flex justify-center" style={{ height: Math.max(48, wheelDisplaySize * 0.12) }}>
         <div
           ref={pointerRef}
           className={`transition-transform duration-500 ${pointerDropped ? 'translate-y-4' : ''}`}
@@ -248,9 +297,20 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           aria-hidden="true"
         >
           {config.pointerIconUrl ? (
-            <img src={config.pointerIconUrl} alt="" className="h-16 w-16" />
+            <img 
+              src={config.pointerIconUrl} 
+              alt="" 
+              className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16" 
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            />
           ) : (
-            <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <svg 
+              width={Math.max(32, wheelDisplaySize * 0.1)} 
+              height={Math.max(32, wheelDisplaySize * 0.1)} 
+              viewBox="0 0 48 48" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
               <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
                 <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3" />
               </filter>
@@ -267,13 +327,13 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         </div>
       </div>
       
-      {/* Wheel SVG */}
+      {/* Wheel SVG - Made fully responsive */}
       <svg
         ref={wheelRef}
-        width={WHEEL_SIZE}
-        height={WHEEL_SIZE}
+        width={wheelDisplaySize}
+        height={wheelDisplaySize}
         viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}
-        className="block mx-auto relative z-0"
+        className="block mx-auto relative z-0 touch-none"
         style={{
           borderRadius: '50%',
           boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)',
@@ -282,6 +342,10 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
             ? `transform ${spinning ? 5 + (rotation % 360) / 360 : 0}s cubic-bezier(0.18, 0.76, 0.22, 0.96)`
             : undefined,
           willChange: 'transform',
+          maxWidth: '100%',
+          height: 'auto',
+          pointerEvents: 'none',
+          userSelect: 'none'
         }}
         aria-label="Prize wheel"
         role="img"
@@ -327,7 +391,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           pointerEvents="none"
         />
         
-        {/* Render all segments */}
+        {/* Render all segments with responsive text */}
         {segments.map((segment, index) => {
           const angle = segAngle;
           const endAngle = startAngle + angle;
@@ -348,11 +412,11 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           }
 
           const labelText = segment.label || `Prix ${index + 1}`;
-          // Estimate text width: (num_chars * font_size * avg_char_width_ratio) + padding
-          const estimatedTextRenderWidth = labelText.length * NEW_FONT_SIZE * 0.55; // 0.55 is an empirical avg width factor
+          // Responsive text width calculation
+          const estimatedTextRenderWidth = labelText.length * responsiveFontSize * 0.55;
           const currentTextRectWidth = Math.min(
             TEXT_RECT_MAX_WIDTH,
-            Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextRenderWidth + 20) // Add 10px padding each side
+            Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextRenderWidth + 20)
           );
           
           return (
@@ -367,9 +431,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
               
               <g transform={`translate(${textPos.x}, ${textPos.y}) rotate(${textRotation})`}>
                 <rect 
-                  x={-currentTextRectWidth / 2} // Use dynamic width
+                  x={-currentTextRectWidth / 2}
                   y={-TEXT_RECT_HEIGHT / 2}
-                  width={currentTextRectWidth} // Use dynamic width
+                  width={currentTextRectWidth}
                   height={TEXT_RECT_HEIGHT}
                   fill="rgba(0,0,0,0.7)" 
                   rx="5"
@@ -382,7 +446,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill={colors.textColor}
-                  fontSize={NEW_FONT_SIZE}
+                  fontSize={responsiveFontSize}
                   fontWeight="900"
                   filter="url(#textShadow)"
                   className="select-none"
@@ -394,7 +458,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           );
         })}
         
-        {/* Center logo or brand */}
+        {/* Center logo or brand - Made responsive */}
         <circle 
           cx={CENTER} 
           cy={CENTER} 
@@ -418,7 +482,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           <text 
             x={CENTER} 
             y={CENTER} 
-            fontSize={28}
+            fontSize={Math.max(20, responsiveFontSize + 8)}
             fontWeight="bold" 
             fill={colors.primaryGradient} 
             textAnchor="middle" 

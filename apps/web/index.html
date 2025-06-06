@@ -2,10 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>IZI Wheel - Marketing Prize Wheel Platform</title>
     <meta name="description" content="IZI Wheel - Marketing prize wheel platform for campaigns, lead generation, and customer engagement" />
+    <style>
+      /* Prevent zoom on iOS Safari double-tap */
+      * {
+        touch-action: manipulation;
+      }
+      /* Ensure body doesn't scroll horizontally on mobile */
+      body {
+        overflow-x: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
