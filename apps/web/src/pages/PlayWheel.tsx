@@ -839,7 +839,7 @@ const PlayWheel = () => {
     if (spinResult?.play.id) {
       try {
         const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
-        const response = await fetch(`${apiBaseUrl}/plays/${spinResult.play.id}/claim`, {
+        const response = await fetch(`${apiBaseUrl}/plays/${spinResult.play.id}/redeem`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1166,24 +1166,24 @@ const PlayWheel = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between p-2 sm:p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
-      {/* Logo */}
+    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-start bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-3 sm:p-4">
+      {/* Logo - Mobile responsive */}
       {wheelData && (
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center mb-4 sm:mb-6 lg:mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 px-4">
+        <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-center mb-3 sm:mb-4 md:mb-6 lg:mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 px-2 sm:px-4">
           {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
         </h1>
       )}
       
       {/* Debug info (only in development) */}
       {import.meta.env.DEV && debugInfo && (
-        <div className="fixed bottom-4 left-2 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
           <div className="font-mono">{debugInfo}</div>
         </div>
       )}
       
       {/* Social network debug info (only in dev mode) */}
       {import.meta.env.DEV && wheelData?.socialNetwork && (
-        <div className="fixed top-4 right-2 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
           <div className="font-mono">Social: {wheelData.socialNetwork}</div>
         </div>
       )}
@@ -1203,66 +1203,160 @@ const PlayWheel = () => {
       />
       
       {/* Social redirect dialog */}
-      {currentStep === 'socialRedirect' && (
-        <SocialRedirectDialog
-          open={showSocialRedirect}
-          onClose={handleSocialRedirectClose}
-          network={wheelData?.socialNetwork}
-          redirectUrl={wheelData?.redirectUrl}
-          redirectText={wheelData?.redirectText}
-        />
-      )}
+      <SocialRedirectDialog
+        open={showSocialRedirect}
+        onClose={handleSocialRedirectClose}
+        network={wheelData?.socialNetwork}
+        redirectUrl={wheelData?.redirectUrl}
+        redirectText={wheelData?.redirectText}
+      />
       
       {/* Claim Form Dialog */}
-      {showClaimForm && (
-        <Dialog open={showClaimForm} onOpenChange={setShowClaimForm}>
-          <DialogContent className="max-w-md mx-4">
-            <DialogHeader>
-              <DialogTitle className="text-xl sm:text-2xl font-bold text-center">Récupérez votre lot !</DialogTitle>
-              <DialogDescription className="text-center text-sm sm:text-base">
-                Remplissez ce formulaire pour recevoir votre cadeau.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-4">
-            <PlayerForm 
-              fields={formFields}
-                onSubmit={handleClaimFormSubmit}
-                isSubmitting={false}
-            />
-          </div>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Thank You Message */}
-      {showThankyouMessage && (
-        <Dialog open={showThankyouMessage} onOpenChange={setShowThankyouMessage}>
-          <DialogContent className="max-w-sm text-center mx-4">
-            <DialogHeader>
-              <DialogTitle className="text-xl sm:text-2xl font-bold text-emerald-600">Merci !</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <p className="text-gray-700 mb-4 text-sm sm:text-base">
-                Votre lot vous sera envoyé par email très prochainement.
-              </p>
-              <Button onClick={() => setShowThankyouMessage(false)}>Fermer</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-      
-      {/* Rules modal */}
-      <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
-        <DialogContent className="max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60 mx-4">
+      <Dialog open={showClaimForm} onOpenChange={setShowClaimForm}>
+        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl font-bold text-center">Récupérer votre prix</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base text-center">
+              Veuillez remplir vos informations pour récupérer votre prix.
+            </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4 text-gray-700 text-sm sm:text-base">
+          
+          <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
+            {formFields.map((field) => (
+              <div key={field.name} className="space-y-1 sm:space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                </label>
+                <div className="relative">
+                  {inputIcons[field.type]}
+                  <input
+                    type={field.type === 'birthDate' ? 'date' : field.type}
+                    value={claimFormData[field.name] || ''}
+                    onChange={(e) => setClaimFormData({
+                      ...claimFormData,
+                      [field.name]: e.target.value
+                    })}
+                    className="w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
+                    placeholder={field.placeholder}
+                    required={field.required}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex gap-2 sm:gap-3 pt-2 sm:pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowClaimForm(false)}
+              className="flex-1 text-sm sm:text-base"
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleClaimFormSubmit}
+              disabled={isLoading}
+              className="flex-1 text-sm sm:text-base"
+            >
+              {isLoading ? 'Envoi...' : 'Récupérer mon prix'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prize Result Modal - Mobile responsive */}
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
+        <DialogContent className="sm:max-w-lg mx-4 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
+              {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4 sm:py-6 text-center space-y-3 sm:space-y-4">
+            {spinResult?.play.result === 'WIN' ? (
+              <>
+                <p className="text-base sm:text-lg text-gray-700">
+                  Vous avez gagné : <strong>{spinResult.slot.label}</strong>
+                </p>
+                {spinResult.play.prize && (
+                  <div className="bg-green-50 p-3 sm:p-4 rounded-lg space-y-2">
+                    <p className="font-semibold text-sm sm:text-base text-green-800">
+                      Votre code PIN : {spinResult.play.prize.pin}
+                    </p>
+                    {spinResult.play.prize.qrLink && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={spinResult.play.prize.qrLink} 
+                          alt="QR Code" 
+                          className="w-32 h-32 sm:w-40 sm:h-40 border rounded-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-base sm:text-lg text-gray-700">
+                Vous n'avez pas gagné cette fois. Bonne chance pour la prochaine !
+              </p>
+            )}
+          </div>
+          
+          <div className="flex gap-2 sm:gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowResultModal(false)}
+              className="flex-1 text-sm sm:text-base"
+            >
+              Fermer
+            </Button>
+            {spinResult?.play.result === 'WIN' && (
+              <Button 
+                onClick={() => {
+                  setShowResultModal(false);
+                  setShowClaimForm(true);
+                }}
+                className="flex-1 text-sm sm:text-base"
+              >
+                Récupérer mon prix
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Thank You Modal - Mobile responsive */}
+      <Dialog open={showThankyouMessage} onOpenChange={setShowThankyouMessage}>
+        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl font-bold text-center">Merci !</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-center">
+            <p className="text-sm sm:text-base text-gray-700">
+              Vos informations ont été envoyées avec succès. Vous devriez recevoir un e-mail de confirmation sous peu.
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowThankyouMessage(false)}
+            className="w-full text-sm sm:text-base"
+          >
+            Fermer
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rules Modal - Mobile responsive */}
+      <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
+        <DialogContent className="max-w-sm sm:max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60 mx-4">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
+          </DialogHeader>
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4 text-gray-700 text-sm sm:text-base">
             {wheelData?.gameRules ? (
               <div className="whitespace-pre-wrap">{wheelData.gameRules}</div>
             ) : (
-              <ul className="list-disc pl-6 space-y-2">
+              <ul className="list-disc pl-4 sm:pl-6 space-y-1.5 sm:space-y-2">
                 <li>Une seule participation par personne est autorisée, sauf indication contraire de l'organisateur.</li>
                 <li>Les informations saisies doivent être exactes pour valider la participation et la remise du lot.</li>
                 <li>En cas de gain, un code PIN et un QR code seront fournis pour récupérer votre lot.</li>
@@ -1276,111 +1370,94 @@ const PlayWheel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Main Content Card - Responsive sizing */}
-      <div className="w-full max-w-sm sm:max-w-md lg:max-w-xl bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-2 sm:my-4 mx-2 sm:mx-4">
-        {/* <div className="w-full max-w-md bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-4"> */}
+      {/* Main Content - Mobile responsive container */}
+      <div className="flex-1 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl flex flex-col items-center justify-center">
         {isLoadingWheel ? (
           // Loading state
-          <div className="p-6 flex items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
-            <p className="ml-2 text-gray-600">Chargement de la roue...</p>
+          <div className="p-4 sm:p-6 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-indigo-600" />
+            <p className="ml-2 text-sm sm:text-base text-gray-600">Chargement de la roue...</p>
           </div>
         ) : wheelError ? (
           // Error state with refresh button
-          <div className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Erreur de chargement</h2>
-            <p className="text-gray-600 mb-6">Impossible de charger les données de la roue.</p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2">
+          <div className="p-4 sm:p-6 text-center">
+            <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 mx-auto mb-3 sm:mb-4" />
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Erreur de chargement</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Impossible de charger les données de la roue.</p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
                 <RefreshCw size={16} />
                 Rafraîchir
               </Button>
-              <Button onClick={() => navigate(-1)} variant="outline">Retour</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
             </div>
           </div>
         ) : !wheelData ? (
           // Wheel not found state
-          <div className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Roue introuvable</h2>
-            <p className="text-gray-600 mb-6">Cette roue n'existe pas ou a été supprimée.</p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2">
+          <div className="p-4 sm:p-6 text-center">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Roue introuvable</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Cette roue n'existe pas ou a été supprimée.</p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
                 <RefreshCw size={16} />
                 Réessayer
               </Button>
-              <Button onClick={() => navigate(-1)} variant="outline">Retour</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
             </div>
           </div>
         ) : wheelConfig.segments.length === 0 ? (
           // Wheel has no segments configuration
-          <div className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">La roue n'est pas configurée</h2>
-            <p className="text-gray-600 mb-6">Aucune option n'est disponible pour cette roue.</p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2">
+          <div className="p-4 sm:p-6 text-center">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">La roue n'est pas configurée</h2>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Aucune option n'est disponible pour cette roue.</p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
                 <RefreshCw size={16} />
                 Actualiser
               </Button>
-              <Button onClick={fixWheel} variant="default">Corriger la roue</Button>
-              <Button onClick={() => navigate(-1)} variant="outline">Retour</Button>
+              <Button onClick={fixWheel} variant="default" className="text-sm sm:text-base">Corriger la roue</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
             </div>
           </div>
         ) : currentStep === 'spinWheel' ? (
-          // Wheel View - needs a spin button if social is completed
-          <div className="relative p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-start">
-            {/* Responsive wheel container */}
-            <div className="relative w-[280px] h-[320px] sm:w-[350px] sm:h-[400px] lg:w-[450px] lg:h-[520px] mx-auto flex items-center justify-center">
-            <Wheel
-              config={wheelConfig}
-              isSpinning={mustSpin}
-              prizeIndex={prizeIndex}
+          // Wheel View - Mobile responsive wheel container
+          <div className="relative p-2 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center justify-center w-full">
+            {/* Responsive wheel container - ensuring it fits within viewport */}
+            <div className="relative w-[250px] h-[280px] sm:w-[300px] sm:h-[340px] md:w-[350px] md:h-[400px] lg:w-[450px] lg:h-[520px] mx-auto flex items-center justify-center">
+              <Wheel
+                config={wheelConfig}
+                isSpinning={mustSpin}
+                prizeIndex={prizeIndex}
                 onSpin={handleSpinClick}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>
             
-            {/* Spin button and message area, appears below the wheel */}
+            {/* Spin button and message area - Mobile responsive */}
             {!mustSpin && userFlowState === 'completedSocial' && (
-              <div className="mt-4 sm:mt-6 w-full flex flex-col items-center">
+              <div className="mt-3 sm:mt-4 md:mt-6 w-full flex flex-col items-center space-y-2 sm:space-y-3">
+                <p className="text-xs sm:text-sm md:text-base text-indigo-700 font-medium text-center px-3 py-1.5 sm:px-4 sm:py-2 bg-white/50 rounded-full">
+                  Vous pouvez maintenant tenter de gagner
+                </p>
                 <Button 
                   onClick={handleSpinClick}
-                  className="px-6 py-3 sm:px-8 sm:py-4 lg:px-10 lg:py-4 text-lg sm:text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 w-full max-w-xs"
+                  className="w-full max-w-xs px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base md:text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
                   disabled={isSpinning}
                 >
                   {isSpinning ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Spinning...
+                      <span className="hidden sm:inline">Spinning...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     'Tourner la roue !'
                   )}
                 </Button>
-                <div className="mt-3 sm:mt-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-center w-full max-w-xs text-sm sm:text-base">
-                  <p>Vous pouvez maintenant tourner la roue pour tenter de gagner un lot !</p>
-                </div>
-          </div>
-        )}
-            
-            {/* Message if waiting for social action */}
-            {userFlowState !== 'completedSocial' && !mustSpin && wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
-                 <div className="mt-3 sm:mt-4 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-center w-full max-w-xs text-sm sm:text-base">
-                    <p>Veuillez d'abord compléter l'action sociale.</p>
-                </div>
-            )}
-            {/* Social popup always rendered if needed */}
-            {wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
-              <SocialRedirectDialog
-                open={showSocialRedirect}
-                onClose={handleSocialRedirectClose}
-                network={wheelData.socialNetwork}
-                redirectUrl={wheelData.redirectUrl}
-                redirectText={wheelData.redirectText}
-              />
+              </div>
             )}
           </div>
         ) : (
@@ -1390,126 +1467,7 @@ const PlayWheel = () => {
             <Button onClick={() => setCurrentStep('spinWheel')} variant="outline">Recommencer</Button>
           </div>
         )}
-        {/* </div> */}
       </div>
-      
-      {/* Prize Result Modal */}
-      <Dialog open={showResultModal} onOpenChange={handleResultModalClose}>
-        <DialogContent className="max-w-sm text-center mx-4">
-          <DialogHeader className={`${spinResult?.play.result === 'WIN' ? 'bg-emerald-500' : 'bg-gray-500'} -mt-6 -mx-6 p-3 sm:p-4 rounded-t-lg`}>
-            <DialogTitle className="text-lg sm:text-2xl font-bold text-white flex items-center justify-center">
-              {spinResult?.play.result === 'WIN' ? (
-                <>
-                  <span className="animate-bounce inline-block mr-2">🎉</span>
-                  <span>Vous avez gagné !</span>
-                </>
-              ) : (
-                <>
-                  <span className="mr-2">😔</span>
-                  <span>Pas de chance cette fois</span>
-                </>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="py-4">
-            {spinResult?.slot.label && (
-              <h3 className="text-lg sm:text-xl font-medium mb-4">{spinResult.slot.label}</h3>
-            )}
-            
-            {spinResult?.play.result === 'WIN' && spinResult.play.prize?.pin && (
-              <div className="mb-6 sm:mb-8">
-                <p className="text-xs sm:text-sm text-gray-500 mb-1">Votre code PIN</p>
-                <div className="text-2xl sm:text-3xl font-mono font-bold tracking-widest bg-gray-100 py-2 rounded">
-                  {spinResult.play.prize.pin}
-                </div>
-          </div>
-            )}
-            
-            {spinResult?.play.result === 'WIN' && spinResult.play.prize?.qrLink && (
-              <div className="mb-4">
-                <p className="text-xs sm:text-sm text-gray-500 mb-2">Code QR du lot</p>
-                <div className="flex justify-center bg-white p-1 border rounded mx-auto" style={{ maxWidth: '180px' }}>
-                  <img 
-                    src={getQRCodeUrl()}
-                      alt="Prize QR Code" 
-                    className="w-full h-auto"
-                    onError={(e) => {
-                      // If image fails to load, try to reload with a different approach
-                      const target = e.target as HTMLImageElement;
-                      const currentSrc = target.src;
-                      
-                      // Prevent infinite retry loops
-                      if (currentSrc.includes('retry=true') || retryCount.current > 2) {
-                        console.error('QR code image failed to load after multiple retries');
-                        setDebugInfo('QR code image failed to load after multiple retries');
-                        return;
-                      }
-                      
-                      retryCount.current += 1;
-                      
-                      // Try a different approach - use Google Charts API directly
-                      if (spinResult && spinResult.play) {
-                        const text = `${window.location.origin}/redeem/${spinResult.play.id}`;
-                        const retryUrl = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(text)}&choe=UTF-8&retry=true`;
-                        
-                        console.log('QR code image failed to load, retrying with Google Charts API');
-                        setDebugInfo(`Retrying QR load: ${retryUrl}`);
-                        
-                        // Update the image source
-                        target.src = retryUrl;
-                      }
-                    }}
-                  />
-                </div>
-                
-                    <Button 
-                  className="mt-4 w-full"
-                      variant="outline" 
-                      onClick={handleDownloadQR}
-                    >
-                  Télécharger le QR
-                    </Button>
-              </div>
-            )}
-            
-            {spinResult?.play.result === 'WIN' && (
-              <Button 
-                className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-pink-500"
-                onClick={() => {
-                  setShowResultModal(false);
-                  setCurrentStep('claimForm');
-                  setShowClaimForm(true);
-                }}
-              >
-                Récupérer mon lot
-              </Button>
-            )}
-            </div>
-          
-          <Button variant="outline" onClick={handleResultModalClose}>
-            {spinResult?.play.result === 'WIN' ? 'Plus tard' : 'Fermer'}
-          </Button>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Footer - Improved mobile layout */}
-      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-3 sm:py-4 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 z-30 mt-4 sm:mt-6">
-        <div className="flex items-center gap-2 text-center sm:text-left">
-          {wheelData?.footerText ? (
-            <span className="break-words">{wheelData.footerText}</span>
-          ) : (
-            <span>© {new Date().getFullYear()} IZI Wheel</span>
-          )}
-        </div>
-        <button
-          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap"
-          onClick={() => setShowRulesModal(true)}
-          type="button"
-        >
-          Règles du jeu
-        </button>
-      </footer>
     </div>
   );
 };

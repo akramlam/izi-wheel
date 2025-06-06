@@ -6,13 +6,14 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Filter, ArrowUpDown, Eye, LinkIcon, Edit, Trash2, QrCode } from "lucide-react"
+import { Plus, Search, Filter, ArrowUpDown, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
 import { apiClient, api } from "@/services/api"
 import { useAuth } from "../hooks/useAuth"
 import UpgradePlanModal from "../components/UpgradePlanModal"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../components/ui/dropdown-menu"
 
 interface Roue {
   id: string
@@ -482,40 +483,39 @@ const Roues: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="h-full overflow-y-auto bg-[#f3f0f9] p-2 sm:p-4 md:p-6">
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Roues</h1>
-          <p className="text-gray-600 dark:text-gray-400">Créez et gérez vos campagnes de roue.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Roues</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Créez et gérez vos campagnes de roue.</p>
         </div>
         {/* Only show button if not super admin or if super admin has selected a company */}
         {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
-          <div className="flex items-center space-x-3">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center sm:text-right">
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
-            <Button className="flex items-center space-x-2" onClick={handleCreateWheel}>
-          <Plus className="h-4 w-4" />
-          <span>Nouvelle roue</span>
-        </Button>
-      </div>
+            <Button className="flex items-center justify-center space-x-2 w-full sm:w-auto" onClick={handleCreateWheel}>
+              <Plus className="h-4 w-4" />
+              <span>Nouvelle roue</span>
+            </Button>
+          </div>
         )}
       </div>
 
-      {/* Company selector for super admin */}
+      {/* Company selector for super admin - Mobile responsive */}
       {isSuperAdmin && (
-        <Card className="mb-2">
-          <CardContent className="p-4">
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-3 sm:p-6">
             <div className="flex flex-col space-y-2">
-              <label htmlFor="company-selector" className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Sélectionner une entreprise
               </label>
               <select
-                id="company-selector"
                 value={selectedCompanyId}
                 onChange={handleCompanyChange}
-                className="w-full sm:w-96 rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+                className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm sm:text-base shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
               >
                 <option value="">-- Choisir une entreprise --</option>
                 {companies.map((company) => (
@@ -529,35 +529,41 @@ const Roues: React.FC = () => {
         </Card>
       )}
 
-      {/* Filters and Search */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
-            {/* Only show add button if not super admin or if super admin has selected a company */}
-            {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
-              <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateWheel}>
-              <Plus className="h-4 w-4" />
-              <span>Ajouter</span>
-            </Button>
-            )}
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <Filter className="h-4 w-4" />
-              <span>Filtrer</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <ArrowUpDown className="h-4 w-4" />
-              <span>Trier</span>
-            </Button>
-            <div className="flex-1"></div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
-              />
+      {/* Controls - Mobile responsive */}
+      <Card className="mb-4 sm:mb-6">
+        <CardContent className="p-3 sm:p-6">
+          <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+            {/* Action buttons - stacked on mobile */}
+            <div className="flex flex-wrap gap-2">
+              {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
+                <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateWheel}>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ajouter</span>
+                  <span className="sm:hidden">Nouvelle</span>
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <Filter className="h-4 w-4" />
+                <span className="hidden sm:inline">Filtrer</span>
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="hidden sm:inline">Trier</span>
+              </Button>
+            </div>
+            
+            {/* Search - full width on mobile */}
+            <div className="flex-1 sm:max-w-64">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -565,9 +571,9 @@ const Roues: React.FC = () => {
 
       {/* Empty state for when super admin hasn't selected a company */}
       {isSuperAdmin && !selectedCompanyId && !loading && (
-        <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
-            <Search className="h-6 w-6 text-purple-600" />
+        <Card className="flex flex-col items-center justify-center p-8 sm:p-12 text-center">
+          <div className="mx-auto flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-purple-100">
+            <Search className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
           </div>
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Sélectionnez une entreprise</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -576,116 +582,135 @@ const Roues: React.FC = () => {
         </Card>
       )}
 
-      {/* Roues Table (only show if not super admin or if super admin has selected a company) */}
+      {/* Roues Table - Mobile responsive */}
       {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && !loading && (
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </TableHead>
-                <TableHead>Entreprise</TableHead>
-                <TableHead>Nom</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Parties</TableHead>
-                <TableHead>Liens</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRoues.map((roue) => (
-                <TableRow key={roue.id}>
-                  <TableCell>
-                    <input type="checkbox" className="rounded border-gray-300" />
-                  </TableCell>
-                  <TableCell className="font-medium">{roue.entreprise}</TableCell>
-                  <TableCell>{roue.nom}</TableCell>
-                  <TableCell>
-                    <Badge variant={getTypeVariant(roue.type)}>{roue.type}</Badge>
-                  </TableCell>
-                  <TableCell>{roue.parties.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                        <div title="Voir la roue">
-                          <Eye 
-                            className="h-4 w-4 text-gray-400 hover:text-purple-600 cursor-pointer" 
-                            onClick={() => handleViewRoue(roue.id)}
-                          />
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="hidden sm:table-cell">
+                      <input type="checkbox" className="rounded border-gray-300" />
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">Entreprise</TableHead>
+                    <TableHead>Nom</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
+                    <TableHead className="hidden md:table-cell">Parties</TableHead>
+                    <TableHead className="hidden md:table-cell">Liens</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRoues.map((roue) => (
+                    <TableRow key={roue.id}>
+                      <TableCell className="hidden sm:table-cell">
+                        <input type="checkbox" className="rounded border-gray-300" />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell font-medium">{roue.entreprise}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="max-w-32 sm:max-w-none truncate">
+                          {roue.nom}
                         </div>
-                        <div title="Voir le QR code">
-                          <QrCode 
-                            className="h-4 w-4 text-gray-400 hover:text-purple-600 cursor-pointer" 
-                            onClick={() => handleViewQRCode(roue.id)}
-                          />
+                        {/* Show type on mobile under name */}
+                        <div className="sm:hidden mt-1">
+                          <Badge variant={getTypeVariant(roue.type)} className="text-xs">{roue.type}</Badge>
                         </div>
-                        <div title="Copier le lien">
-                          <LinkIcon 
-                            className="h-4 w-4 text-gray-400 hover:text-purple-600 cursor-pointer"
-                            onClick={() => handleCopyLink(roue.id)}
-                          />
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={getTypeVariant(roue.type)}>{roue.type}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{roue.parties.toLocaleString()}</TableCell>
+                      <TableCell className="hidden md:table-cell">{roue.liens.toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(roue.statut)}>{roue.statut}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => handleEditRoue(roue.id)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewRoue(roue.id)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Voir
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewQRCode(roue.id)}>
+                                <QrCode className="mr-2 h-4 w-4" />
+                                QR Code
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCopyLink(roue.id)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copier le lien
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(roue.id, roue.statut)}
+                                className={roue.statut === "Actif" ? "text-orange-600" : "text-green-600"}
+                              >
+                                {roue.statut === "Actif" ? (
+                                  <>
+                                    <ToggleLeft className="mr-2 h-4 w-4" />
+                                    Désactiver
+                                  </>
+                                ) : (
+                                  <>
+                                    <ToggleRight className="mr-2 h-4 w-4" />
+                                    Activer
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteRoue(roue.id)}
+                                className="text-red-600"
+                                disabled={deleting === roue.id}
+                              >
+                                {deleting === roue.id ? (
+                                  <div className="flex items-center">
+                                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-t-transparent"></div>
+                                    Suppression...
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Supprimer
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                        {/* <span 
-                          className="text-purple-600 hover:underline cursor-pointer"
-                          onClick={() => handleCopyLink(roue.id)}
-                        >
-                          {roue.liens}
-                        </span> */}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                      <Badge 
-                        variant={getStatusVariant(roue.statut)}
-                        className="cursor-pointer"
-                        onClick={() => handleToggleStatus(roue.id, roue.statut)}
-                      >
-                        {roue.statut}
-                      </Badge>
-                  </TableCell>
-                  <TableCell>
-                      <div className="flex space-x-2">
-                        <button 
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" 
-                          onClick={() => handleEditRoue(roue.id)}
-                        >
-                          <Edit className="h-4 w-4 text-blue-500" />
-                        </button>
-                        <button 
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" 
-                          onClick={() => handleDeleteRoue(roue.id)}
-                          disabled={deleting === roue.id}
-                        >
-                          {deleting === roue.id ? (
-                            <div className="h-4 w-4 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          )}
-                    </button>
-                      </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* QR Code Dialog */}
+      {/* QR Code Dialog - Mobile responsive */}
       <Dialog open={!!selectedWheelForQR} onOpenChange={(open) => !open && setSelectedWheelForQR(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>QR Code</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl">QR Code</DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
               Scannez ce QR code ou partagez-le pour accéder à votre roue.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col items-center justify-center p-6">
+          <div className="flex flex-col items-center justify-center p-4 sm:p-6">
             {selectedWheelForQR && (
               <>
-                <div className="w-64 h-64 bg-white p-4 rounded-md shadow-md flex items-center justify-center">
+                <div className="w-48 h-48 sm:w-64 sm:h-64 bg-white p-3 sm:p-4 rounded-md shadow-md flex items-center justify-center">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/play/company/${selectedWheelForQR}`)}`} 
                     alt="QR Code"
@@ -693,7 +718,7 @@ const Roues: React.FC = () => {
                   />
                 </div>
                 <Button 
-                  className="mt-4"
+                  className="mt-3 sm:mt-4 w-full sm:w-auto"
                   onClick={() => handleCopyLink(selectedWheelForQR)}
                 >
                   Copier le lien
