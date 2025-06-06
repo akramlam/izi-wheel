@@ -86,36 +86,36 @@ const Register: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between">
-      {/* Header */}
-      <div className="flex justify-between items-start w-full mb-8 px-6 pt-6">
-        <div className="flex items-center">
-          <Zap className="h-7 w-7 text-purple-600 mr-2" />
-          <span className="text-xl font-bold text-black">izi KADO</span>
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start w-full mb-6 sm:mb-8 px-4 sm:px-6 pt-4 sm:pt-6">
+        <div className="flex items-center justify-center sm:justify-start">
+          <Zap className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600 mr-2" />
+          <span className="text-lg sm:text-xl font-bold text-black">izi KADO</span>
         </div>
-        <div className="flex gap-3">
-          <span className="rounded-lg bg-black text-white px-4 py-2 text-sm font-semibold shadow-sm border border-black">S'inscrire</span>
+        <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
+          <span className="rounded-lg bg-black text-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm border border-black">S'inscrire</span>
           <Link
             to="/login"
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
           >
             Se connecter
           </Link>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 items-center justify-center">
-        <div className="bg-gradient-to-b from-[#e9c6ff] to-white rounded-[32px] shadow-xl p-12 w-full max-w-md flex flex-col items-center">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-black">Inscription</h2>
-            <p className="text-sm text-gray-500 mt-1">Super-administrateur</p>
+      {/* Main Content - Mobile responsive */}
+      <div className="flex flex-1 items-center justify-center px-4 sm:px-0">
+        <div className="bg-gradient-to-b from-[#e9c6ff] to-white rounded-2xl sm:rounded-[32px] shadow-xl p-6 sm:p-8 lg:p-12 w-full max-w-sm sm:max-w-md flex flex-col items-center">
+          <div className="text-center mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-black">Inscription</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Super-administrateur</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4">
             {errors.general && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <span className="font-medium text-sm">{errors.general}</span>
+              <div className="flex items-center gap-2 sm:gap-3 bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" />
+                <span className="font-medium text-xs sm:text-sm">{errors.general}</span>
               </div>
             )}
 
@@ -125,7 +125,7 @@ const Register: React.FC = () => {
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className="rounded-lg bg-white border border-gray-200 px-4 py-2 placeholder-gray-500"
+              className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base"
               required
             />
             {errors.email && <p className="text-xs text-red-500 px-1">{errors.email}</p>}
@@ -137,16 +137,16 @@ const Register: React.FC = () => {
                 placeholder="Mot de passe"
                 value={formData.password}
                 onChange={handleChange}
-                className="rounded-lg bg-white border border-gray-200 px-4 py-2 placeholder-gray-500 pr-10"
+                className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base pr-10"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-2.5 sm:top-2 text-gray-500 hover:text-gray-700"
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
               </button>
             </div>
             {errors.password && <p className="text-xs text-red-500 px-1">{errors.password}</p>}
@@ -161,21 +161,21 @@ const Register: React.FC = () => {
               placeholder="Confirmez le mot de passe"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="rounded-lg bg-white border border-gray-200 px-4 py-2 placeholder-gray-500"
+              className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base"
               required
             />
             {errors.confirmPassword && <p className="text-xs text-red-500 px-1">{errors.confirmPassword}</p>}
 
-            <div className="flex items-start space-x-2">
+            <div className="flex items-start space-x-2 sm:space-x-3">
               <input
                 type="checkbox"
                 name="acceptTerms"
                 checked={formData.acceptTerms}
                 onChange={handleChange}
-                className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                className="mt-0.5 sm:mt-1 h-3 w-3 sm:h-4 sm:w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
               />
-              <label className="text-sm text-gray-500">
-                J'accepte les{" "}++
+              <label className="text-xs sm:text-sm text-gray-500">
+                J'accepte les{" "}
                 <Link to="/terms" className="text-purple-500 hover:underline">
                   Conditions Générales
                 </Link>{" "}
@@ -189,7 +189,7 @@ const Register: React.FC = () => {
 
             <Button
               type="submit"
-              className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-semibold text-base"
+              className="w-full bg-black hover:bg-gray-800 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base mt-4 sm:mt-4"
               disabled={loading}
             >
               {loading ? "Inscription..." : "S'inscrire"}
@@ -207,8 +207,8 @@ const Register: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center mt-8 mb-4">
+      {/* Footer - Mobile responsive */}
+      <div className="text-center mt-6 sm:mt-8 mb-3 sm:mb-4">
         <p className="text-gray-400 text-xs">© 2025 izi KADO</p>
       </div>
       {/* Animation keyframes for fade/slide in */}

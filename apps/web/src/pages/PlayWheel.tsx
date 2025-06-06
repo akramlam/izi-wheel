@@ -1166,24 +1166,24 @@ const PlayWheel = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
+    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-between p-2 sm:p-4" style={{ backgroundColor: BRAND.backgroundGradient }}>
       {/* Logo */}
       {wheelData && (
-        <h1 className="text-4xl font-extrabold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center mb-4 sm:mb-6 lg:mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 px-4">
           {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
         </h1>
       )}
       
       {/* Debug info (only in development) */}
       {import.meta.env.DEV && debugInfo && (
-        <div className="fixed bottom-4 left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed bottom-4 left-2 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
           <div className="font-mono">{debugInfo}</div>
         </div>
       )}
       
       {/* Social network debug info (only in dev mode) */}
       {import.meta.env.DEV && wheelData?.socialNetwork && (
-        <div className="fixed top-4 right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed top-4 right-2 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
           <div className="font-mono">Social: {wheelData.socialNetwork}</div>
         </div>
       )}
@@ -1216,10 +1216,10 @@ const PlayWheel = () => {
       {/* Claim Form Dialog */}
       {showClaimForm && (
         <Dialog open={showClaimForm} onOpenChange={setShowClaimForm}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md mx-4">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-center">Récupérez votre lot !</DialogTitle>
-              <DialogDescription className="text-center">
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-center">Récupérez votre lot !</DialogTitle>
+              <DialogDescription className="text-center text-sm sm:text-base">
                 Remplissez ce formulaire pour recevoir votre cadeau.
               </DialogDescription>
             </DialogHeader>
@@ -1238,12 +1238,12 @@ const PlayWheel = () => {
       {/* Thank You Message */}
       {showThankyouMessage && (
         <Dialog open={showThankyouMessage} onOpenChange={setShowThankyouMessage}>
-          <DialogContent className="max-w-sm text-center">
+          <DialogContent className="max-w-sm text-center mx-4">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-emerald-600">Merci !</DialogTitle>
+              <DialogTitle className="text-xl sm:text-2xl font-bold text-emerald-600">Merci !</DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-4 text-sm sm:text-base">
                 Votre lot vous sera envoyé par email très prochainement.
               </p>
               <Button onClick={() => setShowThankyouMessage(false)}>Fermer</Button>
@@ -1254,11 +1254,11 @@ const PlayWheel = () => {
       
       {/* Rules modal */}
       <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
-        <DialogContent className="max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60">
+        <DialogContent className="max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60 mx-4">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
+            <DialogTitle className="text-center text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4 text-gray-700 text-base">
+          <div className="py-4 space-y-4 text-gray-700 text-sm sm:text-base">
             {wheelData?.gameRules ? (
               <div className="whitespace-pre-wrap">{wheelData.gameRules}</div>
             ) : (
@@ -1276,8 +1276,8 @@ const PlayWheel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Main Content Card - This will be centered by the parent flex container */}
-      <div className="w-full max-w-xl bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-4">
+      {/* Main Content Card - Responsive sizing */}
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-xl bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-2 sm:my-4 mx-2 sm:mx-4">
         {/* <div className="w-full max-w-md bg-white bg-opacity-90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden my-4"> */}
         {isLoadingWheel ? (
           // Loading state
@@ -1328,9 +1328,9 @@ const PlayWheel = () => {
           </div>
         ) : currentStep === 'spinWheel' ? (
           // Wheel View - needs a spin button if social is completed
-          <div className="relative p-8 flex flex-col items-center justify-start">
-            {/* Use a fixed size container with manual transform to adjust wheel position */}
-            <div className="relative w-[492px] h-[560px] mx-auto flex items-center justify-center">
+          <div className="relative p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-start">
+            {/* Responsive wheel container */}
+            <div className="relative w-[280px] h-[320px] sm:w-[350px] sm:h-[400px] lg:w-[450px] lg:h-[520px] mx-auto flex items-center justify-center">
             <Wheel
               config={wheelConfig}
               isSpinning={mustSpin}
@@ -1342,10 +1342,10 @@ const PlayWheel = () => {
             
             {/* Spin button and message area, appears below the wheel */}
             {!mustSpin && userFlowState === 'completedSocial' && (
-              <div className="mt-6 w-full flex flex-col items-center">
+              <div className="mt-4 sm:mt-6 w-full flex flex-col items-center">
                 <Button 
                   onClick={handleSpinClick}
-                  className="px-10 py-4 text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
+                  className="px-6 py-3 sm:px-8 sm:py-4 lg:px-10 lg:py-4 text-lg sm:text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 w-full max-w-xs"
                   disabled={isSpinning}
                 >
                   {isSpinning ? (
@@ -1360,7 +1360,7 @@ const PlayWheel = () => {
                     'Tourner la roue !'
                   )}
                 </Button>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-center max-w-xs w-full">
+                <div className="mt-3 sm:mt-4 p-3 bg-blue-50 rounded-lg text-blue-700 text-center w-full max-w-xs text-sm sm:text-base">
                   <p>Vous pouvez maintenant tourner la roue pour tenter de gagner un lot !</p>
                 </div>
           </div>
@@ -1368,7 +1368,7 @@ const PlayWheel = () => {
             
             {/* Message if waiting for social action */}
             {userFlowState !== 'completedSocial' && !mustSpin && wheelData?.socialNetwork && wheelData.socialNetwork !== 'NONE' && (
-                 <div className="mt-4 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-center max-w-xs w-full">
+                 <div className="mt-3 sm:mt-4 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-center w-full max-w-xs text-sm sm:text-base">
                     <p>Veuillez d'abord compléter l'action sociale.</p>
                 </div>
             )}
@@ -1395,9 +1395,9 @@ const PlayWheel = () => {
       
       {/* Prize Result Modal */}
       <Dialog open={showResultModal} onOpenChange={handleResultModalClose}>
-        <DialogContent className="max-w-sm text-center">
-          <DialogHeader className={`${spinResult?.play.result === 'WIN' ? 'bg-emerald-500' : 'bg-gray-500'} -mt-6 -mx-6 p-4 rounded-t-lg`}>
-            <DialogTitle className="text-2xl font-bold text-white flex items-center justify-center">
+        <DialogContent className="max-w-sm text-center mx-4">
+          <DialogHeader className={`${spinResult?.play.result === 'WIN' ? 'bg-emerald-500' : 'bg-gray-500'} -mt-6 -mx-6 p-3 sm:p-4 rounded-t-lg`}>
+            <DialogTitle className="text-lg sm:text-2xl font-bold text-white flex items-center justify-center">
               {spinResult?.play.result === 'WIN' ? (
                 <>
                   <span className="animate-bounce inline-block mr-2">🎉</span>
@@ -1414,13 +1414,13 @@ const PlayWheel = () => {
           
           <div className="py-4">
             {spinResult?.slot.label && (
-              <h3 className="text-xl font-medium mb-4">{spinResult.slot.label}</h3>
+              <h3 className="text-lg sm:text-xl font-medium mb-4">{spinResult.slot.label}</h3>
             )}
             
             {spinResult?.play.result === 'WIN' && spinResult.play.prize?.pin && (
-              <div className="mb-8">
-                <p className="text-sm text-gray-500 mb-1">Votre code PIN</p>
-                <div className="text-3xl font-mono font-bold tracking-widest bg-gray-100 py-2 rounded">
+              <div className="mb-6 sm:mb-8">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">Votre code PIN</p>
+                <div className="text-2xl sm:text-3xl font-mono font-bold tracking-widest bg-gray-100 py-2 rounded">
                   {spinResult.play.prize.pin}
                 </div>
           </div>
@@ -1428,8 +1428,8 @@ const PlayWheel = () => {
             
             {spinResult?.play.result === 'WIN' && spinResult.play.prize?.qrLink && (
               <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-2">Code QR du lot</p>
-                <div className="flex justify-center bg-white p-1 border rounded mx-auto" style={{ maxWidth: '200px' }}>
+                <p className="text-xs sm:text-sm text-gray-500 mb-2">Code QR du lot</p>
+                <div className="flex justify-center bg-white p-1 border rounded mx-auto" style={{ maxWidth: '180px' }}>
                   <img 
                     src={getQRCodeUrl()}
                       alt="Prize QR Code" 
@@ -1493,17 +1493,17 @@ const PlayWheel = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Footer */}
-      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30 mt-6">
-        <div className="flex items-center gap-2">
+      {/* Footer - Improved mobile layout */}
+      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-3 sm:py-4 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 z-30 mt-4 sm:mt-6">
+        <div className="flex items-center gap-2 text-center sm:text-left">
           {wheelData?.footerText ? (
-            <span>{wheelData.footerText}</span>
+            <span className="break-words">{wheelData.footerText}</span>
           ) : (
             <span>© {new Date().getFullYear()} IZI Wheel</span>
           )}
         </div>
         <button
-          className="underline text-indigo-600 hover:text-pink-500 transition-colors"
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap"
           onClick={() => setShowRulesModal(true)}
           type="button"
         >

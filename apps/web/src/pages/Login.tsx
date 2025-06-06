@@ -56,46 +56,46 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between">
-      {/* Header */}
-      <div className="flex justify-between items-start w-full mb-8 px-6 pt-6">
-        <div className="flex items-center">
-          <Zap className="h-7 w-7 text-purple-600 mr-2" />
-          <span className="text-xl font-bold text-black">izi KADO</span>
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start w-full mb-6 sm:mb-8 px-4 sm:px-6 pt-4 sm:pt-6">
+        <div className="flex items-center justify-center sm:justify-start">
+          <Zap className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600 mr-2" />
+          <span className="text-lg sm:text-xl font-bold text-black">izi KADO</span>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
           <Link
             to="/register"
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
           >
             S'inscrire
           </Link>
           <span
-            className="rounded-lg bg-black text-white px-4 py-2 text-sm font-semibold shadow-sm hover:bg-gray-900 transition-colors duration-150 border border-black"
+            className="rounded-lg bg-black text-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm hover:bg-gray-900 transition-colors duration-150 border border-black"
           >
             Se connecter
           </span>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 items-center justify-center">
-        <div className="bg-gradient-to-b from-[#e9c6ff] to-white rounded-[32px] shadow-xl p-12 w-full max-w-md flex flex-col items-center">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-black">Connexion</h2>
-            <p className="text-sm text-gray-500 mt-1">Super-administrateur</p>
+      {/* Main Content - Mobile responsive */}
+      <div className="flex flex-1 items-center justify-center px-4 sm:px-0">
+        <div className="bg-gradient-to-b from-[#e9c6ff] to-white rounded-2xl sm:rounded-[32px] shadow-xl p-6 sm:p-8 lg:p-12 w-full max-w-sm sm:max-w-md flex flex-col items-center">
+          <div className="text-center mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-black">Connexion</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Super-administrateur</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4">
             {showSuccess && (
-              <div className="flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                <span className="font-medium text-sm">Inscription réussie, veuillez vous connecter.</span>
+              <div className="flex items-center gap-2 sm:gap-3 bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
+                <span className="font-medium text-xs sm:text-sm">Inscription réussie, veuillez vous connecter.</span>
               </div>
             )}
             {errors.general && (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-                <span className="font-medium text-sm">{errors.general}</span>
+              <div className="flex items-center gap-2 sm:gap-3 bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-sm animate-fade-in-slide-in">
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" />
+                <span className="font-medium text-xs sm:text-sm">{errors.general}</span>
               </div>
             )}
 
@@ -105,7 +105,7 @@ const Login: React.FC = () => {
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
-              className="rounded-lg bg-white border border-gray-200 px-4 py-2 placeholder-gray-500"
+              className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base"
               required
             />
 
@@ -115,19 +115,19 @@ const Login: React.FC = () => {
               placeholder="Mot de passe"
               value={formData.password}
               onChange={handleChange}
-              className="rounded-lg bg-white border border-gray-200 px-4 py-2 placeholder-gray-500"
+              className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base"
               required
             />
 
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-xs text-purple-500 hover:underline">
+              <Link to="/forgot-password" className="text-xs sm:text-xs text-purple-500 hover:underline">
                 Mot de passe oublié ?
               </Link>
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-black hover:bg-gray-800 text-white py-3 rounded-lg font-semibold text-base"
+              className="w-full bg-black hover:bg-gray-800 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base mt-4 sm:mt-4"
               disabled={loading}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
@@ -145,8 +145,8 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center mt-8 mb-4">
+      {/* Footer - Mobile responsive */}
+      <div className="text-center mt-6 sm:mt-8 mb-3 sm:mb-4">
         <p className="text-gray-400 text-xs">© 2025 izi KADO</p>
       </div>
       {/* Animation keyframes for fade/slide in */}

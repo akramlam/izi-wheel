@@ -59,123 +59,127 @@ const Profile = () => {
     }
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="mb-6 text-2xl font-bold text-gray-900">Mon Profil</h1>
-            
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                {/* Carte du profil */}
-                <div className="flex flex-col items-center rounded-2xl bg-white p-6 shadow">
-                    <div className="mb-4 h-32 w-32 overflow-hidden rounded-full border-4 border-indigo-100 shadow-lg">
-                        <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                    </div>
-                    <h2 className="text-xl font-semibold text-gray-900">{profileData.email?.split('@')[0]}</h2>
-                    <p className="text-gray-500">{profileData.email}</p>
-                    
-                    <div className="mt-4 flex w-full flex-col">
-                        <div className="mb-2 rounded-lg bg-indigo-50 p-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500">Rôle</span>
-                                <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-800">
-                                    {profileData.role === 'SUPER' ? 'Super Admin' : 
-                                    profileData.role === 'ADMIN' ? 'Administrateur' : 'Sous-administrateur'}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div className="mb-2 rounded-lg bg-green-50 p-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500">Statut Premium</span>
-                                <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                                    profileData.isPaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                    {profileData.isPaid ? 'Premium' : 'Standard'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button 
-                        className="mt-6 w-full rounded-lg bg-indigo-600 py-2 text-white hover:bg-indigo-700"
-                        onClick={() => navigate('/change-password')}
-                    >
-                        Changer le mot de passe
-                    </button>
-                </div>
+        <div className="h-full overflow-y-auto bg-[#f3f0f9] p-2 sm:p-4 md:p-6">
+            <div className="mx-auto max-w-4xl">
+                <h1 className="mb-4 sm:mb-6 text-2xl sm:text-3xl font-bold text-gray-900">Mon Profil</h1>
                 
-                {/* Détails du profil */}
-                <div className="col-span-2 rounded-2xl bg-white p-6 shadow">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-900">Informations du compte</h3>
-                    
-                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div className="rounded-lg bg-gray-50 p-4">
-                            <div className="mb-2 flex items-center">
-                                <User className="mr-2 h-5 w-5 text-indigo-600" />
-                                <span className="font-medium text-gray-700">Nom d'utilisateur</span>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {/* Profile Card */}
+                    <div className="lg:col-span-1">
+                        <div className="flex flex-col items-center rounded-2xl bg-white p-4 sm:p-6 shadow">
+                            <div className="mb-3 sm:mb-4 h-24 w-24 sm:h-32 sm:w-32 overflow-hidden rounded-full border-4 border-indigo-100 shadow-lg">
+                                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
                             </div>
-                            <p className="text-gray-600">{profileData.name || profileData.email?.split('@')[0] || 'Non défini'}</p>
-                        </div>
-                        
-                        <div className="rounded-lg bg-gray-50 p-4">
-                            <div className="mb-2 flex items-center">
-                                <Mail className="mr-2 h-5 w-5 text-indigo-600" />
-                                <span className="font-medium text-gray-700">Email</span>
-                            </div>
-                            <p className="text-gray-600">{profileData.email}</p>
-                        </div>
-                        
-                        <div className="rounded-lg bg-gray-50 p-4">
-                            <div className="mb-2 flex items-center">
-                                <Shield className="mr-2 h-5 w-5 text-indigo-600" />
-                                <span className="font-medium text-gray-700">Rôle</span>
-                            </div>
-                            <p className="text-gray-600">{
-                                profileData.role === 'SUPER' ? 'Super Administrateur' : 
-                                profileData.role === 'ADMIN' ? 'Administrateur' : 'Sous-administrateur'
-                            }</p>
-                        </div>
-                        
-                        {profileData.companyId && (
-                            <div className="rounded-lg bg-gray-50 p-4">
-                                <div className="mb-2 flex items-center">
-                                    <Building className="mr-2 h-5 w-5 text-indigo-600" />
-                                    <span className="font-medium text-gray-700">Entreprise</span>
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{profileData.email?.split('@')[0]}</h2>
+                            <p className="text-sm sm:text-base text-gray-500">{profileData.email}</p>
+                            
+                            <div className="mt-3 sm:mt-4 flex w-full flex-col space-y-2">
+                                <div className="rounded-lg bg-indigo-50 p-2 sm:p-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs sm:text-sm text-gray-500">Rôle</span>
+                                        <span className="rounded-full bg-indigo-100 px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium text-indigo-800">
+                                            {profileData.role === 'SUPER' ? 'Super Admin' : 
+                                            profileData.role === 'ADMIN' ? 'Administrateur' : 'Sous-administrateur'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <p className="text-gray-600">ID: {profileData.companyId}</p>
+                                
+                                <div className="rounded-lg bg-green-50 p-2 sm:p-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs sm:text-sm text-gray-500">Statut Premium</span>
+                                        <span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-xs font-medium ${
+                                            profileData.isPaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {profileData.isPaid ? 'Premium' : 'Standard'}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                        
-                        <div className="rounded-lg bg-gray-50 p-4">
-                            <div className="mb-2 flex items-center">
-                                <CreditCard className="mr-2 h-5 w-5 text-indigo-600" />
-                                <span className="font-medium text-gray-700">Type de compte</span>
-                            </div>
-                            <p className="text-gray-600">{profileData.isPaid ? 'Premium' : 'Standard'}</p>
-                        </div>
-                        
-                        <div className="rounded-lg bg-gray-50 p-4">
-                            <div className="mb-2 flex items-center">
-                                <Clock className="mr-2 h-5 w-5 text-indigo-600" />
-                                <span className="font-medium text-gray-700">ID Utilisateur</span>
-                            </div>
-                            <p className="text-sm font-mono text-gray-600">{profileData.id}</p>
-                        </div>
-                    </div>
-                    
-                    <div className="border-t border-gray-200 pt-4">
-                        <h4 className="mb-2 text-md font-medium text-gray-700">Actions</h4>
-                        <div className="flex flex-wrap gap-2">
+                            
                             <button 
-                                className="flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                                onClick={() => navigate('/account-settings')}
-                            >
-                                <Settings className="mr-2 h-4 w-4" /> Paramètres du compte
-                            </button>
-                            <button 
-                                className="flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 transition"
+                                className="mt-6 w-full rounded-lg bg-indigo-600 py-2 text-white hover:bg-indigo-700"
                                 onClick={() => navigate('/change-password')}
                             >
-                                <Key className="mr-2 h-4 w-4" /> Changer le mot de passe
+                                Changer le mot de passe
                             </button>
+                        </div>
+                    </div>
+                    
+                    {/* Détails du profil */}
+                    <div className="lg:col-span-2 rounded-2xl bg-white p-4 sm:p-6 shadow">
+                        <h3 className="mb-3 sm:mb-4 text-lg font-semibold text-gray-900">Informations du compte</h3>
+                        
+                        <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                <div className="mb-1.5 sm:mb-2 flex items-center">
+                                    <User className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                    <span className="font-medium text-sm sm:text-base text-gray-700">Nom d'utilisateur</span>
+                                </div>
+                                <p className="text-sm sm:text-base text-gray-600">{profileData.name || profileData.email?.split('@')[0] || 'Non défini'}</p>
+                            </div>
+                            
+                            <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                <div className="mb-1.5 sm:mb-2 flex items-center">
+                                    <Mail className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                    <span className="font-medium text-sm sm:text-base text-gray-700">Email</span>
+                                </div>
+                                <p className="text-sm sm:text-base text-gray-600 break-words">{profileData.email}</p>
+                            </div>
+                            
+                            <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                <div className="mb-1.5 sm:mb-2 flex items-center">
+                                    <Shield className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                    <span className="font-medium text-sm sm:text-base text-gray-700">Rôle</span>
+                                </div>
+                                <p className="text-sm sm:text-base text-gray-600">{
+                                    profileData.role === 'SUPER' ? 'Super Administrateur' : 
+                                    profileData.role === 'ADMIN' ? 'Administrateur' : 'Sous-administrateur'
+                                }</p>
+                            </div>
+                            
+                            {profileData.companyId && (
+                                <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                    <div className="mb-1.5 sm:mb-2 flex items-center">
+                                        <Building className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                        <span className="font-medium text-sm sm:text-base text-gray-700">Entreprise</span>
+                                    </div>
+                                    <p className="text-sm sm:text-base text-gray-600">ID: {profileData.companyId}</p>
+                                </div>
+                            )}
+                            
+                            <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                <div className="mb-1.5 sm:mb-2 flex items-center">
+                                    <CreditCard className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                    <span className="font-medium text-sm sm:text-base text-gray-700">Type de compte</span>
+                                </div>
+                                <p className="text-sm sm:text-base text-gray-600">{profileData.isPaid ? 'Premium' : 'Standard'}</p>
+                            </div>
+                            
+                            <div className="rounded-lg bg-gray-50 p-3 sm:p-4">
+                                <div className="mb-1.5 sm:mb-2 flex items-center">
+                                    <Clock className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-600" />
+                                    <span className="font-medium text-sm sm:text-base text-gray-700">ID Utilisateur</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-mono text-gray-600 break-all">{profileData.id}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="border-t border-gray-200 pt-3 sm:pt-4">
+                            <h4 className="mb-2 text-sm sm:text-base font-medium text-gray-700">Actions</h4>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <button 
+                                    className="flex items-center justify-center sm:justify-start rounded-lg border border-gray-300 px-3 sm:px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                    onClick={() => navigate('/account-settings')}
+                                >
+                                    <Settings className="mr-2 h-4 w-4" /> Paramètres du compte
+                                </button>
+                                <button 
+                                    className="flex items-center justify-center sm:justify-start rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-sm text-white hover:bg-indigo-700 transition"
+                                    onClick={() => navigate('/change-password')}
+                                >
+                                    <Key className="mr-2 h-4 w-4" /> Changer le mot de passe
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
