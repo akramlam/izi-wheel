@@ -291,35 +291,16 @@ const ErrorDisplay = ({ error }: { error: any }) => {
         <div className="w-full bg-gray-100 p-4 rounded text-left overflow-auto text-xs">
           <p><strong>Error:</strong> {error?.message || String(error)}</p>
           <p><strong>URL:</strong> {window.location.href}</p>
-          <p><strong>Company ID:</strong> {companyId || 'null'}</p>
-          <p><strong>Wheel ID:</strong> {wheelId || 'null'}</p>
         </div>
       )}
       
       <button 
-        onClick={() => refetch()}
+        onClick={() => window.location.reload()}
         className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center"
       >
         <RefreshCw className="h-4 w-4 mr-2" />
         Try Again
       </button>
-      {/* Footer */}
-      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30 mt-6">
-        <div className="flex items-center gap-2">
-          {wheelData?.footerText ? (
-            <span>{wheelData.footerText}</span>
-          ) : (
-            <span>© {new Date().getFullYear()} IZI Wheel</span>
-          )}
-        </div>
-        <button
-          className="underline text-indigo-600 hover:text-pink-500 transition-colors"
-          onClick={() => setShowRulesModal(true)}
-          type="button"
-        >
-          Règles du jeu
-        </button>
-      </footer>
     </div>
   );
 };
@@ -1165,24 +1146,26 @@ const PlayWheel = () => {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex flex-col items-center justify-start bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-3 sm:p-4">
+    <div className="min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
       {/* Logo - Mobile responsive */}
       {wheelData && (
-        <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-center mb-3 sm:mb-4 md:mb-6 lg:mb-8 bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 px-2 sm:px-4">
-          {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
-        </h1>
+        <div className="w-full flex justify-center px-2 py-2 sm:py-4">
+          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 max-w-full break-words px-2">
+            {wheelData.mainTitle && wheelData.mainTitle.trim() !== '' ? wheelData.mainTitle : 'IZI Wheel'}
+          </h1>
+        </div>
       )}
       
       {/* Debug info (only in development) */}
       {import.meta.env.DEV && debugInfo && (
-        <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-[200px] opacity-75 z-50 break-words">
           <div className="font-mono">{debugInfo}</div>
         </div>
       )}
       
       {/* Social network debug info (only in dev mode) */}
       {import.meta.env.DEV && wheelData?.socialNetwork && (
-        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-xs opacity-75 z-50">
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-[200px] opacity-75 z-50">
           <div className="font-mono">Social: {wheelData.socialNetwork}</div>
         </div>
       )}
@@ -1212,7 +1195,7 @@ const PlayWheel = () => {
       
       {/* Claim Form Dialog */}
       <Dialog open={showClaimForm} onOpenChange={setShowClaimForm}>
-        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl font-bold text-center">Récupérer votre prix</DialogTitle>
             <DialogDescription className="text-sm sm:text-base text-center">
@@ -1253,7 +1236,16 @@ const PlayWheel = () => {
               Annuler
             </Button>
             <Button 
-              onClick={handleClaimFormSubmit}
+              onClick={() => {
+                // Convert claimFormData to PlayerFormData format
+                const playerData: PlayerFormData = {
+                  name: claimFormData.name || '',
+                  email: claimFormData.email || '',
+                  phone: claimFormData.phone,
+                  birthDate: claimFormData.birthDate
+                };
+                handleClaimFormSubmit(playerData);
+              }}
               disabled={isLoading}
               className="flex-1 text-sm sm:text-base"
             >
@@ -1265,7 +1257,7 @@ const PlayWheel = () => {
 
       {/* Prize Result Modal - Mobile responsive */}
       <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
-        <DialogContent className="sm:max-w-lg mx-4 sm:mx-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg mx-auto">
           <DialogHeader>
             <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
               {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
@@ -1288,7 +1280,7 @@ const PlayWheel = () => {
                         <img 
                           src={spinResult.play.prize.qrLink} 
                           alt="QR Code" 
-                          className="w-32 h-32 sm:w-40 sm:h-40 border rounded-lg"
+                          className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 border rounded-lg"
                         />
                       </div>
                     )}
@@ -1327,7 +1319,7 @@ const PlayWheel = () => {
 
       {/* Thank You Modal - Mobile responsive */}
       <Dialog open={showThankyouMessage} onOpenChange={setShowThankyouMessage}>
-        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl font-bold text-center">Merci !</DialogTitle>
           </DialogHeader>
@@ -1347,11 +1339,11 @@ const PlayWheel = () => {
 
       {/* Rules Modal - Mobile responsive */}
       <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
-        <DialogContent className="max-w-sm sm:max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60 mx-4">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60">
           <DialogHeader>
-            <DialogTitle className="text-center text-lg sm:text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
+            <DialogTitle className="text-center text-base sm:text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">Règles du jeu</DialogTitle>
           </DialogHeader>
-          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4 text-gray-700 text-sm sm:text-base">
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4 text-gray-700 text-xs sm:text-sm md:text-base max-h-[60vh] overflow-y-auto">
             {wheelData?.gameRules ? (
               <div className="whitespace-pre-wrap">{wheelData.gameRules}</div>
             ) : (
@@ -1369,60 +1361,60 @@ const PlayWheel = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Main Content - Mobile responsive container */}
-      <div className="flex-1 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl flex flex-col items-center justify-center">
+      {/* Main Content - Improved mobile responsive container */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center px-2 py-2 min-h-0">
         {isLoadingWheel ? (
           // Loading state
           <div className="p-4 sm:p-6 flex items-center justify-center">
-            <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-indigo-600" />
             <p className="ml-2 text-sm sm:text-base text-gray-600">Chargement de la roue...</p>
           </div>
         ) : wheelError ? (
           // Error state with refresh button
-          <div className="p-4 sm:p-6 text-center">
-            <AlertCircle className="h-10 w-10 sm:h-12 sm:w-12 text-red-500 mx-auto mb-3 sm:mb-4" />
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Erreur de chargement</h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Impossible de charger les données de la roue.</p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
-                <RefreshCw size={16} />
+          <div className="p-4 sm:p-6 text-center max-w-sm">
+            <AlertCircle className="h-8 w-8 sm:h-10 sm:w-10 text-red-500 mx-auto mb-3" />
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Erreur de chargement</h2>
+            <p className="text-sm text-gray-600 mb-4">Impossible de charger les données de la roue.</p>
+            <div className="flex flex-col gap-2 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center justify-center gap-2 text-sm">
+                <RefreshCw size={14} />
                 Rafraîchir
               </Button>
-              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm">Retour</Button>
             </div>
           </div>
         ) : !wheelData ? (
           // Wheel not found state
-          <div className="p-4 sm:p-6 text-center">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Roue introuvable</h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Cette roue n'existe pas ou a été supprimée.</p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
-                <RefreshCw size={16} />
+          <div className="p-4 sm:p-6 text-center max-w-sm">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Roue introuvable</h2>
+            <p className="text-sm text-gray-600 mb-4">Cette roue n'existe pas ou a été supprimée.</p>
+            <div className="flex flex-col gap-2 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center justify-center gap-2 text-sm">
+                <RefreshCw size={14} />
                 Réessayer
               </Button>
-              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm">Retour</Button>
             </div>
           </div>
         ) : wheelConfig.segments.length === 0 ? (
           // Wheel has no segments configuration
-          <div className="p-4 sm:p-6 text-center">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">La roue n'est pas configurée</h2>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Aucune option n'est disponible pour cette roue.</p>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center gap-2 text-sm sm:text-base">
-                <RefreshCw size={16} />
+          <div className="p-4 sm:p-6 text-center max-w-sm">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">La roue n'est pas configurée</h2>
+            <p className="text-sm text-gray-600 mb-4">Aucune option n'est disponible pour cette roue.</p>
+            <div className="flex flex-col gap-2 justify-center">
+              <Button onClick={handleRefreshWheel} variant="default" className="flex items-center justify-center gap-2 text-sm">
+                <RefreshCw size={14} />
                 Actualiser
               </Button>
-              <Button onClick={fixWheel} variant="default" className="text-sm sm:text-base">Corriger la roue</Button>
-              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm sm:text-base">Retour</Button>
+              <Button onClick={fixWheel} variant="default" className="text-sm">Corriger la roue</Button>
+              <Button onClick={() => navigate(-1)} variant="outline" className="text-sm">Retour</Button>
             </div>
           </div>
         ) : currentStep === 'spinWheel' ? (
-          // Wheel View - Mobile responsive wheel container
-          <div className="relative p-2 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center justify-center w-full">
-            {/* Responsive wheel container - ensuring it fits within viewport */}
-            <div className="relative w-[250px] h-[280px] sm:w-[300px] sm:h-[340px] md:w-[350px] md:h-[400px] lg:w-[450px] lg:h-[520px] mx-auto flex items-center justify-center">
+          // Wheel View - Mobile optimized wheel container
+          <div className="w-full max-w-[320px] sm:max-w-[380px] md:max-w-[450px] lg:max-w-[520px] mx-auto flex flex-col items-center justify-center">
+            {/* Mobile optimized wheel container */}
+            <div className="relative w-[280px] h-[300px] sm:w-[320px] sm:h-[340px] md:w-[380px] md:h-[400px] lg:w-[450px] lg:h-[480px] mx-auto flex items-center justify-center overflow-hidden">
               <Wheel
                 config={wheelConfig}
                 isSpinning={mustSpin}
@@ -1434,18 +1426,18 @@ const PlayWheel = () => {
             
             {/* Spin button and message area - Mobile responsive */}
             {!mustSpin && userFlowState === 'completedSocial' && (
-              <div className="mt-3 sm:mt-4 md:mt-6 w-full flex flex-col items-center space-y-2 sm:space-y-3">
-                <p className="text-xs sm:text-sm md:text-base text-indigo-700 font-medium text-center px-3 py-1.5 sm:px-4 sm:py-2 bg-white/50 rounded-full">
+              <div className="mt-3 sm:mt-4 w-full max-w-[280px] sm:max-w-[320px] flex flex-col items-center space-y-2">
+                <p className="text-xs sm:text-sm text-indigo-700 font-medium text-center px-3 py-1.5 bg-white/50 rounded-full">
                   Vous pouvez maintenant tenter de gagner
                 </p>
                 <Button 
                   onClick={handleSpinClick}
-                  className="w-full max-w-xs px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base md:text-xl bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
+                  className="w-full px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300"
                   disabled={isSpinning}
                 >
                   {isSpinning ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -1468,16 +1460,16 @@ const PlayWheel = () => {
       </div>
 
       {/* Footer - Mobile responsive */}
-      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-3 sm:py-4 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 z-30 mt-2 sm:mt-4">
-        <div className="flex items-center gap-2 text-center sm:text-left">
+      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-2 sm:py-3 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 text-xs text-gray-600 z-30 mt-auto">
+        <div className="flex items-center justify-center text-center break-words">
           {wheelData?.footerText ? (
-            <span className="break-words">{wheelData.footerText}</span>
+            <span className="max-w-full">{wheelData.footerText}</span>
           ) : (
             <span>© {new Date().getFullYear()} IZI Wheel</span>
           )}
         </div>
         <button
-          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap"
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap flex-shrink-0"
           onClick={() => setShowRulesModal(true)}
           type="button"
         >
