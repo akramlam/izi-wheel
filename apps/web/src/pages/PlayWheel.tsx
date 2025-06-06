@@ -421,6 +421,7 @@ const PlayWheel = () => {
   const [showThankyouMessage, setShowThankyouMessage] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>('');
   const [userFlowState, setUserFlowState] = useState<'completedSocial' | 'spinning' | 'won' | 'claimed'>('completedSocial');
+  const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
   // Add a confetti ref to control it
@@ -1110,8 +1111,6 @@ const PlayWheel = () => {
     // ... existing code ...
   };
 
-  const [showRulesModal, setShowRulesModal] = useState(false);
-
   // Show social popup on mount if needed
   useEffect(() => {
     if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
@@ -1461,13 +1460,30 @@ const PlayWheel = () => {
             )}
           </div>
         ) : (
-          // Fallback
-          <div className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Étape en cours...</h2>
-            <Button onClick={() => setCurrentStep('spinWheel')} variant="outline">Recommencer</Button>
+          // Other steps (showPrize, claimForm) - placeholder for future implementation
+          <div className="p-4 sm:p-6 text-center">
+            <p className="text-sm sm:text-base text-gray-600">Étape en cours: {currentStep}</p>
           </div>
         )}
       </div>
+
+      {/* Footer - Mobile responsive */}
+      <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-3 sm:py-4 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 z-30 mt-2 sm:mt-4">
+        <div className="flex items-center gap-2 text-center sm:text-left">
+          {wheelData?.footerText ? (
+            <span className="break-words">{wheelData.footerText}</span>
+          ) : (
+            <span>© {new Date().getFullYear()} IZI Wheel</span>
+          )}
+        </div>
+        <button
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap"
+          onClick={() => setShowRulesModal(true)}
+          type="button"
+        >
+          Règles du jeu
+        </button>
+      </footer>
     </div>
   );
 };
