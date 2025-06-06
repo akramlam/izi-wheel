@@ -821,7 +821,7 @@ const PlayWheel = () => {
     if (spinResult?.play.id) {
       try {
         const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
-        const response = await fetch(`${apiBaseUrl}/plays/${spinResult.play.id}/redeem`, {
+        const response = await fetch(`${apiBaseUrl}/public/plays/${spinResult.play.id}/claim`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

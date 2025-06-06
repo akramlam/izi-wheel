@@ -267,6 +267,10 @@ export const api = {
   redeemPrize: async (playId: string, data: { pin: string }) => {
     return apiClient.post(`/public/plays/${playId}/redeem`, data);
   },
+
+  claimPrize: async (playId: string, data: { name: string; email: string; phone?: string; birthDate?: string }) => {
+    return apiClient.post(`/public/plays/${playId}/claim`, data);
+  },
 };
 
 // Entreprises Service

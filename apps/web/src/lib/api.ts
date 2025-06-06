@@ -522,19 +522,38 @@ export const api = {
   },
   
   redeemPrize: async (playId: string, data: { pin: string }) => {
-    console.log('Attempting to redeem prize for play ID:', playId);
-    if (!playId || playId.startsWith('tmp-') || playId.startsWith('fallback-')) {
-      console.error('Invalid play ID format. Cannot redeem prize for temporary ID:', playId);
-      throw new Error('Ce lot ne peut pas être récupéré avec un identifiant temporaire.');
-    }
-    
+    console.log('Redeeming prize for play ID:', playId, 'with PIN');
     try {
       const result = await apiClient.post(`/public/plays/${playId}/redeem`, data);
       console.log('Prize redeemed successfully:', result.data);
       return result;
     } catch (error: any) {
       console.error('Error redeeming prize:', error);
-      throw error;
+      if (error.response?.status === 400) {
+        throw new Error('PIN invalide ou prix déjà récupéré.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Ce lot n\'existe pas.');
+      } else {
+        throw new Error('Erreur lors de la récupération du prix.');
+      }
+    }
+  },
+  
+  claimPrize: async (playId: string, data: { name: string; email: string; phone?: string; birthDate?: string }) => {
+    console.log('Claiming prize for play ID:', playId, 'with contact data');
+    try {
+      const result = await apiClient.post(`/public/plays/${playId}/claim`, data);
+      console.log('Prize claimed successfully:', result.data);
+      return result;
+    } catch (error: any) {
+      console.error('Error claiming prize:', error);
+      if (error.response?.status === 400) {
+        throw new Error('Données invalides ou prix déjà réclamé.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Ce lot n\'existe pas.');
+      } else {
+        throw new Error('Erreur lors de la réclamation du prix.');
+      }
     }
   },
   
