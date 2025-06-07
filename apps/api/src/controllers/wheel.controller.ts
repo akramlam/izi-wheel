@@ -737,19 +737,31 @@ export const fixWheel = async (req: Request, res: Response) => {
  */
 export const uploadWheelImage = async (req: any, res: Response) => {
   try {
+    console.log('=== IMAGE UPLOAD REQUEST ===');
+    console.log('Query params:', req.query);
+    console.log('File info:', req.file ? {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    } : 'No file');
+    console.log('Cloudinary URL configured:', !!process.env.CLOUDINARY_URL);
+
     // Check if file was uploaded
     if (!req.file) {
+      console.log('ERROR: No file provided');
       return res.status(400).json({ error: 'No image file provided' });
     }
 
     // Validate file type
     if (!req.file.mimetype.startsWith('image/')) {
+      console.log('ERROR: Invalid file type:', req.file.mimetype);
       return res.status(400).json({ error: 'File must be an image' });
     }
 
     // Get image type from query params
     const imageType = req.query.type as string;
     if (!imageType || !['banner', 'background'].includes(imageType)) {
+      console.log('ERROR: Invalid image type:', imageType);
       return res.status(400).json({ error: 'Image type must be "banner" or "background"' });
     }
 
@@ -758,8 +770,15 @@ export const uploadWheelImage = async (req: any, res: Response) => {
     const filename = `wheel-${imageType}-${timestamp}`;
     const folder = `iziwheel/wheels/${imageType}s`;
 
+    console.log('Uploading to Cloudinary:', { filename, folder });
+
     // Upload to Cloudinary
     const uploadResult = await uploadAsset(req.file.buffer, folder, filename);
+
+    console.log('Upload successful:', {
+      url: uploadResult.secure_url,
+      publicId: uploadResult.public_id
+    });
 
     res.status(200).json({
       success: true,
@@ -769,10 +788,20 @@ export const uploadWheelImage = async (req: any, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Image upload error:', error);
+    console.error('=== IMAGE UPLOAD ERROR ===');
+    console.error('Error type:', typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    
     res.status(500).json({ 
       error: 'Failed to upload image', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      debug: process.env.NODE_ENV === 'development' ? {
+        type: typeof error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      } : undefined
     });
   }
 }; 

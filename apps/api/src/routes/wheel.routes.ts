@@ -292,4 +292,78 @@ router.post('/:wheelId/fix', authMiddleware, wheelController.fixWheel);
 // Image upload endpoint
 router.post('/upload-image', upload.single('image'), wheelController.uploadWheelImage);
 
+// Test endpoint for Cloudinary configuration
+router.get('/test-cloudinary', (req, res) => {
+  try {
+    const { v2: cloudinary } = require('cloudinary');
+    const config = cloudinary.config();
+    
+    res.json({
+      configured: !!process.env.CLOUDINARY_URL,
+      cloudinaryUrl: process.env.CLOUDINARY_URL ? 'present' : 'missing',
+      config: {
+        cloud_name: config.cloud_name || 'missing',
+        api_key: config.api_key ? 'configured' : 'missing',
+        api_secret: config.api_secret ? 'configured' : 'missing'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Configuration test failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Test upload endpoint
+router.post('/test-upload', async (req, res) => {
+  try {
+    const { v2: cloudinary } = require('cloudinary');
+    
+    // Create a simple test buffer (1x1 pixel PNG)
+    const testBuffer = Buffer.from([
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+      0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00,
+      0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0x57, 0x63, 0x00, 0x01, 0x00, 0x00,
+      0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+      0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+    ]);
+
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'test',
+          public_id: 'test-upload-' + Date.now(),
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          if (!result) return reject(new Error('No result'));
+          resolve(result);
+        }
+      );
+      stream.write(testBuffer);
+      stream.end();
+    });
+
+    res.json({
+      success: true,
+      message: 'Test upload successful',
+      result: {
+        public_id: result.public_id,
+        secure_url: result.secure_url
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Test upload failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+  }
+});
+
 export default router; 
