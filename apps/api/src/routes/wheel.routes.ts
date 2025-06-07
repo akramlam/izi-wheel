@@ -330,14 +330,14 @@ router.post('/test-upload', async (req, res) => {
       0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
     ]);
 
-    const result = await new Promise((resolve, reject) => {
+    const result = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: 'test',
           public_id: 'test-upload-' + Date.now(),
           resource_type: 'auto',
         },
-        (error, result) => {
+        (error: any, result: any) => {
           if (error) return reject(error);
           if (!result) return reject(new Error('No result'));
           resolve(result);
