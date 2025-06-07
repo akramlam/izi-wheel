@@ -2,9 +2,10 @@ import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary with multiple fallbacks
 let configurationAttempted = false;
+let configurationSuccess = false;
 
 const configureCloudinary = () => {
-  if (configurationAttempted) return;
+  if (configurationAttempted) return configurationSuccess;
   configurationAttempted = true;
 
   try {
@@ -21,7 +22,8 @@ const configureCloudinary = () => {
         api_key: '***configured***',
         api_secret: '***configured***'
       });
-      return;
+      configurationSuccess = true;
+      return true;
     }
 
     // Fallback to URL format
@@ -45,22 +47,31 @@ const configureCloudinary = () => {
           api_key: '***configured***',
           api_secret: '***configured***'
         });
+        configurationSuccess = true;
+        return true;
       } else {
         // Direct URL configuration as last resort
         cloudinary.config(process.env.CLOUDINARY_URL);
         console.log('Cloudinary configured with URL (direct)');
+        configurationSuccess = true;
+        return true;
       }
     } else {
-      throw new Error('No Cloudinary configuration found');
+      console.warn('⚠️  Cloudinary not configured - image upload will not work');
+      console.warn('   Please set CLOUDINARY_URL or individual CLOUDINARY_* environment variables');
+      configurationSuccess = false;
+      return false;
     }
 
   } catch (error) {
-    console.error('Cloudinary configuration error:', error);
-    throw new Error('Failed to configure Cloudinary: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    console.error('❌ Cloudinary configuration error:', error instanceof Error ? error.message : 'Unknown error');
+    console.warn('⚠️  Server will start without Cloudinary - image upload will not work');
+    configurationSuccess = false;
+    return false;
   }
 };
 
-// Configure on module load
+// Try to configure on module load, but don't crash if it fails
 configureCloudinary();
 
 /**
@@ -76,7 +87,11 @@ export const uploadAsset = async (
   filename: string
 ): Promise<{ public_id: string; secure_url: string }> => {
   // Ensure configuration is loaded
-  configureCloudinary();
+  const isConfigured = configureCloudinary();
+  
+  if (!isConfigured) {
+    throw new Error('Cloudinary is not configured. Please set environment variables: CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
+  }
 
   return new Promise((resolve, reject) => {
     console.log('Starting Cloudinary upload:', { folder, filename, bufferSize: buffer.length });
@@ -99,7 +114,7 @@ export const uploadAsset = async (
         public_id: filename,
         resource_type: 'auto',
       },
-      (error, result) => {
+      (error: any, result: any) => {
         if (error) {
           console.error('Cloudinary upload error:', {
             message: error.message,
