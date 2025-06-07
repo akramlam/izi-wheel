@@ -744,7 +744,16 @@ export const uploadWheelImage = async (req: any, res: Response) => {
       mimetype: req.file.mimetype,
       size: req.file.size
     } : 'No file');
-    console.log('Cloudinary URL configured:', !!process.env.CLOUDINARY_URL);
+    
+    // Debug environment variables
+    console.log('Environment Debug:', {
+      NODE_ENV: process.env.NODE_ENV,
+      CLOUDINARY_URL_EXISTS: !!process.env.CLOUDINARY_URL,
+      CLOUDINARY_CLOUD_NAME_EXISTS: !!process.env.CLOUDINARY_CLOUD_NAME,
+      CLOUDINARY_API_KEY_EXISTS: !!process.env.CLOUDINARY_API_KEY,
+      CLOUDINARY_API_SECRET_EXISTS: !!process.env.CLOUDINARY_API_SECRET,
+      CLOUDINARY_URL_PREFIX: process.env.CLOUDINARY_URL?.substring(0, 20) + '...' || 'NOT_SET'
+    });
 
     // Check if file was uploaded
     if (!req.file) {
@@ -797,11 +806,15 @@ export const uploadWheelImage = async (req: any, res: Response) => {
     res.status(500).json({ 
       error: 'Failed to upload image', 
       details: error instanceof Error ? error.message : 'Unknown error',
-      debug: process.env.NODE_ENV === 'development' ? {
-        type: typeof error,
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      } : undefined
+      debug: {
+        NODE_ENV: process.env.NODE_ENV,
+        CLOUDINARY_URL_EXISTS: !!process.env.CLOUDINARY_URL,
+        CLOUDINARY_INDIVIDUAL_VARS: {
+          CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
+          API_KEY: !!process.env.CLOUDINARY_API_KEY,
+          API_SECRET: !!process.env.CLOUDINARY_API_SECRET
+        }
+      }
     });
   }
 }; 

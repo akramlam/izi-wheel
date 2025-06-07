@@ -1,78 +1,53 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary with multiple fallbacks
-let configurationAttempted = false;
-let configurationSuccess = false;
-
+// Configure Cloudinary - Simplified for production
 const configureCloudinary = () => {
-  if (configurationAttempted) return configurationSuccess;
-  configurationAttempted = true;
-
   try {
-    // Try individual variables first (more reliable)
+    // Use CLOUDINARY_URL directly - this is the most reliable method
+    const cloudinaryUrl = process.env.CLOUDINARY_URL;
+    
+    if (cloudinaryUrl) {
+      console.log('🌤️  Configuring Cloudinary with URL...');
+      
+      // Direct configuration with the URL
+      cloudinary.config(cloudinaryUrl);
+      
+      console.log('✅ Cloudinary configured successfully');
+      return true;
+    }
+    
+    // Fallback to individual variables
     if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      console.log('🌤️  Configuring Cloudinary with individual variables...');
+      
       cloudinary.config({
         cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
         api_key: process.env.CLOUDINARY_API_KEY,
         api_secret: process.env.CLOUDINARY_API_SECRET,
         secure: true
       });
-      console.log('Cloudinary configured with individual variables:', {
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: '***configured***',
-        api_secret: '***configured***'
-      });
-      configurationSuccess = true;
+      
+      console.log('✅ Cloudinary configured with individual variables');
       return true;
     }
-
-    // Fallback to URL format
-    if (process.env.CLOUDINARY_URL) {
-      // Parse the CLOUDINARY_URL manually for better error handling
-      const cloudinaryUrl = process.env.CLOUDINARY_URL;
-      const urlMatch = cloudinaryUrl.match(/cloudinary:\/\/(\d+):([^@]+)@(.+)/);
-      
-      if (urlMatch) {
-        const [, api_key, api_secret, cloud_name] = urlMatch;
-        
-        cloudinary.config({
-          cloud_name,
-          api_key,
-          api_secret,
-          secure: true
-        });
-        
-        console.log('Cloudinary configured with URL (parsed):', {
-          cloud_name,
-          api_key: '***configured***',
-          api_secret: '***configured***'
-        });
-        configurationSuccess = true;
-        return true;
-      } else {
-        // Direct URL configuration as last resort
-        cloudinary.config(process.env.CLOUDINARY_URL);
-        console.log('Cloudinary configured with URL (direct)');
-        configurationSuccess = true;
-        return true;
-      }
-    } else {
-      console.warn('⚠️  Cloudinary not configured - image upload will not work');
-      console.warn('   Please set CLOUDINARY_URL or individual CLOUDINARY_* environment variables');
-      configurationSuccess = false;
-      return false;
-    }
-
+    
+    console.error('❌ Cloudinary not configured - no environment variables found');
+    console.error('   CLOUDINARY_URL:', !!process.env.CLOUDINARY_URL);
+    console.error('   Individual vars:', {
+      CLOUDINARY_CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
+      CLOUDINARY_API_KEY: !!process.env.CLOUDINARY_API_KEY,
+      CLOUDINARY_API_SECRET: !!process.env.CLOUDINARY_API_SECRET
+    });
+    return false;
+    
   } catch (error) {
     console.error('❌ Cloudinary configuration error:', error instanceof Error ? error.message : 'Unknown error');
-    console.warn('⚠️  Server will start without Cloudinary - image upload will not work');
-    configurationSuccess = false;
     return false;
   }
 };
 
-// Try to configure on module load, but don't crash if it fails
-configureCloudinary();
+// Configure on module load
+const isConfigured = configureCloudinary();
 
 /**
  * Upload an asset to Cloudinary
@@ -86,28 +61,19 @@ export const uploadAsset = async (
   folder: string,
   filename: string
 ): Promise<{ public_id: string; secure_url: string }> => {
-  // Ensure configuration is loaded
-  const isConfigured = configureCloudinary();
   
   if (!isConfigured) {
-    throw new Error('Cloudinary is not configured. Please set environment variables: CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET');
+    // Try to configure again
+    const retryConfig = configureCloudinary();
+    if (!retryConfig) {
+      throw new Error('Cloudinary is not configured. Please set CLOUDINARY_URL environment variable.');
+    }
   }
 
   return new Promise((resolve, reject) => {
-    console.log('Starting Cloudinary upload:', { folder, filename, bufferSize: buffer.length });
+    console.log('📤 Starting Cloudinary upload:', { folder, filename, bufferSize: buffer.length });
     
-    // Validate configuration before upload
-    const config = cloudinary.config();
-    if (!config.cloud_name || !config.api_key || !config.api_secret) {
-      const error = new Error('Cloudinary not properly configured. Missing: ' + 
-        [!config.cloud_name && 'cloud_name', !config.api_key && 'api_key', !config.api_secret && 'api_secret']
-        .filter(Boolean).join(', ')
-      );
-      console.error('Configuration validation error:', error);
-      return reject(error);
-    }
-    
-    // Create a readable stream from the buffer
+    // Create upload stream
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
@@ -116,20 +82,20 @@ export const uploadAsset = async (
       },
       (error: any, result: any) => {
         if (error) {
-          console.error('Cloudinary upload error:', {
+          console.error('❌ Cloudinary upload error:', {
             message: error.message,
-            http_code: error.http_code,
-            error: error
+            http_code: error.http_code
           });
           return reject(error);
         }
+        
         if (!result) {
           const uploadError = new Error('Upload failed - no result returned');
-          console.error('Cloudinary upload error:', uploadError);
+          console.error('❌ Cloudinary upload error:', uploadError);
           return reject(uploadError);
         }
         
-        console.log('Cloudinary upload success:', {
+        console.log('✅ Cloudinary upload success:', {
           public_id: result.public_id,
           secure_url: result.secure_url,
           bytes: result.bytes
