@@ -69,10 +69,19 @@ app.use(cors({
     'https://roue.izikado.fr',
     'http://dashboard.izikado.fr',
     'http://roue.izikado.fr',
-    'https://api.izikado,fr',
-    'http://api.izikado.fr'
+    'https://api.izikado.fr',
+    'http://api.izikado.fr',
+    'http://localhost:3000',
+    'http://localhost:3010',
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'https://localhost:3000',
+    'https://localhost:3010'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 app.use(express.json());
 
