@@ -51,8 +51,33 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData();
       formData.append('image', file);
 
+      // Get company ID for the API call
+      const getValidCompanyId = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) return null;
+          
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/companies/validate-access`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            return data.companyId;
+          }
+        } catch (error) {
+          console.error('Error getting company ID:', error);
+        }
+        return null;
+      };
+
+      const companyId = await getValidCompanyId();
+      if (!companyId) {
+        throw new Error('Impossible de récupérer les informations de l\'entreprise');
+      }
+
       const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiBaseUrl}/companies/upload-image?type=${imageType}`, {
+      const response = await fetch(`${apiBaseUrl}/companies/${companyId}/wheels/upload-image?type=${imageType}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
