@@ -977,7 +977,13 @@ const WheelEdit = () => {
               description: "Roue mise à jour avec succès!",
             });
             
-            navigate('/roues');
+            // Instead of navigating away, refetch the wheel data to show the saved state
+            if (!isNew) {
+              await fetchWheelData();
+            } else {
+              // For new wheels, we could navigate to the edit page with the new ID
+              // But for now, stay on current page
+            }
           } catch (slotError) {
             console.error('Error updating wheel slots:', slotError);
       toast({
