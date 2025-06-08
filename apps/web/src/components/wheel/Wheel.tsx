@@ -376,17 +376,6 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           </filter>
         </defs>
         
-        {/* Wheel background rim */}
-        <circle 
-          cx={CENTER} 
-          cy={CENTER} 
-          r={CENTER - 4} 
-          fill="url(#izi-brand-gradient)" 
-          stroke={colors.border} 
-          strokeWidth={8}
-          filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))"
-        />
-        
         {/* Glossy overlay */}
         <circle 
           cx={CENTER} 
