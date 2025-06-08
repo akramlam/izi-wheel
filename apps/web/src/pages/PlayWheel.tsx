@@ -1058,9 +1058,11 @@ const PlayWheel = () => {
       console.log('[DEBUG] Setting userFlowState to initial (social required)');
       // Don't show social popup immediately - let user click spin first
       setUserFlowState('initial');
+      setCurrentStep('spinWheel'); // Show the wheel, but require social action before spinning
     } else if (wheelData) {
       console.log('[DEBUG] Setting userFlowState to completedSocial (no social required)');
       setUserFlowState('completedSocial');
+      setCurrentStep('spinWheel'); // Show the wheel and allow spinning
     }
   }, [wheelData]);
 
@@ -1444,6 +1446,21 @@ const PlayWheel = () => {
                   ) : (
                     'Tourner la roue !'
                   )}
+                </Button>
+              </div>
+            )}
+            {/* Initial button when social action is required first */}
+            {!mustSpin && userFlowState === 'initial' && (
+              <div className="w-full max-w-[90vw] sm:max-w-[320px] flex flex-col items-center space-y-3">
+                <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
+                  Tentez votre chance de gagner !
+                </p>
+                <Button 
+                  onClick={handleSpinClick}
+                  className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  disabled={isSpinning}
+                >
+                  Tourner la roue !
                 </Button>
               </div>
             )}
