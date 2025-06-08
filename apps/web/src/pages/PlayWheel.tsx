@@ -312,7 +312,7 @@ const PlayWheel = () => {
   // Initialize route parameters state
   const [routeParams, setRouteParams] = useState<{companyId?: string, wheelId?: string}>({});
   
-  // Add debug logging for route parameters
+  // Initialize route parameters once on mount
   useEffect(() => {
     // Special handling for the /play/company/:wheelId route pattern
     const url = new URL(window.location.href);
@@ -332,14 +332,14 @@ const PlayWheel = () => {
         companyId: 'company',
         wheelId: actualWheelId
       });
-    } else {
-      // Use the normal route params
+    } else if (companyId && wheelId) {
+      // Use the normal route params only if they exist
       setRouteParams({
         companyId,
         wheelId
       });
     }
-  }, [companyId, wheelId]);
+  }, []); // Remove dependencies to prevent infinite loop
   
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [mustSpin, setMustSpin] = useState(false);
@@ -545,7 +545,7 @@ const PlayWheel = () => {
     if (currentStep === 'initial') {
       if (wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
         // Show social popup immediately on first button click
-        setCurrentStep('socialRedirect');
+        setCurrentStep('social');
         setShowSocialRedirect(true);
 
       } else {
@@ -664,7 +664,7 @@ const PlayWheel = () => {
         description: 'Failed to spin the wheel. Please try again.',
         variant: 'destructive'
       });
-      setCurrentStep('completedSocial');
+      setCurrentStep('spinWheel');
       setUserFlowState('completedSocial');
     }
   });
@@ -722,7 +722,7 @@ const PlayWheel = () => {
       if (data.play.result === 'WIN') {
         setCurrentStep('showPrize');
       } else {
-        setCurrentStep('completedSocial');
+        setCurrentStep('spinWheel');
       }
     }, 5500); // Slightly longer than spin duration
   };
