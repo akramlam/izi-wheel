@@ -343,7 +343,6 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         className="block mx-auto relative z-0 touch-none"
         style={{
           borderRadius: '50%',
-          boxShadow: '0 8px 32px 0 rgba(31,38,135,0.25)',
           transform: `rotate(${rotation}deg)`,
           transition: spinning 
             ? `transform ${spinning ? 5 + (rotation % 360) / 360 : 0}s cubic-bezier(0.18, 0.76, 0.22, 0.96)`
@@ -375,17 +374,6 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
             <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.75" />
           </filter>
         </defs>
-        
-        {/* Glossy overlay */}
-        <circle 
-          cx={CENTER} 
-          cy={CENTER} 
-          r={CENTER - 12} 
-          fill="url(#wheel-gloss)" 
-          stroke="none" 
-          opacity="0.6" 
-          pointerEvents="none"
-        />
         
         {/* Render all segments with responsive text */}
         {segments.map((segment, index) => {
