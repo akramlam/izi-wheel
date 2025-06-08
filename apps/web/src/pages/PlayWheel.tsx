@@ -309,15 +309,21 @@ const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
   
+  console.log('[DEBUG] PlayWheel render - Route params:', { companyId, wheelId });
+  console.log('[DEBUG] Current URL:', window.location.href);
+  
   // Directly compute effective parameters
   const getEffectiveParams = () => {
     // Special handling for the /play/company/:wheelId route pattern
     const url = new URL(window.location.href);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
+    console.log('[DEBUG] URL path parts:', pathParts);
+    
     // Check if we're on the /play/company/:wheelId route
     if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
       const actualWheelId = pathParts[2];
+      console.log('[DEBUG] Detected company route, wheelId:', actualWheelId);
       return {
         companyId: 'company',
         wheelId: actualWheelId
@@ -325,6 +331,7 @@ const PlayWheel = () => {
     }
     
     // Use normal route params
+    console.log('[DEBUG] Using normal route params:', { companyId, wheelId });
     return {
       companyId,
       wheelId
@@ -332,6 +339,7 @@ const PlayWheel = () => {
   };
 
   const effectiveParams = getEffectiveParams();
+  console.log('[DEBUG] Effective params:', effectiveParams);
 
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [mustSpin, setMustSpin] = useState(false);
@@ -370,11 +378,15 @@ const PlayWheel = () => {
   const { data: wheelData, isLoading: isLoadingWheel, error: wheelError, refetch } = useQuery<WheelData>({
     queryKey: ['wheel', effectiveParams.companyId, effectiveParams.wheelId],
     queryFn: async () => {
+      console.log('[DEBUG] useQuery queryFn called with params:', effectiveParams);
       try {
         const effectiveCompanyId = effectiveParams.companyId;
         const effectiveWheelId = effectiveParams.wheelId;
         
+        console.log('[DEBUG] Making API call with:', { effectiveCompanyId, effectiveWheelId });
+        
         if (!effectiveCompanyId || !effectiveWheelId) {
+          console.error('[DEBUG] Missing required parameters:', { effectiveCompanyId, effectiveWheelId });
           throw new Error('Missing required parameters: companyId and wheelId');
         }
         
@@ -384,30 +396,44 @@ const PlayWheel = () => {
           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
           const directUrl = `${apiUrl}/public/company/${effectiveWheelId}`;
           
+          console.log('[DEBUG] Making company API call to:', directUrl);
+          
           const response = await fetch(directUrl);
           
+          console.log('[DEBUG] Company API response status:', response.status);
+          
           if (!response.ok) {
+            console.error('[DEBUG] Company API call failed:', response.status, response.statusText);
             throw new Error(`API call failed with status: ${response.status}`);
           }
           
           const data = await response.json();
+          console.log('[DEBUG] Company API response data:', data);
           
           if (data && data.wheel) {
+            console.log('[DEBUG] Successfully got wheel data:', data.wheel);
             return data.wheel;
           } else {
+            console.error('[DEBUG] No wheel data in company response');
             throw new Error('No wheel data in response');
           }
         }
         
         // Standard approach for other routes
+        console.log('[DEBUG] Making standard API call');
         const response = await api.getPublicWheel(effectiveCompanyId, effectiveWheelId);
         
+        console.log('[DEBUG] Standard API response:', response);
+        
         if (!response.data || !response.data.wheel) {
+          console.error('[DEBUG] No wheel data in standard response');
           throw new Error('No wheel data returned from API');
         }
         
+        console.log('[DEBUG] Successfully got wheel data from standard API:', response.data.wheel);
         return response.data.wheel;
       } catch (error) {
+        console.error('[DEBUG] useQuery error:', error);
         throw error;
       }
     },
@@ -417,8 +443,16 @@ const PlayWheel = () => {
     staleTime: 30000, // Data is fresh for 30 seconds
   });
 
+  console.log('[DEBUG] useQuery state:', { 
+    isLoadingWheel, 
+    hasWheelData: !!wheelData, 
+    wheelError: wheelError?.message,
+    queryEnabled: !!(effectiveParams.companyId && effectiveParams.wheelId)
+  });
+
   // Prepare wheel data when loaded
   useEffect(() => {
+    console.log('[DEBUG] wheelData useEffect triggered, wheelData:', !!wheelData);
     if (wheelData) {
 
 
@@ -1019,15 +1053,21 @@ const PlayWheel = () => {
 
   // Initialize user flow state on wheel load
   useEffect(() => {
+    console.log('[DEBUG] wheelData useEffect triggered, wheelData:', !!wheelData);
     if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
+      console.log('[DEBUG] Setting userFlowState to initial (social required)');
       // Don't show social popup immediately - let user click spin first
       setUserFlowState('initial');
-    } else {
+    } else if (wheelData) {
+      console.log('[DEBUG] Setting userFlowState to completedSocial (no social required)');
       setUserFlowState('completedSocial');
     }
   }, [wheelData]);
 
+  console.log('[DEBUG] Render state check:', { isLoadingWheel, hasWheelError: !!wheelError, hasWheelData: !!wheelData });
+
   if (isLoadingWheel) {
+    console.log('[DEBUG] Showing loading screen - isLoadingWheel is true');
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
         <h1 className="text-3xl font-bold text-indigo-700 mb-8">IZI Wheel</h1>
@@ -1038,10 +1078,12 @@ const PlayWheel = () => {
   }
 
   if (wheelError) {
+    console.log('[DEBUG] Showing error screen - wheelError:', wheelError);
     return <ErrorDisplay error={wheelError} />;
   }
 
   if (!wheelData) {
+    console.log('[DEBUG] Showing no data screen - wheelData is null/undefined');
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
         <h1 className="text-3xl font-bold text-indigo-700 mb-8">Oops!</h1>
@@ -1069,6 +1111,14 @@ const PlayWheel = () => {
       </div>
     );
   }
+
+  console.log('[DEBUG] Rendering main wheel component with data:', {
+    hasWheelData: !!wheelData,
+    slotsCount: wheelData?.slots?.length || 0,
+    currentStep,
+    userFlowState,
+    socialNetwork: wheelData?.socialNetwork
+  });
 
   return (
     <div 
@@ -1356,6 +1406,10 @@ const PlayWheel = () => {
           </div>
         ) : currentStep === 'spinWheel' ? (
           // Wheel View - Responsive mobile wheel container
+          (() => {
+            console.log('[DEBUG] Rendering wheel view - currentStep is spinWheel');
+            return null;
+          })(),
           <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
             {/* Responsive wheel container that adapts to screen size */}
             <div className="relative w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[500px] mx-auto flex items-center justify-center">
@@ -1396,6 +1450,10 @@ const PlayWheel = () => {
           </div>
         ) : (
           // Loading or processing state
+          (() => {
+            console.log('[DEBUG] Rendering loading/processing state - currentStep:', currentStep, 'userFlowState:', userFlowState);
+            return null;
+          })(),
           <div className="p-4 sm:p-6 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-3" />
             <p className="text-sm sm:text-base text-gray-600">Traitement en cours...</p>
