@@ -1321,20 +1321,20 @@ const PlayWheel = () => {
           </div>
           
           <div className="flex gap-2 sm:gap-3">
-            <Button 
+            {/* <Button 
               variant="outline" 
               onClick={() => setShowResultModal(false)}
               className="flex-1 text-sm sm:text-base"
             >
               Fermer
-            </Button>
+            </Button> */}
             {spinResult?.play.result === 'WIN' && (
               <Button 
                 onClick={() => {
                   setShowResultModal(false);
                   setShowClaimForm(true);
                 }}
-                className="flex-1 text-sm sm:text-base"
+                className="flex-2 text-sm sm:text-base"
               >
                 Récupérer mon prix
               </Button>

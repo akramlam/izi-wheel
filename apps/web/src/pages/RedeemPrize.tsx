@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
+// import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Loader2, CheckCircle, AlertCircle, Home } from 'lucide-react';
@@ -15,7 +15,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 
-import PrizeDebugger from '../components/PrizeDebugger';
+// import PrizeDebugger from '../components/PrizeDebugger';
 
 type PrizeDetails = {
   id: string;
@@ -267,7 +267,7 @@ const RedeemPrize = () => {
         </CardFooter>
       </Card>
       
-      <PrizeDebugger playId={effectivePlayId || ''} />
+      {/* <PrizeDebugger playId={effectivePlayId || ''} /> */}
     </div>
   );
 };
