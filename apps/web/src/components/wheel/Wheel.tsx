@@ -14,13 +14,13 @@ interface WheelProps {
 const getWheelSize = () => {
   if (typeof window !== 'undefined') {
     const screenWidth = window.innerWidth;
-    // Scale wheel size based on screen width - reduced sizes
-    if (screenWidth < 480) return 240; // Mobile phones (was 280)
-    if (screenWidth < 768) return 300; // Small tablets (was 350)
-    if (screenWidth < 1024) return 340; // Tablets (was 400)
-    return 420; // Desktop (was 500)
+    // Scale wheel size based on screen width - increased sizes for better visibility
+    if (screenWidth < 480) return 320; // Mobile phones (was 240)
+    if (screenWidth < 768) return 380; // Small tablets (was 300)
+    if (screenWidth < 1024) return 420; // Tablets (was 340)
+    return 480; // Desktop (was 420)
   }
-  return 420; // Default for SSR (was 500)
+  return 480; // Default for SSR (was 420)
 };
 
 const WHEEL_SIZE = 500; // Base size for viewBox calculations

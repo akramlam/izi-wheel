@@ -1418,7 +1418,7 @@ const PlayWheel = () => {
           })(),
           <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
             {/* Responsive wheel container that adapts to screen size */}
-            <div className="relative w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[500px] mx-auto flex items-center justify-center">
+            <div className="relative w-full max-w-[95vw] sm:max-w-[450px] md:max-w-[500px] lg:max-w-[550px] mx-auto flex items-center justify-center">
               <Wheel
                 config={wheelConfig}
                 isSpinning={mustSpin}
