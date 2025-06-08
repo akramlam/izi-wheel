@@ -309,38 +309,30 @@ const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
   
-  // Initialize route parameters state
-  const [routeParams, setRouteParams] = useState<{companyId?: string, wheelId?: string}>({});
-  
-  // Initialize route parameters once on mount
-  useEffect(() => {
+  // Directly compute effective parameters
+  const getEffectiveParams = () => {
     // Special handling for the /play/company/:wheelId route pattern
     const url = new URL(window.location.href);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
     // Check if we're on the /play/company/:wheelId route
     if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
-      // We need to manually set the companyId since React Router isn't handling it correctly
       const actualWheelId = pathParts[2];
-      
-      // Store these values for use in the query function
-      window.sessionStorage.setItem('manual_companyId', 'company');
-      window.sessionStorage.setItem('manual_wheelId', actualWheelId);
-      
-      // Update local state to trigger query
-      setRouteParams({
+      return {
         companyId: 'company',
         wheelId: actualWheelId
-      });
-    } else if (companyId && wheelId) {
-      // Use the normal route params only if they exist
-      setRouteParams({
-        companyId,
-        wheelId
-      });
+      };
     }
-  }, []); // Remove dependencies to prevent infinite loop
-  
+    
+    // Use normal route params
+    return {
+      companyId,
+      wheelId
+    };
+  };
+
+  const effectiveParams = getEffectiveParams();
+
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeIndex, setPrizeIndex] = useState(0);
@@ -376,16 +368,11 @@ const PlayWheel = () => {
 
   // Fetch wheel data
   const { data: wheelData, isLoading: isLoadingWheel, error: wheelError, refetch } = useQuery<WheelData>({
-    queryKey: ['wheel', routeParams.companyId, routeParams.wheelId],
+    queryKey: ['wheel', effectiveParams.companyId, effectiveParams.wheelId],
     queryFn: async () => {
       try {
-        // Get manually stored parameters if available
-        const manualCompanyId = window.sessionStorage.getItem('manual_companyId');
-        const manualWheelId = window.sessionStorage.getItem('manual_wheelId');
-        
-        // Use route params or manual params
-        const effectiveCompanyId = routeParams.companyId || manualCompanyId;
-        const effectiveWheelId = routeParams.wheelId || manualWheelId;
+        const effectiveCompanyId = effectiveParams.companyId;
+        const effectiveWheelId = effectiveParams.wheelId;
         
         if (!effectiveCompanyId || !effectiveWheelId) {
           throw new Error('Missing required parameters: companyId and wheelId');
@@ -397,23 +384,18 @@ const PlayWheel = () => {
           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
           const directUrl = `${apiUrl}/public/company/${effectiveWheelId}`;
           
-          try {
-            // Use fetch for direct approach
-            const response = await fetch(directUrl);
-            
-            if (!response.ok) {
-              throw new Error(`API call failed with status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data && data.wheel) {
-              return data.wheel;
-            } else {
-              throw new Error('No wheel data in response');
-            }
-          } catch (error) {
-            throw error;
+          const response = await fetch(directUrl);
+          
+          if (!response.ok) {
+            throw new Error(`API call failed with status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          
+          if (data && data.wheel) {
+            return data.wheel;
+          } else {
+            throw new Error('No wheel data in response');
           }
         }
         
@@ -429,7 +411,7 @@ const PlayWheel = () => {
         throw error;
       }
     },
-    enabled: !!(routeParams.companyId && routeParams.wheelId),
+    enabled: !!(effectiveParams.companyId && effectiveParams.wheelId),
     retry: 3,
     retryDelay: attempt => Math.min(attempt > 1 ? 2000 : 1000, 30 * 1000),
     staleTime: 30000, // Data is fresh for 30 seconds
@@ -613,7 +595,7 @@ const PlayWheel = () => {
   const { mutate: spinWheel, isPending: isSpinning } = useMutation({
     mutationFn: async () => {
       // For initial spin, use minimal data
-      const response = await api.spinWheel(routeParams.companyId || '', routeParams.wheelId || '', { 
+      const response = await api.spinWheel(effectiveParams.companyId || '', effectiveParams.wheelId || '', { 
         lead: formData
       });
       return response.data;
@@ -953,7 +935,7 @@ const PlayWheel = () => {
       
       try {
         // Try to fix wheel via API
-        await api.fixWheel(routeParams.wheelId || '');
+        await api.fixWheel(effectiveParams.wheelId || '');
         
         // Refetch wheel data
         refetch();
