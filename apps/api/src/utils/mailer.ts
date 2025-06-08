@@ -9,8 +9,52 @@ const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
 
+// SMTP.com API configuration
+const SMTP_COM_API_KEY = process.env.SMTP_COM_API_KEY || '';
+const SMTP_COM_API_URL = 'https://api.smtp.com/v4';
+const USE_SMTP_COM_API = process.env.USE_SMTP_COM_API === 'true' && SMTP_COM_API_KEY;
+
 // Check if SMTP configuration is valid
 const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
+const isSmtpComApiConfigured = USE_SMTP_COM_API && SMTP_COM_API_KEY;
+
+// SMTP.com API email sender
+const sendViaSmtpComApi = async (mailOptions: any) => {
+  const emailData = {
+    from: {
+      email: mailOptions.from,
+      name: process.env.EMAIL_FROM_NAME || 'IZI Wheel'
+    },
+    to: [
+      {
+        email: mailOptions.to,
+        name: mailOptions.toName || ''
+      }
+    ],
+    subject: mailOptions.subject,
+    html: mailOptions.html,
+    text: mailOptions.text || ''
+  };
+
+  const response = await fetch(`${SMTP_COM_API_URL}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SMTP_COM_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(emailData)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.text();
+    throw new Error(`SMTP.com API error: ${response.status} - ${errorData}`);
+  }
+
+  const result = await response.json();
+  console.log(`[SMTP.COM API] ✅ Email sent successfully:`, result);
+  return { messageId: result.data?.message_id || `smtp-com-${Date.now()}` };
+};
 
 // Create a development file transport for testing
 const createFileTransport = () => {
@@ -65,24 +109,46 @@ const testTransport = {
   }
 };
 
-// Create a transporter using SMTP.com if configured
-const transporter = isSmtpConfigured ? nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: SMTP_PORT,
-  secure: SMTP_SECURE,
-  auth: {
-    user: SMTP_USER,
-    pass: SMTP_PASS,
-  },
-}) : (process.env.NODE_ENV === 'development' ? createFileTransport() : testTransport);
+// Enhanced transport that supports both SMTP.com API and traditional SMTP
+const createEnhancedTransport = () => {
+  return {
+    sendMail: async (mailOptions: any) => {
+      if (isSmtpComApiConfigured) {
+        console.log(`[EMAIL] Using SMTP.com API for delivery`);
+        return await sendViaSmtpComApi(mailOptions);
+      } else if (isSmtpConfigured) {
+        console.log(`[EMAIL] Using traditional SMTP for delivery`);
+        const smtpTransporter = nodemailer.createTransporter({
+          host: SMTP_HOST,
+          port: SMTP_PORT,
+          secure: SMTP_SECURE,
+          auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASS,
+          },
+        });
+        return await smtpTransporter.sendMail(mailOptions);
+      } else {
+        throw new Error('No email transport configured');
+      }
+    }
+  };
+};
 
-// Log SMTP configuration status on startup
-if (isSmtpConfigured) {
-  console.log(`Mailer initialized: Using SMTP configuration (${SMTP_HOST}:${SMTP_PORT})`);
+// Create the appropriate transporter
+const transporter = (isSmtpComApiConfigured || isSmtpConfigured) 
+  ? createEnhancedTransport()
+  : (process.env.NODE_ENV === 'development' ? createFileTransport() : testTransport);
+
+// Log email configuration status on startup
+if (isSmtpComApiConfigured) {
+  console.log(`[EMAIL] ✅ Mailer initialized: Using SMTP.com REST API`);
+} else if (isSmtpConfigured) {
+  console.log(`[EMAIL] ✅ Mailer initialized: Using traditional SMTP (${SMTP_HOST}:${SMTP_PORT})`);
 } else if (process.env.NODE_ENV === 'development') {
-  console.log(`Mailer initialized: Using file transport (emails saved to ./emails/ folder)`);
+  console.log(`[EMAIL] 📁 Mailer initialized: Using file transport (emails saved to ./emails/ folder)`);
 } else {
-  console.log(`Mailer initialized: Using test transport (emails will be logged but not sent)`);
+  console.log(`[EMAIL] ⚠️  Mailer initialized: Using test transport (emails will be logged but not sent)`);
 }
 
 /**
