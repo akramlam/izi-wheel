@@ -109,7 +109,6 @@ const WheelManager = () => {
         setIsLoading(false);
       }
     } catch (error) {
-      console.error('Error fetching companies:', error);
       setError('Failed to load companies. Please try again.');
       setIsLoading(false);
     }
@@ -170,7 +169,6 @@ const WheelManager = () => {
               setCompanyId(validationResponse.data.companyId);
             }
           } catch (validationError) {
-            console.error('Error validating company ID:', validationError);
           }
         } else {
           companyIdToUse = storedCompanyId;
@@ -220,7 +218,6 @@ const WheelManager = () => {
       }
 
     } catch (error) {
-      console.error('Error fetching wheels:', error);
       setError('Failed to load wheels. Please try again.');
     } finally {
       setIsLoading(false);
@@ -256,7 +253,6 @@ const WheelManager = () => {
       setShowDeleteModal(false);
       setWheelToDelete(null);
     } catch (error) {
-      console.error('Error deleting wheel:', error);
       setError('Failed to delete wheel. Please try again.');
     } finally {
       setIsDeleting(false);
@@ -286,7 +282,6 @@ const WheelManager = () => {
         });
       }
     } catch (error) {
-      console.error('Error toggling wheel status:', error);
       setError('Failed to update wheel status. Please try again.');
     }
   };
@@ -306,7 +301,6 @@ const WheelManager = () => {
         });
       })
       .catch(err => {
-        console.error('Failed to copy URL:', err);
         toast({
           title: "Échec de la copie",
           description: "Impossible de copier l'URL. Veuillez réessayer.",

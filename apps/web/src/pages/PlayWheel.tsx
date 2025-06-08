@@ -91,9 +91,7 @@ const SocialRedirectDialog = ({
   
   // Debug network info on render
   useEffect(() => {
-    console.log('SocialRedirectDialog rendered with open state:', open);
-    console.log('SocialRedirectDialog network:', network);
-    console.log('Redirect URL:', redirectUrl);
+    
     
     // Add detailed debugging in development mode
     if (import.meta.env.DEV) {
@@ -105,28 +103,28 @@ const SocialRedirectDialog = ({
   }, [open, network, redirectUrl]);
 
   const getNetworkIcon = () => {
-    console.log('Getting icon for network:', network);
     
-    switch (network) {
-      case 'GOOGLE':
+    
+    switch (network?.toLowerCase()) {
+      case 'google':
         return (
           <svg className="h-16 w-16 mb-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
             <path d="M12 11h8.88c.08.53.12 1.06.12 1.6 0 4.41-3.16 7.55-7.55 7.55-4.41 0-8-3.59-8-8s3.59-8 8-8c2.07 0 3.92.8 5.37 2.11l-2.19 2.11C15.17 7.4 13.65 6.95 12 6.95c-2.76 0-5 2.24-5 5s2.24 5 5 5c2.64 0 4.41-1.54 4.8-3.95H12v-2z"/>
           </svg>
         );
-      case 'INSTAGRAM':
+      case 'instagram':
         return (
           <svg className="h-16 w-16 mb-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
             <path d="M12 2c-2.716 0-3.056.011-4.123.06-1.064.048-1.791.218-2.427.465a4.9 4.9 0 0 0-1.77 1.153A4.9 4.9 0 0 0 2.525 5.45c-.247.636-.417 1.363-.465 2.427C2.011 8.944 2 9.284 2 12s.011 3.056.06 4.123c.048 1.064.218 1.791.465 2.427a4.9 4.9 0 0 0 1.153 1.77 4.9 4.9 0 0 0 1.77 1.153c.636.247 1.363.417 2.427.465 1.067.048 1.407.06 4.123.06s3.056-.011 4.123-.06c1.064-.048 1.791-.218 2.427-.465a4.9 4.9 0 0 0 1.77-1.153 4.9 4.9 0 0 0 1.153-1.77c.247-.636.417-1.363.465-2.427.048-1.067.06-1.407.06-4.123s-.011-3.056-.06-4.123c-.048-1.064-.218-1.791-.465-2.427a4.9 4.9 0 0 0-1.153-1.77 4.9 4.9 0 0 0-1.77-1.153c-.636-.247-1.363-.417-2.427-.465C15.056 2.011 14.716 2 12 2zm0 1.802c2.67 0 2.986.01 4.04.058.976.045 1.505.207 1.858.344.466.182.8.399 1.15.748.35.35.566.684.748 1.15.137.353.3.882.344 1.857.048 1.055.058 1.37.058 4.041 0 2.67-.01 2.986-.058 4.04-.045.976-.207 1.505-.344 1.858a3.1 3.1 0 0 1-.748 1.15c-.35.35-.684.566-1.15.748-.353.137-.882.3-1.857.344-1.054.048-1.37.058-4.041.058-2.67 0-2.987-.01-4.04-.058-.976-.045-1.505-.207-1.858-.344a3.1 3.1 0 0 1-1.15-.748 3.1 3.1 0 0 1-.748-1.15c-.137-.353-.3-.882-.344-1.857-.048-1.055-.058-1.37-.058-4.041 0-2.67.01-2.986.058-4.04.045-.976.207-1.505.344-1.858.182-.466.399-.8.748-1.15.35-.35.684-.566 1.15-.748.353-.137.882-.3 1.857-.344 1.055-.048 1.37-.058 4.041-.058zm0 3.063a5.135 5.135 0 1 0 0 10.27 5.135 5.135 0 0 0 0-10.27zm0 8.468a3.333 3.333 0 1 1 0-6.666 3.333 3.333 0 0 1 0 6.666zm6.538-8.671a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0z"/>
           </svg>
         );
-      case 'TIKTOK':
+      case 'tiktok':
         return (
           <svg className="h-16 w-16 mb-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
             <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.59-1.16-2.59-2.5a2.592 2.592 0 0 1 4.3-1.96V10.3a5.636 5.636 0 0 0-1.71-.26c-3.09 0-5.59 2.5-5.59 5.59s2.5 5.59 5.59 5.59 5.59-2.5 5.59-5.59V7.73c.99.79 2.22 1.25 3.59 1.25v-3.1c0-.02-2.44-.06-2.44-.06Z"/>
           </svg>
         );
-      case 'FACEBOOK':
+      case 'facebook':
         return (
           <svg className="h-16 w-16 mb-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
             <path d="M20.007 3H3.993A.993.993 0 0 0 3 3.993v16.014c0 .549.444.993.993.993h8.621v-6.97h-2.347v-2.716h2.347V9.309c0-2.325 1.42-3.591 3.494-3.591.993 0 1.847.074 2.096.107v2.43h-1.438c-1.128 0-1.346.537-1.346 1.324v1.734h2.69l-.35 2.717h-2.34V21h4.587a.993.993 0 0 0 .993-.993V3.993A.993.993 0 0 0 20.007 3z"/>
@@ -150,13 +148,13 @@ const SocialRedirectDialog = ({
   };
 
   const getTitle = () => {
-    switch (network) {
-      case 'GOOGLE':
+    switch (network?.toLowerCase()) {
+      case 'google':
         return 'LAISSEZ NOUS UN AVIS';
-      case 'INSTAGRAM':
-      case 'TIKTOK':
-      case 'FACEBOOK':
-      case 'SNAPCHAT':
+      case 'instagram':
+      case 'tiktok':
+      case 'facebook':
+      case 'snapchat':
         return 'SUIVEZ-NOUS SUR NOS RÉSEAUX';
       default:
         return 'SUIVEZ-NOUS';
@@ -164,16 +162,16 @@ const SocialRedirectDialog = ({
   };
 
   const getButtonText = () => {
-    switch (network) {
-      case 'GOOGLE':
+    switch (network?.toLowerCase()) {
+      case 'google':
         return 'Noter sur Google';
-      case 'INSTAGRAM':
+      case 'instagram':
         return 'Suivre sur Instagram';
-      case 'TIKTOK':
+      case 'tiktok':
         return 'Suivre sur TikTok';
-      case 'FACEBOOK':
+      case 'facebook':
         return 'Suivre sur Facebook';
-      case 'SNAPCHAT':
+      case 'snapchat':
         return 'Suivre sur Snapchat';
       default:
         return 'Continuer';
@@ -181,8 +179,8 @@ const SocialRedirectDialog = ({
   };
 
   const getInstructions = () => {
-    switch (network) {
-      case 'GOOGLE':
+    switch (network?.toLowerCase()) {
+      case 'google':
         return (
           <div className="flex flex-col space-y-4 mt-4">
             <div className="flex items-center space-x-2">
@@ -199,10 +197,10 @@ const SocialRedirectDialog = ({
             </div>
           </div>
         );
-      case 'INSTAGRAM':
-      case 'TIKTOK':
-      case 'FACEBOOK':
-      case 'SNAPCHAT':
+      case 'instagram':
+      case 'tiktok':
+      case 'facebook':
+      case 'snapchat':
         return (
           <div className="flex flex-col space-y-4 mt-4">
             <div className="flex items-center space-x-2">
@@ -313,8 +311,7 @@ const PlayWheel = () => {
   
   // Add debug logging for route parameters
   useEffect(() => {
-    console.log('PlayWheel mounted with params:', { companyId, wheelId });
-    console.log('Current URL:', window.location.href);
+
     
     // Special handling for the /play/company/:wheelId route pattern
     const url = new URL(window.location.href);
@@ -322,7 +319,7 @@ const PlayWheel = () => {
     
     // Check if we're on the /play/company/:wheelId route
     if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
-      console.log('Detected company route pattern, setting companyId to "company"');
+      
       // We need to manually set the companyId since React Router isn't handling it correctly
       const actualWheelId = pathParts[2];
       
@@ -331,22 +328,7 @@ const PlayWheel = () => {
       window.sessionStorage.setItem('manual_wheelId', actualWheelId);
     }
     
-    console.log('Route match debug:', { 
-      isCompany: pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company',
-      companyIdType: typeof companyId,
-      wheelIdType: typeof wheelId
-    });
-    
-    // Additional debug logging
-    const debugInfo = {
-      apiBaseUrl: import.meta.env.VITE_API_URL || 'https://api.izikado.fr',
-      hostname: window.location.hostname,
-      pathname: window.location.pathname,
-      isPublicDomain: window.location.hostname === 'roue.izikado.fr',
-      fullWheelId: wheelId,
-      fullCompanyId: companyId
-    };
-    console.log('Extended debug info:', debugInfo);
+
     
     // Add visual debug info in development
     if (import.meta.env.DEV) {
@@ -415,7 +397,7 @@ const PlayWheel = () => {
     queryKey: ['wheel', companyId, wheelId],
     queryFn: async () => {
       try {
-        console.log(`Fetching wheel data for companyId: ${companyId}, wheelId: ${wheelId}`);
+
         
         // Get manually stored parameters if available
         const manualCompanyId = window.sessionStorage.getItem('manual_companyId');
@@ -424,7 +406,7 @@ const PlayWheel = () => {
         // Special handling for "company" in the URL path
         // Check both the route param and our manual detection
         if (companyId === 'company' || manualCompanyId === 'company') {
-          console.log('Detected "company" in URL path, using special company route');
+
           
           // Use the correct wheelId (either from route or manual detection)
           const actualWheelId = wheelId || manualWheelId;
@@ -436,19 +418,19 @@ const PlayWheel = () => {
           // Make a direct fetch call to the proper API endpoint
           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
           const directUrl = `${apiUrl}/public/company/${actualWheelId}`;
-          console.log('Fetching from URL:', directUrl);
+
           
           try {
             // Use fetch for direct approach
             const response = await fetch(directUrl);
             
             if (!response.ok) {
-              console.error(`API call failed with status: ${response.status}`);
+
               throw new Error(`API call failed with status: ${response.status}`);
             }
             
             const data = await response.json();
-            console.log('API response data:', data);
+
             
             if (data && data.wheel) {
               return data.wheel;
@@ -456,7 +438,7 @@ const PlayWheel = () => {
               throw new Error('No wheel data in response');
             }
           } catch (error) {
-            console.error('Error fetching wheel data:', error);
+
             throw error;
           }
         }
@@ -465,22 +447,22 @@ const PlayWheel = () => {
         const response = await api.getPublicWheel(companyId || '', wheelId || '');
         
         if (!response.data || !response.data.wheel) {
-          console.error('API returned no wheel data:', response);
+
           throw new Error('No wheel data returned from API');
         }
         
-        console.log('Wheel data received:', response.data.wheel);
+
         
         // Check if slots are present
         if (!response.data.wheel.slots || response.data.wheel.slots.length === 0) {
-          console.warn('Wheel has no slots!');
+
         } else {
-          console.log(`Wheel has ${response.data.wheel.slots.length} slots`);
+
         }
         
         return response.data.wheel;
       } catch (error) {
-        console.error('Error fetching wheel data:', error);
+
         setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
         throw error;
       }
@@ -495,20 +477,20 @@ const PlayWheel = () => {
   // Prepare wheel data when loaded
   useEffect(() => {
     if (wheelData) {
-      console.log('PlayWheel.tsx: Processing wheelData for UI', JSON.parse(JSON.stringify(wheelData)));
-      console.log('PlayWheel.tsx: Raw wheelData.slots from API:', wheelData.slots.map(s => ({id: s.id, label: s.label, position: s.position })));
+
+
       
       // Log social network configuration for debugging
       if (wheelData.socialNetwork) {
-        console.log(`Wheel has social network configured: ${wheelData.socialNetwork}`);
-        console.log('Redirect URL:', wheelData.redirectUrl);
+
+
       } else {
-        console.log('No social network configured for this wheel');
+
       }
       
       // Ensure we have valid slot data, even if the wheel has no properly configured slots
       if (!wheelData.slots || wheelData.slots.length === 0) {
-        console.warn('No slots found in wheel data, creating default configuration');
+
         
         // Create default slots if none exist
         const defaultSlots = [
@@ -535,13 +517,13 @@ const PlayWheel = () => {
         
         setDebugInfo('Using default wheel configuration as no slots were found');
       } else {
-        console.log(`Processing ${wheelData.slots.length} slots`);
+
         
         // Ensure slots have position values
         const sortedSlots = [...wheelData.slots].sort((a, b) => 
           (a.position !== undefined ? a.position : 999) - (b.position !== undefined ? b.position : 999)
         );
-        console.log('PlayWheel.tsx: Sorted frontend slots for wheel config:', sortedSlots.map(s => ({id: s.id, label: s.label, position: s.position })));
+
         
         // Check if any slot is marked as winning
         const hasWinningSlot = sortedSlots.some(slot => slot.isWinning);
@@ -549,7 +531,7 @@ const PlayWheel = () => {
         // Make the first slot winning if none are winning
         if (!hasWinningSlot && sortedSlots.length > 0) {
           sortedSlots[0].isWinning = true;
-          console.log('No winning slot found, marking first slot as winning');
+
       }
       
       // Set wheel colors and prepare segments configuration
@@ -560,7 +542,7 @@ const PlayWheel = () => {
         isWinning: slot.isWinning
       }));
         
-        console.log('Setting wheel configuration with segments:', segments);
+
       
       setWheelConfig({
         ...wheelConfig,
@@ -626,7 +608,7 @@ const PlayWheel = () => {
 
   // Handle social redirect close
   const handleSocialRedirectClose = () => {
-    console.log('Social redirect closed, user should now be ready to spin the wheel');
+
     setShowSocialRedirect(false);
     setHasCompletedSocialAction(true);
     setUserFlowState('completedSocial');
@@ -650,7 +632,7 @@ const PlayWheel = () => {
   const handleSpinClick = () => {
     // Only allow spin if social action is completed or not required
     if (currentStep === 'spinWheel' && (userFlowState === 'completedSocial' || !wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
-      console.log('User clicked to spin the wheel after completing social action');
+
       setUserFlowState('spinning');
       handleSpinWithoutSocial();
     } else if (currentStep === 'initial') {
@@ -672,18 +654,18 @@ const PlayWheel = () => {
       // wheelConfig.segments is the source of truth for visual indexing.
       // It's derived from wheelData.slots, sorted by position.
       if (!wheelConfig.segments || wheelConfig.segments.length === 0) {
-        console.error("CRITICAL: PlayWheel.tsx - wheelConfig.segments is empty or undefined during spinWheel onSuccess.");
+
         toast({ title: "Erreur Roue", description: "Configuration de la roue invalide.", variant: "destructive"});
         // Potentially reset state or disable further interaction
         setUserFlowState('completedSocial'); // Reset flow
         return;
       }
       if (!data || !data.slot || !data.slot.id) {
-        console.error("CRITICAL: PlayWheel.tsx - Backend spinWheel response missing slot data or slot.id.");
+
         
         // Try to use the first slot as a fallback if we have wheel data
         if (wheelConfig.segments && wheelConfig.segments.length > 0) {
-          console.log("Using fallback slot (first segment) due to missing slot data in response");
+
           // Create a modified data object with the first segment as the slot
           const fallbackData = {
             ...data,
@@ -708,7 +690,7 @@ const PlayWheel = () => {
       handleSpinResultWithData(data);
     },
     onError: (error: any) => {
-      console.error('Error spinning wheel:', error);
+
       toast({
         title: 'Error',
         description: 'Failed to spin the wheel. Please try again.',
@@ -722,19 +704,14 @@ const PlayWheel = () => {
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
     // Logs from previous step (can be kept for debugging if needed)
-    console.log('PlayWheel.tsx: spinWheel onSuccess - Backend response data:', JSON.parse(JSON.stringify(data)));
-    console.log('PlayWheel.tsx: spinWheel onSuccess - Frontend wheelConfig.segments for visual wheel:', wheelConfig.segments.map(s => ({id: s.id, label: s.label})));
+
+
 
     // Find the index of the winning slot ID within the wheelConfig.segments array
     let prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
 
     if (prizeIndexFound === -1) {
-      console.error("CRITICAL: PlayWheel.tsx - Winning slot ID from backend NOT FOUND in frontend wheelConfig.segments!", {
-        backendSlotId: data.slot.id,
-        backendSlotLabel: data.slot.label,
-        frontendSegmentsForVisualWheel: wheelConfig.segments.map(s => ({id: s.id, label: s.label})),
-        originalFrontendSlotsUnsorted: wheelData?.slots?.map(s => ({id: s.id, label: s.label, position: s.position})) || "wheelData.slots not available"
-      });
+
       
       toast({
         title: "Affichage désynchronisé",
@@ -790,12 +767,12 @@ const PlayWheel = () => {
     
     // If user won and is in the showPrize step, show the claim form
     if (spinResult?.play.result === 'WIN' && currentStep === 'showPrize') {
-      console.log('User won prize, showing claim form');
+
       setCurrentStep('claimForm');
       setShowClaimForm(true);
     } else {
       // Otherwise reset to initial state
-      console.log('Resetting to initial state');
+
       setCurrentStep('spinWheel');
       setUserFlowState('completedSocial');
     }
@@ -803,7 +780,7 @@ const PlayWheel = () => {
 
   // Handle claim form submission
   const handleClaimFormSubmit = async (data: PlayerFormData) => {
-    console.log('Claim form submitted:', data);
+
     
     // Stop confetti immediately
     setShowConfetti(false);
@@ -838,7 +815,7 @@ const PlayWheel = () => {
 
         if (response.ok) {
           const result = await response.json();
-          console.log('Prize claimed successfully:', result);
+
           
           // Set user flow to claimed
           setUserFlowState('claimed');
@@ -851,7 +828,7 @@ const PlayWheel = () => {
           });
         } else {
           const error = await response.json();
-          console.error('Failed to claim prize:', error);
+
           
           toast({
             title: "Erreur",
@@ -861,7 +838,7 @@ const PlayWheel = () => {
           return; // Don't proceed if API call failed
         }
       } catch (error) {
-        console.error('Error claiming prize:', error);
+
         
         toast({
           title: "Erreur de connexion",
@@ -889,7 +866,7 @@ const PlayWheel = () => {
   const getQRCodeUrl = () => {
     // Safety check - if spinResult or prize doesn't exist
     if (!spinResult || !spinResult.play || !spinResult.play.prize) {
-      console.error('No valid spin result available for QR code');
+
       
       // Return a fallback "no QR" image
       return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMWYxZjEiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIHNhbnMtc2VyaWYiIGZpbGw9IiM5OTkiPlBhcyBkZSBRUjwvdGV4dD48L3N2Zz4=';
@@ -929,7 +906,7 @@ const PlayWheel = () => {
     }
     
     // Fallback - if somehow we have a prize but no QR or PIN (should not happen)
-    console.error('No QR code URL available');
+
     return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMWYxZjEiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIHNhbnMtc2VyaWYiIGZpbGw9IiM5OTkiPlBhcyBkZSBRUjwvdGV4dD48L3N2Zz4=';
   };
 
@@ -989,7 +966,7 @@ const PlayWheel = () => {
         description: 'Le code QR a été téléchargé.'
       });
     } catch (error) {
-      console.error('Error downloading QR code:', error);
+
       
       // Fallback: open in new tab
       window.open(qrUrl, '_blank');
@@ -1013,7 +990,7 @@ const PlayWheel = () => {
         // Refetch wheel data
         refetch();
       } catch (apiError) {
-        console.warn('Could not fix wheel via API, using client-side fix:', apiError);
+
         
         // Get the slots
         let slots = [];
@@ -1059,7 +1036,7 @@ const PlayWheel = () => {
       
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fixing wheel:', error);
+
       toast({
         title: "Erreur",
         description: "Impossible de corriger la roue.",
@@ -1071,7 +1048,7 @@ const PlayWheel = () => {
 
   // Add a new method to force reload the wheel data
   const handleRefreshWheel = () => {
-    console.log('Manually refreshing wheel data...');
+
     setDebugInfo('Refreshing wheel data...');
     refetch().then(() => {
       setDebugInfo('Wheel data refreshed successfully');
@@ -1320,7 +1297,7 @@ const PlayWheel = () => {
             )}
           </div>
           
-          <div className="flex gap-2 sm:gap-3">
+          <div className="flex gap-2 sm:gap-3 justify-center">
             {/* <Button 
               variant="outline" 
               onClick={() => setShowResultModal(false)}
@@ -1477,9 +1454,10 @@ const PlayWheel = () => {
             )}
           </div>
         ) : (
-          // Other steps (showPrize, claimForm) - placeholder for future implementation
+          // Loading or processing state
           <div className="p-4 sm:p-6 text-center">
-            <p className="text-sm sm:text-base text-gray-600">Étape en cours: {currentStep}</p>
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-3" />
+            <p className="text-sm sm:text-base text-gray-600">Traitement en cours...</p>
           </div>
         )}
       </div>

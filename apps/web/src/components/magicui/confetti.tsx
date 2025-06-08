@@ -54,7 +54,6 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
         instanceRef.current = null;
       }
     } catch (err) {
-      console.error('Error cleaning up confetti instance:', err);
     }
   }, []);
 
@@ -76,7 +75,6 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
             resize: true,
           });
         } catch (error) {
-          console.error("Error creating confetti instance:", error);
         }
       } else {
         cleanupInstance();
@@ -91,7 +89,6 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
         if (!isMounted.current) return;
         await instanceRef.current?.({ ...options, ...opts });
       } catch (error) {
-        console.error("Confetti error:", error);
       }
     },
     [options],
@@ -114,7 +111,6 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
             await fire();
           }
         } catch (error) {
-          console.error("Confetti effect error:", error);
         }
       })();
     }
@@ -158,7 +154,6 @@ const ConfettiButtonComponent = ({
         },
       });
     } catch (error) {
-      console.error("Confetti button error:", error);
     }
   };
 

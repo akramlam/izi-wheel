@@ -232,14 +232,14 @@ const WheelEdit = () => {
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching companies...");
+
       const response = await api.getAllCompanies();
-      console.log("Companies response:", response);
+
       if (response.data && response.data.companies) {
         setCompanies(response.data.companies);
       }
     } catch (error) {
-      console.error('Failed to fetch companies:', error);
+
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -267,11 +267,11 @@ const WheelEdit = () => {
       
       try {
         const wheelResponse = await api.getWheel(id!);
-        console.log('Raw wheel data from API:', wheelResponse.data);
+
         
         if (wheelResponse.data && wheelResponse.data.wheel) {
           const wheelFromApi = wheelResponse.data.wheel;
-          console.log('Wheel mode from API:', wheelFromApi.mode);
+
           
           // Directly use the API enum value - don't convert it
           const validType: WheelType = wheelFromApi.mode === 'ALL_WIN' ? 'ALL_WIN' : 'RANDOM_WIN';
@@ -297,7 +297,7 @@ const WheelEdit = () => {
             backgroundImage: wheelFromApi.backgroundImage || '',
           };
           
-          console.log('Processed wheel data:', wheelData);
+
           
           // Process slots if available
           if (wheelFromApi.slots && Array.isArray(wheelFromApi.slots)) {
@@ -311,7 +311,7 @@ const WheelEdit = () => {
           }
         }
       } catch (error) {
-        console.error('Error loading wheel data:', error);
+
         // Use fallback data if API fails
         wheelData = {
           id: id || '',
@@ -341,11 +341,11 @@ const WheelEdit = () => {
           else {
             // If neither format works, use empty array
             slots = [];
-            console.warn('Unexpected slots data format:', slotsResponse.data);
+
           }
         }
     } catch (error) {
-        console.error('Error loading wheel slots:', error);
+
         // Use fallback slots if API fails
         slots = [
           { 
@@ -391,7 +391,7 @@ const WheelEdit = () => {
       }
 
     } catch (error) {
-      console.error('Error loading wheel data:', error);
+
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -459,7 +459,7 @@ const WheelEdit = () => {
       setSelectedCompanyId(newCompanyId);
       localStorage.setItem('companyId', newCompanyId);
     } else {
-      console.warn('Attempted to select a company with an invalid ID format:', newCompanyId);
+
       toast({
         title: "ID d'entreprise invalide",
         description: "Le format de l'ID de l'entreprise sélectionnée n'est pas valide.",
@@ -783,12 +783,12 @@ const WheelEdit = () => {
 
   // Helper function to convert between frontend display values and backend enum values
   const displayTypeToApiType = (displayType: WheelDisplayType): WheelType => {
-    console.log('Converting display type to API type:', displayType);
+
     return displayType === "Gagnant à tous les coups" ? "ALL_WIN" : "RANDOM_WIN";
   }
 
   const apiTypeToDisplayType = (apiType: WheelType): WheelDisplayType => {
-    console.log('Converting API type to display type:', apiType);
+
     return apiType === "ALL_WIN" ? "Gagnant à tous les coups" : "Gain aléatoire";
   }
 
@@ -838,7 +838,7 @@ const WheelEdit = () => {
       }
 
     // Log the final payload before sending
-    console.log("Final payload being sent to API:", JSON.parse(JSON.stringify(payload)));
+
 
     try {
       if (isNew) {
@@ -875,7 +875,7 @@ const WheelEdit = () => {
           
           navigate('/roues');
         } catch (error: any) {
-          console.error("Error creating wheel:", error);
+
           toast({
             variant: "destructive",
             title: "Erreur",
@@ -903,7 +903,7 @@ const WheelEdit = () => {
               }
             }
             
-            console.log(`Found ${existingSlots.length} existing slots to delete`);
+
             
             if (existingSlots.length > 0) {
               // Delete all existing slots first before creating new ones
@@ -911,9 +911,9 @@ const WheelEdit = () => {
                 if (slot.id) {
                   try {
                     await api.deleteSlot(id!, slot.id);
-                    console.log(`Deleted slot ${slot.id}`);
+
                   } catch (deleteError) {
-                    console.error(`Error deleting slot ${slot.id}:`, deleteError);
+
                   }
                 }
               }
@@ -956,7 +956,7 @@ const WheelEdit = () => {
                   color: slot.color,
                   isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
                 });
-                console.log(`Created slot: ${slot.label} (${slot.weight}%)`);
+
               }
             } else {
               // Weights already total 100%, create slots as is
@@ -968,7 +968,7 @@ const WheelEdit = () => {
                   color: slot.color,
                   isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
                 });
-                console.log(`Created slot: ${slot.label} (${slot.weight}%)`);
+
               }
         }
         
@@ -985,7 +985,7 @@ const WheelEdit = () => {
               // But for now, stay on current page
             }
           } catch (slotError) {
-            console.error('Error updating wheel slots:', slotError);
+
       toast({
         variant: 'destructive',
               title: 'Erreur partielle',
@@ -993,7 +993,7 @@ const WheelEdit = () => {
             });
           }
         } catch (error: any) {
-          console.error("Error updating wheel:", error);
+
           toast({
             variant: "destructive",
             title: "Erreur",
@@ -1002,7 +1002,7 @@ const WheelEdit = () => {
         }
       }
     } catch (error: any) {
-      console.error("Error saving wheel:", error);
+
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -1014,11 +1014,11 @@ const WheelEdit = () => {
   };
 
   const handleTypeChange = (value: string) => {
-    console.log('Type changed to:', value);
+
     // Convert from display string to API enum value
     const newType: WheelType = value === "Gagnant à tous les coups" ? "ALL_WIN" : "RANDOM_WIN";
     
-    console.log('Setting wheel type to:', newType);
+
     setWheel(prev => ({
       ...prev,
       type: newType

@@ -54,7 +54,7 @@ const ChangePassword = () => {
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (error) {
-      console.error('Error changing password:', error);
+      
       toast({
         variant: 'destructive',
         title: 'Erreur',

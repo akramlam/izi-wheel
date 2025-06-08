@@ -25,7 +25,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, all
   const [loading, setLoading] = useState(true);
   
   // Debug logger
-  const log = (msg: string) => console.log(`[ProtectedRoute ${location.pathname}] ${msg}`);
+  const log = (msg: string) => {}; // Removed console logging for production
   
   useEffect(() => {
     log(`Route rendered with auth state: ${isAuthenticated ? 'authenticated' : 'not authenticated'}`);
