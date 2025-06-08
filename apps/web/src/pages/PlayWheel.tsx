@@ -309,28 +309,36 @@ const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
   const navigate = useNavigate();
   
+  // Initialize route parameters state
+  const [routeParams, setRouteParams] = useState<{companyId?: string, wheelId?: string}>({});
+  
   // Add debug logging for route parameters
   useEffect(() => {
-
-    
     // Special handling for the /play/company/:wheelId route pattern
     const url = new URL(window.location.href);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
     // Check if we're on the /play/company/:wheelId route
     if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
-      
       // We need to manually set the companyId since React Router isn't handling it correctly
       const actualWheelId = pathParts[2];
       
       // Store these values for use in the query function
       window.sessionStorage.setItem('manual_companyId', 'company');
       window.sessionStorage.setItem('manual_wheelId', actualWheelId);
+      
+      // Update local state to trigger query
+      setRouteParams({
+        companyId: 'company',
+        wheelId: actualWheelId
+      });
+    } else {
+      // Use the normal route params
+      setRouteParams({
+        companyId,
+        wheelId
+      });
     }
-    
-
-    
-
   }, [companyId, wheelId]);
   
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -355,11 +363,11 @@ const PlayWheel = () => {
   const [hasCompletedSocialAction, setHasCompletedSocialAction] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showClaimForm, setShowClaimForm] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'spinWheel' | 'showPrize' | 'claimForm'>('spinWheel');
+  const [currentStep, setCurrentStep] = useState<'initial' | 'social' | 'spinWheel' | 'showPrize' | 'claimForm'>('initial');
   const [claimFormData, setClaimFormData] = useState<Record<string, string>>({});
   const [showThankyouMessage, setShowThankyouMessage] = useState(false);
 
-  const [userFlowState, setUserFlowState] = useState<'completedSocial' | 'spinning' | 'won' | 'claimed'>('completedSocial');
+  const [userFlowState, setUserFlowState] = useState<'initial' | 'completedSocial' | 'spinning' | 'won' | 'claimed'>('completedSocial');
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
@@ -368,43 +376,36 @@ const PlayWheel = () => {
 
   // Fetch wheel data
   const { data: wheelData, isLoading: isLoadingWheel, error: wheelError, refetch } = useQuery<WheelData>({
-    queryKey: ['wheel', companyId, wheelId],
+    queryKey: ['wheel', routeParams.companyId, routeParams.wheelId],
     queryFn: async () => {
       try {
-
-        
         // Get manually stored parameters if available
         const manualCompanyId = window.sessionStorage.getItem('manual_companyId');
         const manualWheelId = window.sessionStorage.getItem('manual_wheelId');
         
+        // Use route params or manual params
+        const effectiveCompanyId = routeParams.companyId || manualCompanyId;
+        const effectiveWheelId = routeParams.wheelId || manualWheelId;
+        
+        if (!effectiveCompanyId || !effectiveWheelId) {
+          throw new Error('Missing required parameters: companyId and wheelId');
+        }
+        
         // Special handling for "company" in the URL path
-        // Check both the route param and our manual detection
-        if (companyId === 'company' || manualCompanyId === 'company') {
-
-          
-          // Use the correct wheelId (either from route or manual detection)
-          const actualWheelId = wheelId || manualWheelId;
-          
-          if (!actualWheelId) {
-            throw new Error('No wheel ID found for company route');
-          }
-          
+        if (effectiveCompanyId === 'company') {
           // Make a direct fetch call to the proper API endpoint
           const apiUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
-          const directUrl = `${apiUrl}/public/company/${actualWheelId}`;
-
+          const directUrl = `${apiUrl}/public/company/${effectiveWheelId}`;
           
           try {
             // Use fetch for direct approach
             const response = await fetch(directUrl);
             
             if (!response.ok) {
-
               throw new Error(`API call failed with status: ${response.status}`);
             }
             
             const data = await response.json();
-
             
             if (data && data.wheel) {
               return data.wheel;
@@ -412,37 +413,23 @@ const PlayWheel = () => {
               throw new Error('No wheel data in response');
             }
           } catch (error) {
-
             throw error;
           }
         }
         
         // Standard approach for other routes
-        const response = await api.getPublicWheel(companyId || '', wheelId || '');
+        const response = await api.getPublicWheel(effectiveCompanyId, effectiveWheelId);
         
         if (!response.data || !response.data.wheel) {
-
           throw new Error('No wheel data returned from API');
-        }
-        
-
-        
-        // Check if slots are present
-        if (!response.data.wheel.slots || response.data.wheel.slots.length === 0) {
-
-        } else {
-
         }
         
         return response.data.wheel;
       } catch (error) {
-
-
         throw error;
       }
     },
-    enabled: !!(companyId || window.sessionStorage.getItem('manual_companyId')) && 
-            !!(wheelId || window.sessionStorage.getItem('manual_wheelId')),
+    enabled: !!(routeParams.companyId && routeParams.wheelId),
     retry: 3,
     retryDelay: attempt => Math.min(attempt > 1 ? 2000 : 1000, 30 * 1000),
     staleTime: 30000, // Data is fresh for 30 seconds
@@ -560,12 +547,12 @@ const PlayWheel = () => {
         // Show social popup immediately on first button click
         setCurrentStep('socialRedirect');
         setShowSocialRedirect(true);
-        setDebugInfo(`Showing social popup for: ${wheelData.socialNetwork}`);
+
       } else {
         // If no social network, proceed directly to allow spinning
         setCurrentStep('spinWheel');
         setUserFlowState('completedSocial');
-        setDebugInfo('No social network configured, ready to spin');
+
         // Proceed with spinning
         handleSpinClick();
       }
@@ -587,7 +574,7 @@ const PlayWheel = () => {
     setHasCompletedSocialAction(true);
     setUserFlowState('completedSocial');
     setCurrentStep('spinWheel');
-    setDebugInfo('Social action completed. Click "Tourner la roue" to spin!');
+
   };
 
   // Handle actual wheel spin after social action
@@ -604,14 +591,21 @@ const PlayWheel = () => {
 
   // Modify handleSpinClick to follow the flow diagram
   const handleSpinClick = () => {
-    // Only allow spin if social action is completed or not required
-    if (currentStep === 'spinWheel' && (userFlowState === 'completedSocial' || !wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
-
+    // Check if we need to show social popup first
+    if (currentStep === 'initial' && wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
+      // Show social popup when user first tries to spin
+      setShowSocialRedirect(true);
+      setCurrentStep('social');
+    } else if (currentStep === 'spinWheel' && (userFlowState === 'completedSocial' || !wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
+      // Only allow spin if social action is completed or not required
       setUserFlowState('spinning');
       handleSpinWithoutSocial();
-    } else if (currentStep === 'initial') {
-      // If we're at the initial step, start the process
-      handleStartProcess();
+    } else if (currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
+      // If no social required, go directly to spin
+      setUserFlowState('completedSocial');
+      setCurrentStep('spinWheel');
+      setUserFlowState('spinning');
+      handleSpinWithoutSocial();
     }
   };
 
@@ -619,7 +613,7 @@ const PlayWheel = () => {
   const { mutate: spinWheel, isPending: isSpinning } = useMutation({
     mutationFn: async () => {
       // For initial spin, use minimal data
-      const response = await api.spinWheel(companyId || '', wheelId || '', { 
+      const response = await api.spinWheel(routeParams.companyId || '', routeParams.wheelId || '', { 
         lead: formData
       });
       return response.data;
@@ -959,7 +953,7 @@ const PlayWheel = () => {
       
       try {
         // Try to fix wheel via API
-        await api.fixWheel(wheelId || '');
+        await api.fixWheel(routeParams.wheelId || '');
         
         // Refetch wheel data
         refetch();
@@ -1022,16 +1016,12 @@ const PlayWheel = () => {
 
   // Add a new method to force reload the wheel data
   const handleRefreshWheel = () => {
-
-    setDebugInfo('Refreshing wheel data...');
     refetch().then(() => {
-      setDebugInfo('Wheel data refreshed successfully');
       toast({
         title: 'Données actualisées',
         description: 'Les données de la roue ont été rechargées.',
       });
     }).catch(error => {
-      setDebugInfo(`Failed to refresh: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
         title: 'Erreur',
         description: 'Impossible de recharger les données. Veuillez réessayer.',
@@ -1045,11 +1035,11 @@ const PlayWheel = () => {
     // ... existing code ...
   };
 
-  // Show social popup on mount if needed
+  // Initialize user flow state on wheel load
   useEffect(() => {
     if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
-      setShowSocialRedirect(true);
-      setUserFlowState('completedSocial');
+      // Don't show social popup immediately - let user click spin first
+      setUserFlowState('initial');
     } else {
       setUserFlowState('completedSocial');
     }
@@ -1133,12 +1123,7 @@ const PlayWheel = () => {
         </div>
       )}
       
-      {/* Debug info (only in development) */}
-      {import.meta.env.DEV && debugInfo && (
-        <div className="fixed bottom-2 left-2 sm:bottom-4 sm:left-4 bg-gray-800 text-white p-2 rounded-md text-xs max-w-[200px] opacity-75 z-50 break-words">
-          <div className="font-mono">{debugInfo}</div>
-        </div>
-      )}
+
       
       {/* Social network debug info (only in dev mode) */}
       {import.meta.env.DEV && wheelData?.socialNetwork && (

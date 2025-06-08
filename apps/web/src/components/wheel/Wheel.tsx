@@ -10,17 +10,17 @@ interface WheelProps {
   showSpinButton?: boolean;
 }
 
-// Constants for wheel dimensions - Made responsive
+// Constants for wheel dimensions - Made responsive and reduced size
 const getWheelSize = () => {
   if (typeof window !== 'undefined') {
     const screenWidth = window.innerWidth;
-    // Scale wheel size based on screen width
-    if (screenWidth < 480) return 280; // Mobile phones
-    if (screenWidth < 768) return 350; // Small tablets
-    if (screenWidth < 1024) return 400; // Tablets
-    return 500; // Desktop
+    // Scale wheel size based on screen width - reduced sizes
+    if (screenWidth < 480) return 240; // Mobile phones (was 280)
+    if (screenWidth < 768) return 300; // Small tablets (was 350)
+    if (screenWidth < 1024) return 340; // Tablets (was 400)
+    return 420; // Desktop (was 500)
   }
-  return 500; // Default for SSR
+  return 420; // Default for SSR (was 500)
 };
 
 const WHEEL_SIZE = 500; // Base size for viewBox calculations
@@ -56,15 +56,23 @@ const DEFAULT_COLORS = {
   textColor: '#ffffff'  // Default text color
 };
 
-// Helper functions for SVG path calculations
+// Helper functions for SVG path calculations with rounded segments
 function getArcPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  
+  // Add slight curve to make segments more rounded
+  const innerRadius = r * 0.15; // Inner radius for rounded effect
+  const startInner = polarToCartesian(cx, cy, innerRadius, endAngle);
+  const endInner = polarToCartesian(cx, cy, innerRadius, startAngle);
+  
   return [
-    'M', start.x, start.y,
+    'M', startInner.x, startInner.y,
+    'L', start.x, start.y,
     'A', r, r, 0, largeArcFlag, 0, end.x, end.y,
-    'L', cx, cy,
+    'L', endInner.x, endInner.y,
+    'A', innerRadius, innerRadius, 0, largeArcFlag, 1, startInner.x, startInner.y,
     'Z',
   ].join(' ');
 }
@@ -426,6 +434,8 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
                 fill={segmentColor}
                 stroke={colors.border}
                 strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
               />
               
               <g transform={`translate(${textPos.x}, ${textPos.y}) rotate(${textRotation})`}>
@@ -435,7 +445,8 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
                   width={currentTextRectWidth}
                   height={TEXT_RECT_HEIGHT}
                   fill="rgba(0,0,0,0.7)" 
-                  rx="5"
+                  rx="8"
+                  ry="8"
                   stroke="rgba(255,255,255,0.7)"
                   strokeWidth="1"
                 />
