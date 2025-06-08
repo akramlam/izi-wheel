@@ -42,7 +42,6 @@ export const TimedConfetti = ({
           });
         }
       } catch (error) {
-        console.error("Error cleaning up confetti:", error);
       }
     }
   };

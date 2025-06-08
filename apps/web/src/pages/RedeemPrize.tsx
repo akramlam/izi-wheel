@@ -45,7 +45,6 @@ const RedeemPrize = () => {
     if (!id) {
       id = sessionStorage.getItem('lastPlayId') || undefined;
       if (id) {
-        console.log('Recovered play ID from session storage:', id);
         setEffectivePlayId(id);
       }
     }
@@ -54,7 +53,6 @@ const RedeemPrize = () => {
     if (id) {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const isValid = uuidRegex.test(id);
-      console.log(`Play ID ${id} is ${isValid ? 'valid' : 'invalid'} UUID format`);
       setIsIdValid(isValid);
       
       if (!isValid) {
@@ -65,7 +63,6 @@ const RedeemPrize = () => {
         });
       }
     } else {
-      console.error('No play ID available');
       setIsIdValid(false);
     }
   }, [urlPlayId, toast]);
@@ -80,11 +77,9 @@ const RedeemPrize = () => {
     queryKey: ['prize', effectivePlayId],
     queryFn: async () => {
       try {
-        console.log('Fetching prize details for play ID:', effectivePlayId);
         const response = await api.getPrizeDetails(effectivePlayId || '');
         return response.data;
       } catch (err) {
-        console.error('Error fetching prize details:', err);
         throw err;
       }
     },

@@ -28,7 +28,6 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   // Create default segments if none provided (fixes green wheel issue if segments are empty)
   useEffect(() => {
     if (!config.segments || config.segments.length === 0) {
-      console.log('No segments found - creating default segments');
       props.config.segments = [
         { label: 'Cadeau 1', color: '#FF6384', isWinning: true },
         { label: 'Cadeau 2', color: '#36A2EB', isWinning: true },
@@ -56,13 +55,10 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
       setPointerDropped(false);
       setHasCompletedSpin(false);
       
-      console.log('SimpleWheel3D: Starting spin animation');
       
       // CRITICAL DIRECT FIX: Force immediate callback for broken wheels
       // This will ensure the result shows up even if animation callbacks fail
-      console.log('CRITICAL FIX: Scheduling direct callback to show result');
       setTimeout(() => {
-        console.log('CRITICAL FIX: Directly triggering onSpin callback');
         setSpinning(false);
         onSpin(); // Directly call the callback, bypassing the normal flow
       }, 5000); // 5 seconds should be enough for visual effect
@@ -131,7 +127,6 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
       // This ensures we always consider the result as a win
       const isWinningSegment = true; // Force winning for all segments
       
-      console.log('Spin result determination:', { 
         allSegmentsWinning, 
         currentSegmentIsWinning,
         isWinningSegment: true, // Always true with our fix
@@ -164,10 +159,8 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           // Play win/lose sound only after wheel has visually stopped
           if (isWinningSegment) {
             soundUtils.play('win', 0.8);
-            console.log('Prize won:', config.segments[prizeIndex]?.label);
           } else {
             soundUtils.play('lose', 0.5);
-            console.log('No prize won');
           }
           
           // Final haptic feedback
@@ -177,7 +170,6 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           
           // Reset spinning state and signal that the spin is complete
           finalStateTimer = window.setTimeout(() => {
-            console.log('Setting spinning to false and hasCompletedSpin to true');
             setSpinning(false);
             setHasCompletedSpin(true);
           }, 200);
@@ -209,7 +201,6 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
     // When we've completed a spin and we're not spinning anymore, 
     // notify the parent component to show results
     if (hasCompletedSpin && !spinning) {
-      console.log('SimpleWheel3D: Wheel has completely stopped, notifying parent to show results');
       // This will trigger the parent to show the prize modal
       onSpin();
       // Reset so we don't call multiple times
@@ -221,7 +212,6 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   useEffect(() => {
     if (isSpinning && config.segments.length > 0) {
       const allSegmentsWinning = config.segments.every(segment => segment.isWinning);
-      console.log('Wheel mode detection:', { 
         allSegmentsWinning, 
         prizeSegmentIsWinning: config.segments[prizeIndex]?.isWinning,
         prizeLabel: config.segments[prizeIndex]?.label

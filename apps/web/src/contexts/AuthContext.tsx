@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Debugging function
   const debugLog = (message: string, data?: any) => {
-    console.log(`[AuthProvider] ${message}`, data || '');
   };
 
   // Configure axios defaults

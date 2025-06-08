@@ -254,7 +254,6 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
     
     // Complete cleanup on unmount
     return () => {
-      console.log('Wheel component unmounting - performing cleanup');
       soundUtils.stop(); // Stop all sounds
       soundUtils.clearAllTimers(); // Clear all registered timers
       setSpinning(false); // Reset spinning state

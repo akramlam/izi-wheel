@@ -330,33 +330,7 @@ const PlayWheel = () => {
     
 
     
-    // Add visual debug info in development
-    if (import.meta.env.DEV) {
-      const debugElement = document.createElement('div');
-      debugElement.style.position = 'fixed';
-      debugElement.style.bottom = '10px';
-      debugElement.style.right = '10px';
-      debugElement.style.backgroundColor = 'rgba(0,0,0,0.8)';
-      debugElement.style.color = 'white';
-      debugElement.style.padding = '10px';
-      debugElement.style.borderRadius = '5px';
-      debugElement.style.zIndex = '9999';
-      debugElement.style.fontSize = '12px';
-      debugElement.style.maxWidth = '400px';
-      debugElement.style.overflow = 'auto';
-      debugElement.innerHTML = `
-        <strong>Debug Info:</strong><br>
-        URL: ${window.location.href}<br>
-        companyId: ${companyId || 'null'}<br>
-        wheelId: ${wheelId || 'null'}<br>
-        isCompany: ${companyId === 'company'}<br>
-      `;
-      document.body.appendChild(debugElement);
-      
-      return () => {
-        document.body.removeChild(debugElement);
-      };
-    }
+
   }, [companyId, wheelId]);
   
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -384,7 +358,7 @@ const PlayWheel = () => {
   const [currentStep, setCurrentStep] = useState<'spinWheel' | 'showPrize' | 'claimForm'>('spinWheel');
   const [claimFormData, setClaimFormData] = useState<Record<string, string>>({});
   const [showThankyouMessage, setShowThankyouMessage] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
+
   const [userFlowState, setUserFlowState] = useState<'completedSocial' | 'spinning' | 'won' | 'claimed'>('completedSocial');
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
@@ -463,7 +437,7 @@ const PlayWheel = () => {
         return response.data.wheel;
       } catch (error) {
 
-        setDebugInfo(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
         throw error;
       }
     },
@@ -515,7 +489,7 @@ const PlayWheel = () => {
         }
       });
         
-        setDebugInfo('Using default wheel configuration as no slots were found');
+
       } else {
 
         

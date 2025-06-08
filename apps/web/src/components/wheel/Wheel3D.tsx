@@ -140,12 +140,9 @@ const WheelScene = ({
       // Set spinning state to prevent multiple animations
       setSpinning(true);
       
-      console.log('Starting Wheel3D spin animation');
       
       // CRITICAL DIRECT FIX: Force immediate callback bypassing animation
-      console.log('WHEEL3D - CRITICAL FIX: Scheduling direct callback');
       setTimeout(() => {
-        console.log('WHEEL3D - CRITICAL FIX: Directly triggering onSpin');
         setSpinning(false);
         onSpin(); // Directly call callback
       }, 5000); // 5 seconds should be enough for visual effect
@@ -159,8 +156,6 @@ const WheelScene = ({
       const target = Math.PI * 2 * rotations + targetSegment;
       
       // CRITICAL FIX: Log the exact prize index and segment
-      console.log('Wheel3D - Prize index:', prizeIndex);
-      console.log('Wheel3D - Prize segment label:', config.segments[prizeIndex]?.label);
       
       // Set rotation target
       setRotation(target);
@@ -214,10 +209,8 @@ const WheelScene = ({
         // Play win/lose sound
         if (config.segments[prizeIndex]?.isWinning) {
           soundUtils.play('win', 0.8);
-          console.log('Prize won in 3D wheel!');
         } else {
           soundUtils.play('lose', 0.5);
-          console.log('No prize won in 3D wheel');
         }
         
         // Final haptic feedback
@@ -227,7 +220,6 @@ const WheelScene = ({
         
         // Reset spinning state and call onSpin
         soundTimer = window.setTimeout(() => {
-          console.log('3D wheel animation complete, notifying parent');
           setSpinning(false);
           
           // Notify parent that the wheel has stopped
