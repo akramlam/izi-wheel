@@ -612,6 +612,10 @@ const PlayWheel = () => {
       // Show social popup when user first tries to spin
       setShowSocialRedirect(true);
       setCurrentStep('social');
+    } else if (currentStep === 'spinWheel' && userFlowState === 'initial' && wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
+      // Show social popup when user tries to spin and social action is required
+      setShowSocialRedirect(true);
+      setCurrentStep('social');
     } else if (currentStep === 'spinWheel' && (userFlowState === 'completedSocial' || !wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
       // Only allow spin if social action is completed or not required
       setUserFlowState('spinning');
