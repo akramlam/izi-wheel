@@ -678,12 +678,45 @@ const PlayWheel = () => {
       handleSpinResultWithData(data);
     },
     onError: (error: any) => {
-
-      toast({
-        title: 'Error',
-        description: 'Failed to spin the wheel. Please try again.',
-        variant: 'destructive'
-      });
+      console.error('Error spinning wheel:', error);
+      
+      // Type-safe error handling for Axios errors
+      let backendMsg = '';
+      let errorCode = '';
+      let playLimit = '';
+      
+      if (error && error.response && error.response.data) {
+        backendMsg = error.response.data.error || '';
+        errorCode = error.response.data.code || '';
+        playLimit = error.response.data.playLimit || '';
+      }
+      
+      // Handle specific play limit errors
+      if (error.response?.status === 429 && errorCode === 'PLAY_LIMIT_EXCEEDED') {
+        let limitMessage = '';
+        if (playLimit === 'ONCE_PER_DAY') {
+          limitMessage = "Vous avez déjà joué aujourd'hui. Vous pourrez rejouer demain !";
+        } else if (playLimit === 'ONCE_PER_MONTH') {
+          limitMessage = "Vous avez déjà joué ce mois-ci. Vous pourrez rejouer le mois prochain !";
+        } else {
+          limitMessage = backendMsg || "Limite de jeu atteinte. Veuillez réessayer plus tard.";
+        }
+        
+        toast({
+          title: "Limite de jeu atteinte",
+          description: limitMessage,
+          variant: "destructive",
+          duration: 5000
+        });
+      } else {
+        // Handle other errors
+        toast({
+          title: 'Error',
+          description: backendMsg || 'Failed to spin the wheel. Please try again.',
+          variant: 'destructive'
+        });
+      }
+      
       setCurrentStep('spinWheel');
       setUserFlowState('completedSocial');
     }
@@ -1219,7 +1252,7 @@ const PlayWheel = () => {
                       [field.name]: e.target.value
                     })}
                     className="w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
-                    placeholder={field.placeholder}
+                    placeholder={`Votre ${field.label.toLowerCase()}`}
                     required={field.required}
                   />
                 </div>

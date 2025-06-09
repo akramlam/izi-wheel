@@ -203,18 +203,45 @@ const PlayWheelV2 = () => {
     onError: (error: any) => {
       // Type-safe error handling for Axios errors
       let backendMsg = '';
-      if (error && error.response && error.response.data && error.response.data.error) {
-        backendMsg = error.response.data.error;
+      let errorCode = '';
+      let playLimit = '';
+      
+      if (error && error.response && error.response.data) {
+        backendMsg = error.response.data.error || '';
+        errorCode = error.response.data.code || '';
+        playLimit = error.response.data.playLimit || '';
       }
-      if (backendMsg) {
-        console.error('Spin error:', backendMsg);
+      
+      // Handle specific play limit errors
+      if (error.response?.status === 429 && errorCode === 'PLAY_LIMIT_EXCEEDED') {
+        let limitMessage = '';
+        if (playLimit === 'ONCE_PER_DAY') {
+          limitMessage = "Vous avez déjà joué aujourd'hui. Vous pourrez rejouer demain !";
+        } else if (playLimit === 'ONCE_PER_MONTH') {
+          limitMessage = "Vous avez déjà joué ce mois-ci. Vous pourrez rejouer le mois prochain !";
+        } else {
+          limitMessage = backendMsg || "Limite de jeu atteinte. Veuillez réessayer plus tard.";
+        }
+        
+        Toast({
+          title: "Limite de jeu atteinte",
+          description: limitMessage,
+          variant: "destructive",
+          duration: 5000
+        });
       } else {
-        console.error('Spin error:', error);
+        // Handle other errors
+        if (backendMsg) {
+          console.error('Spin error:', backendMsg);
+        } else {
+          console.error('Spin error:', error);
+        }
+        Toast({
+          title: backendMsg || "Erreur : Impossible de faire tourner la roue. Veuillez réessayer.",
+          variant: "destructive"
+        });
       }
-      Toast({
-        title: backendMsg || "Erreur : Impossible de faire tourner la roue. Veuillez réessayer.",
-        variant: "destructive"
-      });
+      
       setIsSpinning(false); // Ensure button state resets on error
     }
   });

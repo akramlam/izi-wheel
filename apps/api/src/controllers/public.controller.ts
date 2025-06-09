@@ -329,6 +329,9 @@ export const spinWheel = async (req: Request, res: Response) => {
       });
     }
 
+    // Get IP address for play limit checking
+    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+
     // Check if we're using the fallback route (no companyId provided)
     let wheel;
     let actualCompanyId = companyId;
@@ -385,6 +388,50 @@ export const spinWheel = async (req: Request, res: Response) => {
     if (!wheel.slots || wheel.slots.length === 0) {
       console.error('Wheel has no active slots:', wheelId);
       return res.status(400).json({ error: 'Wheel has no active slots' });
+    }
+
+    // Check play limits based on wheel.playLimit setting
+    if (wheel.playLimit && wheel.playLimit !== 'UNLIMITED') {
+      const now = new Date();
+      let timeRestriction = {};
+      
+      if (wheel.playLimit === 'ONCE_PER_DAY') {
+        // Check for plays from the same IP in the last 24 hours
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        timeRestriction = {
+          createdAt: {
+            gte: yesterday
+          }
+        };
+      } else if (wheel.playLimit === 'ONCE_PER_MONTH') {
+        // Check for plays from the same IP in the last 30 days
+        const lastMonth = new Date();
+        lastMonth.setDate(now.getDate() - 30);
+        timeRestriction = {
+          createdAt: {
+            gte: lastMonth
+          }
+        };
+      }
+
+      // Check if this IP has already played within the time restriction
+      const existingPlay = await prisma.play.findFirst({
+        where: {
+          wheelId: wheelId,
+          ip: ip,
+          ...timeRestriction
+        }
+      });
+
+      if (existingPlay) {
+        const limitText = wheel.playLimit === 'ONCE_PER_DAY' ? 'once per day' : 'once per month';
+        return res.status(429).json({ 
+          error: `Play limit exceeded. This wheel can only be played ${limitText}.`,
+          code: 'PLAY_LIMIT_EXCEEDED',
+          playLimit: wheel.playLimit
+        });
+      }
     }
 
     // Log the slots for debugging
@@ -455,7 +502,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         result: isWin ? 'WIN' : 'LOSE',
         pin: pin,
         qrLink: qrLink,
-        ip: req.ip || req.socket.remoteAddress || null
+        ip: ip
       }
     });
 
