@@ -261,7 +261,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       soundUtils.stop();
     };
   }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning, 
-      config.hapticFeedback, segments, config.sounds, onSpin]);
+      config.hapticFeedback, segments, config.sounds]);
   
   // Additional cleanup effect to ensure all resources are freed when component unmounts
   useEffect(() => {
