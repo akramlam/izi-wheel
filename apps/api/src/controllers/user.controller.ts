@@ -397,13 +397,9 @@ export const deleteUser = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Super users cannot be deleted' });
     }
     
-    // Soft delete the user
-    await prisma.user.update({
-      where: { id: uid },
-      data: {
-        isActive: false,
-        deletedAt: new Date()
-      }
+    // Hard delete the user (completely remove from database)
+    await prisma.user.delete({
+      where: { id: uid }
     });
     
     res.status(200).json({ message: 'User deleted successfully' });

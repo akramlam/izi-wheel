@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
 import { Plus, Pencil, Trash2, Check, X, RefreshCw } from 'lucide-react';
+import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
 
 type SubAdmin = {
   id: string;
@@ -31,6 +32,16 @@ const SubAdminManager = () => {
   const [newPassword, setNewPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    subAdminId: string | null;
+    subAdminName: string;
+  }>({
+    isOpen: false,
+    subAdminId: null,
+    subAdminName: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -266,13 +277,28 @@ const SubAdminManager = () => {
     }
   };
 
-  const handleDeleteSubAdmin = async (subAdminId: string) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce sous-administrateur ? Cette action ne peut être annulée.')) {
-      return;
-    }
+  const openDeleteConfirmation = (subAdminId: string, subAdminName: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      subAdminId,
+      subAdminName,
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      subAdminId: null,
+      subAdminName: '',
+    });
+  };
+
+  const handleDeleteSubAdmin = async () => {
+    if (!deleteConfirmation.subAdminId) return;
     
+    setIsDeleting(true);
     try {
-      await api.deleteUser(subAdminId);
+      await api.deleteUser(deleteConfirmation.subAdminId);
       
       toast({
         title: 'Succès',
@@ -280,6 +306,7 @@ const SubAdminManager = () => {
       });
       
       fetchSubAdmins();
+      closeDeleteConfirmation();
     } catch (error) {
       console.error('Error deleting sub-admin:', error);
       toast({
@@ -287,6 +314,8 @@ const SubAdminManager = () => {
         title: 'Erreur',
         description: 'Échec de la suppression du sous-administrateur',
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -636,7 +665,7 @@ const SubAdminManager = () => {
                             <RefreshCw className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleDeleteSubAdmin(subAdmin.id)}
+                            onClick={() => openDeleteConfirmation(subAdmin.id, subAdmin.name)}
                             className="text-red-600 hover:text-red-900"
                             title="Supprimer"
                           >
@@ -652,6 +681,15 @@ const SubAdminManager = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleDeleteSubAdmin}
+        itemName={`le sous-administrateur "${deleteConfirmation.subAdminName}"`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

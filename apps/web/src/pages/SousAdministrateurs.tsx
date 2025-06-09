@@ -10,6 +10,7 @@ import { Plus, Search, Filter, ArrowUpDown, MoreHorizontal, Edit, Trash2, Pencil
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
+import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
 
 // Data types from SubAdminManager.tsx
 type SubAdmin = {
@@ -53,6 +54,16 @@ const SousAdministrateurs: React.FC = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    subAdminId: string | null;
+    subAdminName: string;
+  }>({
+    isOpen: false,
+    subAdminId: null,
+    subAdminName: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -399,15 +410,31 @@ const SousAdministrateurs: React.FC = () => {
     }
   };
 
-  const handleDeleteSubAdmin = async (subAdminId: string) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce sous-administrateur ? Cette action est irréversible.')) {
-      return;
-    }
-    setIsFormProcessing(true);
+  const openDeleteConfirmation = (subAdminId: string, subAdminName: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      subAdminId,
+      subAdminName,
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    setDeleteConfirmation({
+      isOpen: false,
+      subAdminId: null,
+      subAdminName: '',
+    });
+  };
+
+  const handleDeleteSubAdmin = async () => {
+    if (!deleteConfirmation.subAdminId) return;
+    
+    setIsDeleting(true);
     try {
-      await api.deleteUser(subAdminId);
+      await api.deleteUser(deleteConfirmation.subAdminId);
       toast({ title: 'Succès', description: 'Sous-administrateur supprimé.' });
       fetchSubAdmins(selectedCompanyId);
+      closeDeleteConfirmation();
     } catch (error: any) {
       console.error('Error deleting sub-admin:', error);
       const errorMsg = error.response?.data?.message || 'Échec de la suppression.';
@@ -417,7 +444,7 @@ const SousAdministrateurs: React.FC = () => {
         description: errorMsg,
       });
     } finally {
-      setIsFormProcessing(false);
+      setIsDeleting(false);
     }
   };
 
@@ -700,7 +727,7 @@ const SousAdministrateurs: React.FC = () => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteSubAdmin(admin.id)}
+                            onClick={() => openDeleteConfirmation(admin.id, admin.name)}
                             title="Supprimer"
                             disabled={isUpdating === admin.id || resetPasswordPrompt === admin.id || isLoading}
                       >
@@ -716,6 +743,15 @@ const SousAdministrateurs: React.FC = () => {
         </CardContent>
       </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleDeleteSubAdmin}
+        itemName={`le sous-administrateur "${deleteConfirmation.subAdminName}"`}
+        isLoading={isDeleting}
+      />
     </div>
   )
 }
