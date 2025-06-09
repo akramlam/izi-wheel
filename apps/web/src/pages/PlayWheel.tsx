@@ -822,12 +822,28 @@ const PlayWheel = () => {
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
     console.log('📡 handleSpinResultWithData called with:', data);
+    console.log('🎯 Frontend wheelConfig.segments:', wheelConfig.segments.map((s, i) => ({
+      index: i,
+      id: s.id, 
+      label: s.label
+    })));
+    console.log('🎯 Backend returned slot:', {
+      id: data.slot.id,
+      label: data.slot.label
+    });
 
     // Find the index of the winning slot ID within the wheelConfig.segments array
     let prizeIndexFound = wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
 
     if (prizeIndexFound === -1) {
       console.log('⚠️ Prize index not found, using fallback index 0');
+      console.log('🔍 Detailed mismatch analysis:', {
+        backendSlotId: data.slot.id,
+        backendSlotLabel: data.slot.label,
+        frontendSegments: wheelConfig.segments.map((s, i) => `${i}: ${s.id} (${s.label})`),
+        possibleMatch: wheelConfig.segments.find(s => s.label === data.slot.label)
+      });
+      
       toast({
         title: 'Affichage désynchronisé',
         description:
@@ -840,7 +856,7 @@ const PlayWheel = () => {
       // The popup (from setSpinResult(data)) will show the CORRECT prize.
       setPrizeIndex(0);
     } else {
-      console.log('✅ Prize index found:', prizeIndexFound);
+      console.log('✅ Prize index found:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
       setPrizeIndex(prizeIndexFound);
     }
 

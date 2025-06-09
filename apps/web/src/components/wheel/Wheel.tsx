@@ -146,6 +146,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   useEffect(() => {
     if (isSpinning && !spinning) {
       console.log('🎬 Starting wheel animation, isSpinning:', isSpinning, 'spinning:', spinning);
+      console.log('🎯 Target prizeIndex:', prizeIndex, 'Total segments:', segments.length);
       
       // Stop any previous sounds and timers first
       soundUtils.stop();
@@ -161,8 +162,21 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       
       // Calculate target rotation: Multiple full rotations + offset to prize
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
-      const targetSegment = 360 - (prizeIndex * segAngle + segAngle / 2);
+      
+      // FIXED: Correct calculation for stopping at the right segment
+      // The pointer is at the top (12 o'clock), segments start at 0 degrees (3 o'clock)
+      // We need to rotate so the target segment ends up under the pointer
+      const targetAngle = prizeIndex * segAngle + segAngle / 2; // Center of target segment
+      const targetSegment = 360 - targetAngle + 90; // Adjust for pointer position at top
       const target = 360 * rotations + targetSegment;
+      
+      console.log('🎯 Calculated rotation:', {
+        prizeIndex,
+        segAngle,
+        targetAngle,
+        targetSegment,
+        totalRotation: target
+      });
       
       // Set rotation and trigger animation
       setRotation(target);
