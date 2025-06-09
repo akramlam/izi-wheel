@@ -498,7 +498,10 @@ export const updateWheel = async (req: Request, res: Response) => {
 
     // Validate IDs
     if (!companyId || !wheelId) {
-      return res.status(400).json({ error: 'Invalid or missing IDs in URL.' });
+      return res.status(400).json({ 
+        error: 'Identifiants manquants dans l\'URL.',
+        userMessage: 'Erreur de configuration. Veuillez recharger la page.' 
+      });
     }
 
     // Log the raw request body for debugging
@@ -508,8 +511,62 @@ export const updateWheel = async (req: Request, res: Response) => {
     const validationResult = wheelSchema.safeParse(req.body);
     if (!validationResult.success) {
       console.error('Wheel update validation failed:', validationResult.error);
+      
+      // Create user-friendly error messages
+      const validationErrors = validationResult.error.errors;
+      const userFriendlyErrors = [];
+      
+      for (const error of validationErrors) {
+        const path = error.path.join('.');
+        
+        switch (path) {
+          case 'name':
+            if (error.code === 'too_small') {
+              userFriendlyErrors.push('Le nom de la roue doit contenir au moins 1 caractère.');
+            } else if (error.code === 'too_big') {
+              userFriendlyErrors.push('Le nom de la roue ne peut pas dépasser 100 caractères.');
+            } else {
+              userFriendlyErrors.push('Le nom de la roue est requis.');
+            }
+            break;
+            
+          case 'bannerImage':
+            userFriendlyErrors.push('L\'URL de l\'image de bannière n\'est pas valide. Veuillez utiliser une URL complète (ex: https://exemple.com/image.jpg).');
+            break;
+            
+          case 'backgroundImage':
+            userFriendlyErrors.push('L\'URL de l\'image de fond n\'est pas valide. Veuillez utiliser une URL complète (ex: https://exemple.com/image.jpg).');
+            break;
+            
+          case 'redirectUrl':
+            userFriendlyErrors.push('L\'URL de redirection n\'est pas valide. Veuillez utiliser une URL complète (ex: https://exemple.com).');
+            break;
+            
+          case 'gameRules':
+            userFriendlyErrors.push('Les règles du jeu ne peuvent pas dépasser 2000 caractères.');
+            break;
+            
+          case 'footerText':
+            userFriendlyErrors.push('Le texte du pied de page ne peut pas dépasser 500 caractères.');
+            break;
+            
+          case 'mainTitle':
+            userFriendlyErrors.push('Le titre principal ne peut pas dépasser 100 caractères.');
+            break;
+            
+          case 'redirectText':
+            userFriendlyErrors.push('Le texte de redirection ne peut pas dépasser 500 caractères.');
+            break;
+            
+          default:
+            userFriendlyErrors.push(`Erreur de validation: ${error.message}`);
+        }
+      }
+      
       return res.status(400).json({ 
-        error: 'Invalid wheel data', 
+        error: 'Données de roue invalides',
+        userMessage: userFriendlyErrors.length > 0 ? userFriendlyErrors.join(' ') : 'Veuillez vérifier les données saisies.',
+        validationErrors: userFriendlyErrors,
         details: validationResult.error.format() 
       });
     }
@@ -528,10 +585,37 @@ export const updateWheel = async (req: Request, res: Response) => {
         id: wheelId,
         companyId,
       },
+      include: {
+        slots: {
+          where: { isActive: true }
+        }
+      }
     });
 
     if (!existingWheel) {
-      return res.status(404).json({ error: 'Wheel not found or does not belong to this company.' });
+      return res.status(404).json({ 
+        error: 'Roue non trouvée ou n\'appartient pas à cette entreprise.',
+        userMessage: 'La roue demandée n\'existe pas ou vous n\'avez pas les droits pour la modifier.'
+      });
+    }
+
+    // Additional validation for wheel mode and slots
+    if (existingWheel.slots && existingWheel.slots.length > 0) {
+      const totalWeight = existingWheel.slots.reduce((sum, slot) => sum + slot.weight, 0);
+      
+      // For RANDOM_WIN mode, check if probabilities add up to 100%
+      if (validatedData.mode === 'RANDOM_WIN' && totalWeight !== 100) {
+        return res.status(400).json({
+          error: 'Probabilities must total 100%',
+          userMessage: `Les probabilités des lots doivent totaliser 100%. Actuellement: ${totalWeight}%. Veuillez ajuster les probabilités des lots ou utiliser le bouton "Normaliser à 100%" avant de sauvegarder.`,
+          currentTotal: totalWeight,
+          expectedTotal: 100,
+          slots: existingWheel.slots.map(slot => ({
+            label: slot.label,
+            weight: slot.weight
+          }))
+        });
+      }
     }
 
     // Update the wheel
@@ -542,13 +626,19 @@ export const updateWheel = async (req: Request, res: Response) => {
 
     res.status(200).json({ wheel });
   } catch (error) {
+    console.error('Error updating wheel:', error);
+    
     if (error instanceof Error) {
       res.status(error instanceof z.ZodError ? 400 : 500).json({ 
         error: error.message,
+        userMessage: 'Une erreur est survenue lors de la mise à jour de la roue. Veuillez réessayer.',
         details: error instanceof z.ZodError ? error.format() : undefined
       });
     } else {
-      res.status(500).json({ error: 'An unexpected error occurred' });
+      res.status(500).json({ 
+        error: 'An unexpected error occurred',
+        userMessage: 'Une erreur inattendue est survenue. Veuillez réessayer.'
+      });
     }
   }
 };

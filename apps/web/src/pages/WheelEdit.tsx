@@ -993,20 +993,78 @@ const WheelEdit = () => {
             });
           }
         } catch (error: any) {
-
+          console.error("Error updating wheel:", error);
+          
+          // Extract user-friendly error message from API response
+          let errorMessage = "Une erreur est survenue lors de la mise à jour de la roue";
+          let errorTitle = "Erreur";
+          
+          if (error.response?.data) {
+            const errorData = error.response.data;
+            
+            // Use userMessage if available (user-friendly message from API)
+            if (errorData.userMessage) {
+              errorMessage = errorData.userMessage;
+              errorTitle = "Erreur de validation";
+            }
+            // Handle specific probability validation error
+            else if (errorData.error === 'Probabilities must total 100%') {
+              errorMessage = `Les probabilités des lots doivent totaliser 100%. Actuellement: ${errorData.currentTotal}%. Veuillez ajuster les probabilités des lots ou utiliser le bouton "Normaliser à 100%" avant de sauvegarder.`;
+              errorTitle = "Erreur de probabilité";
+            }
+            // Handle validation errors array
+            else if (errorData.validationErrors && Array.isArray(errorData.validationErrors)) {
+              errorMessage = errorData.validationErrors.join(' ');
+              errorTitle = "Erreur de validation";
+            }
+            // Fallback to generic error message
+            else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          }
+          
           toast({
             variant: "destructive",
-            title: "Erreur",
-            description: error.message || "Une erreur est survenue lors de la mise à jour de la roue",
+            title: errorTitle,
+            description: errorMessage,
           });
         }
       }
     } catch (error: any) {
+      console.error("Error saving wheel:", error);
+      
+      // Extract user-friendly error message from API response
+      let errorMessage = "Une erreur est survenue lors de l'enregistrement de la roue";
+      let errorTitle = "Erreur";
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Use userMessage if available (user-friendly message from API)
+        if (errorData.userMessage) {
+          errorMessage = errorData.userMessage;
+          errorTitle = "Erreur de validation";
+        }
+        // Handle specific probability validation error
+        else if (errorData.error === 'Probabilities must total 100%') {
+          errorMessage = `Les probabilités des lots doivent totaliser 100%. Actuellement: ${errorData.currentTotal}%. Veuillez ajuster les probabilités des lots ou utiliser le bouton "Normaliser à 100%" avant de sauvegarder.`;
+          errorTitle = "Erreur de probabilité";
+        }
+        // Handle validation errors array
+        else if (errorData.validationErrors && Array.isArray(errorData.validationErrors)) {
+          errorMessage = errorData.validationErrors.join(' ');
+          errorTitle = "Erreur de validation";
+        }
+        // Fallback to generic error message
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      }
 
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'enregistrement de la roue",
+        title: errorTitle,
+        description: errorMessage,
       });
     } finally {
       setIsSaving(false);
