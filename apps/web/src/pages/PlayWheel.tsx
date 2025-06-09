@@ -1347,7 +1347,7 @@ const PlayWheel = () => {
         />
       )} */}
 
-      {showConfetti && spinResult?.play.result === 'WIN' (
+      {showConfetti && spinResult?.play.result === 'WIN' && (
         <TimedConfetti
           // key="confetti-active"
           isActive={true}
