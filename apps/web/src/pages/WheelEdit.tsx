@@ -492,10 +492,12 @@ const WheelEdit = () => {
       if (field === 'weight') {
         // For weight field, handle numbers appropriately
         let numValue = typeof value === 'string' ? parseFloat(value) : value;
-        // If NaN or null, use 0 instead
-        if (isNaN(numValue) || numValue === null) {
+        // If NaN, empty string, or null, use 0 instead
+        if (isNaN(numValue) || numValue === null || value === '') {
           numValue = 0;
         }
+        // Ensure value is within valid range
+        numValue = Math.max(0, Math.min(100, numValue));
         updatedSlots[index] = { ...updatedSlots[index], [field]: numValue };
       } else {
         // For string fields, convert null to empty string
@@ -1328,10 +1330,28 @@ const WheelEdit = () => {
                         <input
                       id={`slot-${index}-weight`}
                           type="number"
-                          min="1"
+                          min="0"
                       max="100"
-                          value={slot.weight ?? ''}
-                          onChange={(e) => handleSlotChange(index, 'weight', e.target.value)}
+                          step="1"
+                          value={slot.weight === 0 ? '' : slot.weight}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow empty value while typing
+                            if (value === '') {
+                              handleSlotChange(index, 'weight', 0);
+                            } else {
+                              // Parse the number and ensure it's within valid range
+                              const numValue = parseInt(value, 10);
+                              if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                                handleSlotChange(index, 'weight', numValue);
+                              }
+                            }
+                          }}
+                          onFocus={(e) => {
+                            // Select all text when focused for easy editing
+                            e.target.select();
+                          }}
+                          placeholder="0"
                       className={`w-full p-2 border rounded-md ${formErrors[`slots[${index}].weight`] ? 'border-red-500' : 'border-gray-300'}`}
                         />
                         {formErrors[`slots[${index}].weight`] && (
