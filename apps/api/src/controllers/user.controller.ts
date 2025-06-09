@@ -32,6 +32,7 @@ export const getCompanyUsers = async (req: Request, res: Response) => {
       },
       select: {
         id: true,
+        name: true,
         email: true,
         role: true,
         isActive: true,
@@ -307,7 +308,7 @@ export const inviteUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { companyId, uid } = req.params;
-    const { role, isActive } = req.body;
+    const { name, email, role, isActive } = req.body;
     
     // Check if user exists and belongs to the company
     const user = await prisma.user.findFirst({
@@ -332,11 +333,14 @@ export const updateUser = async (req: Request, res: Response) => {
     const updatedUser = await prisma.user.update({
       where: { id: uid },
       data: {
+        ...(name && { name }),
+        ...(email && { email }),
         ...(role && { role }),
         ...(isActive !== undefined ? { isActive } : {})
       },
       select: {
         id: true,
+        name: true,
         email: true,
         role: true,
         isActive: true,
