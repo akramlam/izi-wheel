@@ -212,6 +212,8 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       
       // Drop pointer at the end of spin animation
       const timeoutId = setTimeout(() => {
+        console.log('🎬 Main animation timeout reached, duration was:', duration * 1000);
+        
         // Clear tick interval
         if (tickInterval) clearInterval(tickInterval);
         
@@ -238,7 +240,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           
           // ✅ FIXED: Call onSpin callback to notify parent that wheel has finished
           onSpin();
-        }, 500);
+        }, 1500); // Increased from 500ms to 1500ms to ensure wheel fully stops
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);
