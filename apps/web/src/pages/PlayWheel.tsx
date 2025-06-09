@@ -1332,18 +1332,20 @@ const PlayWheel = () => {
       )}
 
       {/* Confetti (only shown on win) */}
-      <TimedConfetti
-        key={`confetti-${showConfetti ? 'active' : 'inactive'}`}
-        isActive={showConfetti}
-        duration={8000}
-        options={{
-          particleCount: 160,
-          angle: 90,
-          spread: 120,
-          colors: CONFETTI_COLORS,
-          shapes: ['star', 'circle', 'square'],
-        }}
-      />
+      {showConfetti && (
+        <TimedConfetti
+          key="confetti-active"
+          isActive={true}
+          duration={8000}
+          options={{
+            particleCount: 160,
+            angle: 90,
+            spread: 120,
+            colors: CONFETTI_COLORS,
+            shapes: ['star', 'circle', 'square'],
+          }}
+        />
+      )}
 
       {/* Social redirect dialog */}
       <SocialRedirectDialog
