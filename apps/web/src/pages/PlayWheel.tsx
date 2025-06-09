@@ -755,7 +755,7 @@ const PlayWheel = () => {
   };
 
   // Handle wheel finishing spin - called by wheel component when animation completes
-  const handleWheelFinishedSpin = useCallback(() => {
+  const handleWheelFinishedSpin = () => {
     console.log('CALLBACK TRIGGERED: Wheel finished spinning, showing result');
     
     // Reset the spinning state
