@@ -1332,7 +1332,7 @@ const PlayWheel = () => {
       )}
 
       {/* Confetti (only shown on win) */}
-      {showConfetti && (
+      {/* {showConfetti && (
         <TimedConfetti
           key="confetti-active"
           isActive={true}
@@ -1345,7 +1345,7 @@ const PlayWheel = () => {
             shapes: ['star', 'circle', 'square'],
           }}
         />
-      )}
+      )} */}
 
       {/* Social redirect dialog */}
       <SocialRedirectDialog
@@ -1394,14 +1394,7 @@ const PlayWheel = () => {
             ))}
           </div>
 
-          <div className="flex gap-2 sm:gap-3 pt-2 sm:pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowClaimForm(false)}
-              className="flex-1 text-sm sm:text-base"
-            >
-              Annuler
-            </Button>
+          <div className="flex justify-center gap-2 sm:gap-3 pt-2 sm:pt-4">
             <Button
               onClick={() => {
                 // Convert claimFormData to PlayerFormData format
@@ -1416,7 +1409,7 @@ const PlayWheel = () => {
               disabled={isLoading}
               className="flex-1 text-sm sm:text-base"
             >
-              {isLoading ? 'Envoi...' : 'Récupérer mon prix'}
+              {isLoading ? 'Récupération en cours...' : 'Récupérer mon prix'}
             </Button>
           </div>
         </DialogContent>
