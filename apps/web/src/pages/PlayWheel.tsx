@@ -1333,7 +1333,7 @@ const PlayWheel = () => {
 
       {/* Confetti (only shown on win) */}
       <TimedConfetti
-        key={`confetti-${showConfetti ? 'active' : 'inactive'}-${Date.now()}`}
+        key={`confetti-${showConfetti ? 'active' : 'inactive'}`}
         isActive={showConfetti}
         duration={8000}
         options={{
