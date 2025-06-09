@@ -724,16 +724,10 @@ const PlayWheel = () => {
 
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
-    // Logs from previous step (can be kept for debugging if needed)
-
-
-
     // Find the index of the winning slot ID within the wheelConfig.segments array
     let prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
 
     if (prizeIndexFound === -1) {
-
-      
       toast({
         title: "Affichage désynchronisé",
         description: "Le prix gagné est correct (voir popup), mais l'affichage de la roue est désynchronisé. Contactez le support si cela persiste.",
@@ -751,33 +745,42 @@ const PlayWheel = () => {
     setSpinResult(data); // This determines the popup content and is based on direct backend data.
     setMustSpin(true); // Trigger the visual spin
     
-    // Show result modal after wheel stops spinning
-    setTimeout(() => {
-      setShowResultModal(true);
-      if (data.play.result === 'WIN') {
-        // Reset retry counter for QR code loading
-        retryCount.current = 0;
-        
-        // Show confetti with a clear timeout
-        setShowConfetti(true);
-        setUserFlowState('won');
-        
-        // Stop confetti after 8 seconds
-        setTimeout(() => {
-          // Only hide confetti if we're still in the same flow
-          if (userFlowState === 'won') {
-            setShowConfetti(false);
-          }
-        }, 8000);
-      }
+    // ✅ REMOVED: Fixed timeout - now using proper wheel callback
+    // The modal will be shown when handleWheelFinishedSpin() is called by the wheel component
+  };
+
+  // Handle wheel finishing spin - called by wheel component when animation completes
+  const handleWheelFinishedSpin = () => {
+    console.log('CALLBACK TRIGGERED: Wheel finished spinning, showing result');
+    
+    // Reset the spinning state
+    setMustSpin(false);
+    
+    // Show result modal immediately since wheel has finished spinning
+    setShowResultModal(true);
+    
+    if (spinResult?.play.result === 'WIN') {
+      // Reset retry counter for QR code loading
+      retryCount.current = 0;
       
-      // After showing result, set next step to claim form if won
-      if (data.play.result === 'WIN') {
-        setCurrentStep('showPrize');
-      } else {
-        setCurrentStep('spinWheel');
-      }
-    }, 5500); // Slightly longer than spin duration
+      // Show confetti for wins
+      setShowConfetti(true);
+      setUserFlowState('won');
+      
+      // Stop confetti after 8 seconds
+      setTimeout(() => {
+        // Only hide confetti if we're still in the same flow
+        if (userFlowState === 'won') {
+          setShowConfetti(false);
+        }
+      }, 8000);
+      
+      // Set next step to show prize
+      setCurrentStep('showPrize');
+    } else {
+      // For losing results, just reset to initial
+      setCurrentStep('spinWheel');
+    }
   };
 
   // Handle result modal close and transition to next flow step
@@ -1456,7 +1459,7 @@ const PlayWheel = () => {
                 config={wheelConfig}
                 isSpinning={mustSpin}
                 prizeIndex={prizeIndex}
-                onSpin={handleSpinClick}
+                onSpin={handleWheelFinishedSpin}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>

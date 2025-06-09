@@ -754,13 +754,23 @@ const WheelEdit = () => {
 
     // Validate individual slots and total probability only if basic slot count is valid
     if (isValid && wheel.slots.length > 0) {
-      // Check if total probability is 100% for RANDOM_WIN type
-      if (wheel.type === 'RANDOM_WIN') {
-        const total = wheel.slots.reduce((sum, slot) => sum + (slot.weight || 0), 0);
+      // Check probability totals based on wheel type
+      const total = wheel.slots.reduce((sum, slot) => sum + (slot.weight || 0), 0);
+      
+      if (wheel.type === 'ALL_WIN') {
+        // ALL_WIN wheels must total exactly 100% (everyone wins something)
         if (total !== 100) {
-          errors.totalProbability = `Pour un gain aléatoire, la somme des probabilités doit être 100% (actuellement ${total}%).`;
+          errors.totalProbability = `Pour "Gagnant à tous les coups", la somme des probabilités doit être exactement 100% (actuellement ${total}%).`;
           isValid = false;
         }
+      } else if (wheel.type === 'RANDOM_WIN') {
+        // RANDOM_WIN wheels can be 0-100% (missing percentage = losing chances)
+        if (total > 100) {
+          errors.totalProbability = `Pour "Gain aléatoire", la somme des probabilités ne peut pas dépasser 100% (actuellement ${total}%).`;
+          isValid = false;
+        }
+        // Note: totals less than 100% are perfectly valid for RANDOM_WIN
+        // Missing percentage becomes automatic losing chances
       }
 
       wheel.slots.forEach((slot, index) => {
@@ -1261,13 +1271,28 @@ const WheelEdit = () => {
             <CardTitle>Lots et prix</CardTitle>
             <div className="mt-1 text-sm text-gray-500">
               Probabilité totale: 
-              <span className={totalProbability === 100 ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+              <span className={
+                wheel.type === 'ALL_WIN' ? 
+                  (totalProbability === 100 ? "text-green-600 font-semibold" : "text-red-600 font-semibold") :
+                  (totalProbability <= 100 ? "text-green-600 font-semibold" : "text-red-600 font-semibold")
+              }>
                 {" "}{totalProbability}%
               </span>
-              {totalProbability !== 100 && (
+              {wheel.type === 'ALL_WIN' && totalProbability !== 100 && (
                 <span className="ml-2 text-red-600 inline-flex items-center">
                   <AlertCircle className="h-4 w-4 mr-1" />
-                  La somme des probabilités devrait être 100%
+                  Doit être exactement 100%
+                </span>
+              )}
+              {wheel.type === 'RANDOM_WIN' && totalProbability > 100 && (
+                <span className="ml-2 text-red-600 inline-flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  Ne peut pas dépasser 100%
+                </span>
+              )}
+              {wheel.type === 'RANDOM_WIN' && totalProbability < 100 && (
+                <span className="ml-2 text-blue-600 inline-flex items-center">
+                  ℹ️ {100 - totalProbability}% de chances de perdre
                 </span>
               )}
               {formErrors['totalProbability'] && (
@@ -1278,13 +1303,13 @@ const WheelEdit = () => {
             {wheel.type === 'RANDOM_WIN' && (
               <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
                 <strong>Mode "Gain aléatoire":</strong> Les lots avec 0% de probabilité sont des cases perdantes. 
-                Les joueurs peuvent tomber sur ces cases et ne rien gagner.
+                Le total peut être inférieur à 100% - le pourcentage manquant représente des chances supplémentaires de perdre.
               </div>
             )}
             {wheel.type === 'ALL_WIN' && (
               <div className="mt-2 text-xs text-green-600 bg-green-50 p-2 rounded">
-                <strong>Mode "Gagnant à tous les coups":</strong> Tous les lots doivent avoir une probabilité {'>'}0%. 
-                Le joueur gagnera toujours quelque chose.
+                <strong>Mode "Gagnant à tous les coups":</strong> Tous les lots doivent avoir une probabilité {'>'}0% 
+                et le total doit être exactement 100% (le joueur gagne toujours quelque chose).
               </div>
             )}
           </div>
