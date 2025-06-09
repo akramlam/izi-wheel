@@ -752,6 +752,9 @@ const PlayWheel = () => {
     
     // ✅ REMOVED: Fixed timeout - now using proper wheel callback
     // The modal will be shown when handleWheelFinishedSpin() is called by the wheel component
+    handleWheelFinishedSpin();
+    setShowResultModal(true);
+    setShowConfetti(true);
   };
 
   // Handle wheel finishing spin - called by wheel component when animation completes

@@ -29,7 +29,7 @@ async function refreshUserToken(email) {
     console.log('Found user:', user);
     
     // Generate a new token with updated user info
-    const tokenSecret = process.env.JWT_SECRET || 'your-secret-key';
+    const tokenSecret = process.env.JWT_SECRET || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImQwZjQyOTE5LTVmOTMtNGNmMS05Y2I2LTdhYjdkMjIwNWU2ZCIsImVtYWlsIjoiYm91bGJvdWxAZ21haWwuY29tIiwicm9sZSI6IlNVUEVSIiwiaXNQYWlkIjpmYWxzZSwibmFtZSI6IiIsImZvcmNlUGFzc3dvcmRDaGFuZ2UiOmZhbHNlLCJpYXQiOjE3NDgzMTQyNjksImV4cCI6MTc0ODkxOTA2OX0.JKvqJrx6yW71GBl5vAiqlcMLlQQ-A-EtmwZJI-bTGjM';
     const newToken = jwt.sign(user, tokenSecret, { expiresIn: '24h' });
     
     console.log('\n--- New Token (copy this) ---');
@@ -43,7 +43,7 @@ async function refreshUserToken(email) {
     console.log('1. Copy the token above');
     console.log('2. Open the browser developer tools (F12)');
     console.log('3. Go to the Application tab');
-    console.log('4. In Storage > Local Storage > http://localhost:3000');
+    console.log('4. In Storage > Local Storage > https://api.izikado.fr');
     console.log('5. Replace the "token" value with the new token');
     console.log('6. Refresh the page');
     
