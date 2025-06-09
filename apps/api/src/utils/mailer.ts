@@ -53,7 +53,7 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
 
   const result = await response.json();
   console.log(`[SMTP.COM API] ✅ Email sent successfully:`, result);
-  return { messageId: result.data?.message_id || `smtp-com-${Date.now()}` };
+  return { messageId: (result as any).data?.message_id || `smtp-com-${Date.now()}` };
 };
 
 // Create a development file transport for testing
@@ -118,7 +118,7 @@ const createEnhancedTransport = () => {
         return await sendViaSmtpComApi(mailOptions);
       } else if (isSmtpConfigured) {
         console.log(`[EMAIL] Using traditional SMTP for delivery`);
-        const smtpTransporter = nodemailer.createTransporter({
+        const smtpTransporter = nodemailer.createTransport({
           host: SMTP_HOST,
           port: SMTP_PORT,
           secure: SMTP_SECURE,
