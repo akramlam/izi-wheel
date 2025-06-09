@@ -8,6 +8,7 @@ import { Input } from "../components/ui/input" // Added Input
 import { Label } from "../components/ui/label" // Added Label
 import { Switch } from "../components/ui/switch" // Added Switch
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select" // Added Select components
+import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
 
 import { api } from '../lib/api' // Fixed import path
 import { useToast } from '../hooks/use-toast' // Fixed import path
@@ -52,6 +53,16 @@ const Entreprises: React.FC = () => {
     plan: 'FREE',
     maxWheels: 1
   });
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    companyId: string | null;
+    companyName: string;
+  }>({
+    isOpen: false,
+    companyId: null,
+    companyName: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Console logging for debugging
   useEffect(() => {
@@ -245,11 +256,21 @@ const Entreprises: React.FC = () => {
   };
 
   const handleDeleteCompany = async (companyId: string) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette entreprise ?")) return;
+    const company = companies.find(c => c.id === companyId);
+    setDeleteConfirmation({
+      isOpen: true,
+      companyId: companyId,
+      companyName: company?.name || 'cette entreprise',
+    });
+  };
+
+  const confirmDeleteCompany = async () => {
+    if (!deleteConfirmation.companyId) return;
     
-    console.log("Deleting company with ID:", companyId);
+    console.log("Deleting company with ID:", deleteConfirmation.companyId);
     try {
-      const response = await api.deleteCompany(companyId);
+      setIsDeleting(true);
+      const response = await api.deleteCompany(deleteConfirmation.companyId);
       console.log("Delete company response:", response);
       
       toast({
@@ -257,6 +278,7 @@ const Entreprises: React.FC = () => {
         description: "Entreprise supprimée avec succès"
       });
       
+      setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' });
       await fetchCompanies();
     } catch (error: any) {
       console.error("Error deleting company:", error);
@@ -266,6 +288,8 @@ const Entreprises: React.FC = () => {
         title: 'Erreur',
         description: errorMessage
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
   
@@ -533,6 +557,19 @@ const Entreprises: React.FC = () => {
         <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
       </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onConfirm={confirmDeleteCompany}
+        onClose={() => setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' })}
+        title="Supprimer l'entreprise"
+        description={`Êtes-vous sûr de vouloir supprimer l'entreprise "${deleteConfirmation.companyName}" ? Toutes les données associées (roues, utilisateurs, parties) seront définitivement perdues. Cette action est irréversible.`}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
   )
 }

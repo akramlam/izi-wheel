@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { Plus, Pencil, Trash2, Check, X, UserPlus } from 'lucide-react';
+import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
 
 type Company = {
   id: string;
@@ -34,6 +35,16 @@ const SuperAdmin = () => {
     plan: 'BASIC',
     maxWheels: 1
   });
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    companyId: string | null;
+    companyName: string;
+  }>({
+    isOpen: false,
+    companyId: null,
+    companyName: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch all companies on component mount
   useEffect(() => {
@@ -138,14 +149,23 @@ const SuperAdmin = () => {
   };
 
   const handleDeleteCompany = async (companyId: string) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette entreprise ?")) {
-      return;
-    }
+    const company = companies.find(c => c.id === companyId);
+    setDeleteConfirmation({
+      isOpen: true,
+      companyId: companyId,
+      companyName: company?.name || 'cette entreprise',
+    });
+  };
+
+  const confirmDeleteCompany = async () => {
+    if (!deleteConfirmation.companyId) return;
     
     try {
-      await api.deleteCompany(companyId);
+      setIsDeleting(true);
+      await api.deleteCompany(deleteConfirmation.companyId);
       
-      setCompanies(prev => prev.filter(company => company.id !== companyId));
+      setCompanies(prev => prev.filter(company => company.id !== deleteConfirmation.companyId));
+      setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' });
       
       toast({
         title: 'Success',
@@ -158,6 +178,8 @@ const SuperAdmin = () => {
         title: 'Erreur',
         description: errorMessage
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -563,6 +585,19 @@ const SuperAdmin = () => {
           </table>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onConfirm={confirmDeleteCompany}
+        onClose={() => setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' })}
+        title="Supprimer l'entreprise"
+        description={`Êtes-vous sûr de vouloir supprimer l'entreprise "${deleteConfirmation.companyName}" ? Toutes les données associées (roues, utilisateurs, parties) seront définitivement perdues. Cette action est irréversible.`}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

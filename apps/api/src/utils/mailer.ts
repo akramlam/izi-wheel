@@ -4,10 +4,13 @@ import path from 'path';
 
 // Get SMTP configuration from environment variables
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.smtp.com';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
+const SMTP_PORT = parseInt(process.env.SMTP_PORT || '2525');
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '';
+
+// Alternative ports for fallback (based on troubleshooting guides)
+const FALLBACK_PORTS = [2525, 587, 465, 25];
 
 // SMTP.com API configuration
 const SMTP_COM_API_KEY = process.env.SMTP_COM_API_KEY || '';
@@ -18,8 +21,44 @@ const USE_SMTP_COM_API = process.env.USE_SMTP_COM_API === 'true' && SMTP_COM_API
 const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
 const isSmtpComApiConfigured = USE_SMTP_COM_API && SMTP_COM_API_KEY;
 
+// Enhanced SMTP transporter with connection testing and fallback ports
+const createSmtpTransporter = async (port = SMTP_PORT) => {
+  const config = {
+    host: SMTP_HOST,
+    port: port,
+    secure: port === 465, // Use secure for port 465, false for others
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+    // Additional options based on troubleshooting guides
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 60000,     // 60 seconds
+    // Disable certificate validation for development
+    tls: {
+      rejectUnauthorized: process.env.NODE_ENV === 'production'
+    }
+  };
+
+  console.log(`[SMTP] Attempting connection to ${SMTP_HOST}:${port}`);
+  const transporter = nodemailer.createTransport(config);
+  
+  try {
+    // Test the connection
+    await transporter.verify();
+    console.log(`[SMTP] ✅ Connection successful on port ${port}`);
+    return transporter;
+  } catch (error) {
+    console.log(`[SMTP] ❌ Connection failed on port ${port}:`, error.message);
+    throw error;
+  }
+};
+
 // SMTP.com API email sender
 const sendViaSmtpComApi = async (mailOptions: any) => {
+  console.log(`[SMTP.COM API] Sending email to ${mailOptions.to}`);
+  
   const emailData = {
     from: {
       email: mailOptions.from,
@@ -36,24 +75,30 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
     text: mailOptions.text || ''
   };
 
-  const response = await fetch(`${SMTP_COM_API_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SMTP_COM_API_KEY}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(emailData)
-  });
+  try {
+    const response = await fetch(`${SMTP_COM_API_URL}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SMTP_COM_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(emailData)
+    });
 
-  if (!response.ok) {
-    const errorData = await response.text();
-    throw new Error(`SMTP.com API error: ${response.status} - ${errorData}`);
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`[SMTP.COM API] ❌ Error ${response.status}:`, errorData);
+      throw new Error(`SMTP.com API error: ${response.status} - ${errorData}`);
+    }
+
+    const result = await response.json();
+    console.log(`[SMTP.COM API] ✅ Email sent successfully:`, result);
+    return { messageId: (result as any).data?.message_id || `smtp-com-${Date.now()}` };
+  } catch (error) {
+    console.error(`[SMTP.COM API] ❌ Failed to send via API:`, error.message);
+    throw error;
   }
-
-  const result = await response.json();
-  console.log(`[SMTP.COM API] ✅ Email sent successfully:`, result);
-  return { messageId: (result as any).data?.message_id || `smtp-com-${Date.now()}` };
 };
 
 // Create a development file transport for testing
@@ -109,25 +154,71 @@ const testTransport = {
   }
 };
 
-// Enhanced transport that supports both SMTP.com API and traditional SMTP
+// Enhanced transport that supports both SMTP.com API and traditional SMTP with fallbacks
 const createEnhancedTransport = () => {
+  let cachedTransporter: any = null;
+  
   return {
     sendMail: async (mailOptions: any) => {
+      console.log(`[EMAIL] Attempting to send email to: ${mailOptions.to}`);
+      console.log(`[EMAIL] Subject: ${mailOptions.subject}`);
+      
+      // Try SMTP.com API first if configured
       if (isSmtpComApiConfigured) {
-        console.log(`[EMAIL] Using SMTP.com API for delivery`);
-        return await sendViaSmtpComApi(mailOptions);
-      } else if (isSmtpConfigured) {
+        try {
+          console.log(`[EMAIL] Using SMTP.com API for delivery`);
+          return await sendViaSmtpComApi(mailOptions);
+        } catch (error) {
+          console.error(`[EMAIL] SMTP.com API failed, falling back to traditional SMTP:`, error.message);
+        }
+      }
+      
+      // Fall back to traditional SMTP
+      if (isSmtpConfigured) {
         console.log(`[EMAIL] Using traditional SMTP for delivery`);
-        const smtpTransporter = nodemailer.createTransport({
-          host: SMTP_HOST,
-          port: SMTP_PORT,
-          secure: SMTP_SECURE,
-          auth: {
-            user: SMTP_USER,
-            pass: SMTP_PASS,
-          },
-        });
-        return await smtpTransporter.sendMail(mailOptions);
+        
+        // Try to use cached transporter first
+        if (cachedTransporter) {
+          try {
+            const result = await cachedTransporter.sendMail(mailOptions);
+            console.log(`[SMTP] ✅ Email sent successfully via cached connection`);
+            return result;
+          } catch (error) {
+            console.log(`[SMTP] Cached connection failed, creating new connection:`, error.message);
+            cachedTransporter = null;
+          }
+        }
+        
+        // Try different ports based on troubleshooting guides
+        for (const port of FALLBACK_PORTS) {
+          try {
+            const transporter = await createSmtpTransporter(port);
+            const result = await transporter.sendMail(mailOptions);
+            
+            // Cache successful transporter
+            cachedTransporter = transporter;
+            console.log(`[SMTP] ✅ Email sent successfully on port ${port}`);
+            return result;
+          } catch (error) {
+            console.log(`[SMTP] Port ${port} failed:`, error.message);
+            
+            // Check for specific SMTP error codes (based on Google's guide)
+            if (error.code === 'EAUTH' || error.responseCode === 535) {
+              console.error(`[SMTP] ❌ Authentication failed. Check credentials.`);
+              break; // Don't try other ports for auth errors
+            }
+            
+            if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+              console.log(`[SMTP] Connection issue on port ${port}, trying next port...`);
+              continue; // Try next port
+            }
+            
+            // For other errors, continue to next port
+            continue;
+          }
+        }
+        
+        throw new Error(`All SMTP ports failed. Check your network connection and SMTP settings.`);
       } else {
         throw new Error('No email transport configured');
       }
