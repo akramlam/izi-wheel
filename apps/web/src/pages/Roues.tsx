@@ -644,7 +644,32 @@ const Roues: React.FC = () => {
                         <Badge variant={getTypeVariant(roue.type)}>{roue.type}</Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{roue.parties.toLocaleString()}</TableCell>
-                      <TableCell className="hidden md:table-cell">{roue.liens.toLocaleString()}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {roue.statut === "Actif" ? (
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyLink(roue.id)}
+                              className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                              title="Copier le lien"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewQRCode(roue.id)}
+                              className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
+                              title="QR Code"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">Roue inactive</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(roue.statut)}>{roue.statut}</Badge>
                       </TableCell>

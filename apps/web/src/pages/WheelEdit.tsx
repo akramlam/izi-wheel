@@ -772,8 +772,14 @@ const WheelEdit = () => {
           errors[`slots[${index}].prizeCode`] = 'Le code du lot est requis';
           isValid = false;
         }
-        if (slot.weight <= 0) {
-          errors[`slots[${index}].weight`] = 'La probabilité doit être supérieure à 0';
+        
+        // For RANDOM_WIN, allow 0% probability (losing slots)
+        // For ALL_WIN, all slots must have probability > 0
+        if (wheel.type === 'ALL_WIN' && slot.weight <= 0) {
+          errors[`slots[${index}].weight`] = 'Pour "Gagnant à tous les coups", tous les lots doivent avoir une probabilité supérieure à 0';
+          isValid = false;
+        } else if (wheel.type === 'RANDOM_WIN' && slot.weight < 0) {
+          errors[`slots[${index}].weight`] = 'La probabilité ne peut pas être négative';
           isValid = false;
         }
       });
@@ -1268,6 +1274,19 @@ const WheelEdit = () => {
                 <p className="text-sm text-red-500 mt-1">{formErrors['totalProbability']}</p>
               )}
             </div>
+            {/* Explanatory text based on wheel type */}
+            {wheel.type === 'RANDOM_WIN' && (
+              <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                <strong>Mode "Gain aléatoire":</strong> Les lots avec 0% de probabilité sont des cases perdantes. 
+                Les joueurs peuvent tomber sur ces cases et ne rien gagner.
+              </div>
+            )}
+            {wheel.type === 'ALL_WIN' && (
+              <div className="mt-2 text-xs text-green-600 bg-green-50 p-2 rounded">
+                <strong>Mode "Gagnant à tous les coups":</strong> Tous les lots doivent avoir une probabilité {'>'}0%. 
+                Le joueur gagnera toujours quelque chose.
+              </div>
+            )}
           </div>
           <div className="flex space-x-2">
             <Button onClick={normalizeWeights} variant="outline" className="mr-2">
@@ -1354,6 +1373,13 @@ const WheelEdit = () => {
                           placeholder="0"
                       className={`w-full p-2 border rounded-md ${formErrors[`slots[${index}].weight`] ? 'border-red-500' : 'border-gray-300'}`}
                         />
+                        {/* Show helpful info for 0% probability in RANDOM_WIN mode */}
+                        {wheel.type === 'RANDOM_WIN' && slot.weight === 0 && (
+                          <p className="text-xs text-blue-600 flex items-center">
+                            <span className="mr-1">ℹ️</span>
+                            Lot perdant (0% de chance de gagner)
+                          </p>
+                        )}
                         {formErrors[`slots[${index}].weight`] && (
                       <p className="text-sm text-red-500">{formErrors[`slots[${index}].weight`]}</p>
                     )}

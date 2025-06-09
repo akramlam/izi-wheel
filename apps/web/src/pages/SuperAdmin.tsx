@@ -198,12 +198,12 @@ const SuperAdmin = () => {
         throw error; // Re-throw for the enhanced dialog to catch
       } else {
         // For other errors, show a toast
-        const errorMessage = error.response?.data?.error || "Impossible de supprimer l'entreprise";
-        toast({
-          variant: 'destructive',
-          title: 'Erreur',
-          description: errorMessage
-        });
+      const errorMessage = error.response?.data?.error || "Impossible de supprimer l'entreprise";
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: errorMessage
+      });
       }
     } finally {
       setIsDeleting(false);

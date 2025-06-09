@@ -311,7 +311,7 @@ const PlayWheel = () => {
   
   console.log('[DEBUG] PlayWheel render - Route params:', { companyId, wheelId });
   console.log('[DEBUG] Current URL:', window.location.href);
-  
+    
   // Directly compute effective parameters
   const getEffectiveParams = () => {
     // Special handling for the /play/company/:wheelId route pattern
@@ -340,7 +340,7 @@ const PlayWheel = () => {
 
   const effectiveParams = getEffectiveParams();
   console.log('[DEBUG] Effective params:', effectiveParams);
-
+  
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [mustSpin, setMustSpin] = useState(false);
   const [prizeIndex, setPrizeIndex] = useState(0);
@@ -398,24 +398,24 @@ const PlayWheel = () => {
           
           console.log('[DEBUG] Making company API call to:', directUrl);
           
-          const response = await fetch(directUrl);
+            const response = await fetch(directUrl);
           
           console.log('[DEBUG] Company API response status:', response.status);
-          
-          if (!response.ok) {
+            
+            if (!response.ok) {
             console.error('[DEBUG] Company API call failed:', response.status, response.statusText);
-            throw new Error(`API call failed with status: ${response.status}`);
-          }
-          
-          const data = await response.json();
+              throw new Error(`API call failed with status: ${response.status}`);
+            }
+            
+            const data = await response.json();
           console.log('[DEBUG] Company API response data:', data);
-          
-          if (data && data.wheel) {
+            
+            if (data && data.wheel) {
             console.log('[DEBUG] Successfully got wheel data:', data.wheel);
-            return data.wheel;
-          } else {
+              return data.wheel;
+            } else {
             console.error('[DEBUG] No wheel data in company response');
-            throw new Error('No wheel data in response');
+              throw new Error('No wheel data in response');
           }
         }
         
@@ -617,7 +617,7 @@ const PlayWheel = () => {
       setShowSocialRedirect(true);
       setCurrentStep('social');
     } else if (currentStep === 'spinWheel' && (userFlowState === 'completedSocial' || !wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
-      // Only allow spin if social action is completed or not required
+    // Only allow spin if social action is completed or not required
       setUserFlowState('spinning');
       handleSpinWithoutSocial();
     } else if (currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')) {
@@ -710,11 +710,11 @@ const PlayWheel = () => {
         });
       } else {
         // Handle other errors
-        toast({
-          title: 'Error',
+      toast({
+        title: 'Error',
           description: backendMsg || 'Failed to spin the wheel. Please try again.',
-          variant: 'destructive'
-        });
+        variant: 'destructive'
+      });
       }
       
       setCurrentStep('spinWheel');
