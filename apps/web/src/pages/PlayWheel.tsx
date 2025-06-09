@@ -724,10 +724,13 @@ const PlayWheel = () => {
 
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
+    console.log('📡 handleSpinResultWithData called with:', data);
+    
     // Find the index of the winning slot ID within the wheelConfig.segments array
     let prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
 
     if (prizeIndexFound === -1) {
+      console.log('⚠️ Prize index not found, using fallback index 0');
       toast({
         title: "Affichage désynchronisé",
         description: "Le prix gagné est correct (voir popup), mais l'affichage de la roue est désynchronisé. Contactez le support si cela persiste.",
@@ -739,9 +742,11 @@ const PlayWheel = () => {
       // The popup (from setSpinResult(data)) will show the CORRECT prize.
       setPrizeIndex(0); 
     } else {
+      console.log('✅ Prize index found:', prizeIndexFound);
       setPrizeIndex(prizeIndexFound);
     }
     
+    console.log('🎯 Setting spin result and triggering wheel animation');
     setSpinResult(data); // This determines the popup content and is based on direct backend data.
     setMustSpin(true); // Trigger the visual spin
     

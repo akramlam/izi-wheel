@@ -145,6 +145,8 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   // Handle spin animation with physics-based easing
   useEffect(() => {
     if (isSpinning && !spinning) {
+      console.log('🎬 Starting wheel animation, isSpinning:', isSpinning, 'spinning:', spinning);
+      
       // Stop any previous sounds and timers first
       soundUtils.stop();
       
@@ -231,6 +233,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         
         // Reset spinning state
         const resetTimeout = setTimeout(() => {
+          console.log('🎬 Wheel animation completed, calling onSpin callback');
           setSpinning(false);
           
           // ✅ FIXED: Call onSpin callback to notify parent that wheel has finished
