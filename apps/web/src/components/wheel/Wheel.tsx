@@ -232,6 +232,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         // Reset spinning state
         const resetTimeout = setTimeout(() => {
           setSpinning(false);
+          
+          // ✅ FIXED: Call onSpin callback to notify parent that wheel has finished
+          onSpin();
         }, 500);
         
         // Register the timeout for cleanup
@@ -253,7 +256,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       soundUtils.stop();
     };
   }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning, 
-      config.hapticFeedback, segments, config.sounds]);
+      config.hapticFeedback, segments, config.sounds, onSpin]);
   
   // Additional cleanup effect to ensure all resources are freed when component unmounts
   useEffect(() => {
