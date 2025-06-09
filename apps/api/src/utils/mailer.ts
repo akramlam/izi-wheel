@@ -50,7 +50,8 @@ const createSmtpTransporter = async (port = SMTP_PORT) => {
     console.log(`[SMTP] ✅ Connection successful on port ${port}`);
     return transporter;
   } catch (error) {
-    console.log(`[SMTP] ❌ Connection failed on port ${port}:`, error.message);
+    const err = error as Error;
+    console.log(`[SMTP] ❌ Connection failed on port ${port}:`, err.message);
     throw error;
   }
 };
@@ -96,7 +97,8 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
     console.log(`[SMTP.COM API] ✅ Email sent successfully:`, result);
     return { messageId: (result as any).data?.message_id || `smtp-com-${Date.now()}` };
   } catch (error) {
-    console.error(`[SMTP.COM API] ❌ Failed to send via API:`, error.message);
+    const err = error as Error;
+    console.error(`[SMTP.COM API] ❌ Failed to send via API:`, err.message);
     throw error;
   }
 };
@@ -169,7 +171,8 @@ const createEnhancedTransport = () => {
           console.log(`[EMAIL] Using SMTP.com API for delivery`);
           return await sendViaSmtpComApi(mailOptions);
         } catch (error) {
-          console.error(`[EMAIL] SMTP.com API failed, falling back to traditional SMTP:`, error.message);
+          const err = error as Error;
+          console.error(`[EMAIL] SMTP.com API failed, falling back to traditional SMTP:`, err.message);
         }
       }
       
@@ -184,7 +187,8 @@ const createEnhancedTransport = () => {
             console.log(`[SMTP] ✅ Email sent successfully via cached connection`);
             return result;
           } catch (error) {
-            console.log(`[SMTP] Cached connection failed, creating new connection:`, error.message);
+            const err = error as Error;
+            console.log(`[SMTP] Cached connection failed, creating new connection:`, err.message);
             cachedTransporter = null;
           }
         }
@@ -200,15 +204,16 @@ const createEnhancedTransport = () => {
             console.log(`[SMTP] ✅ Email sent successfully on port ${port}`);
             return result;
           } catch (error) {
-            console.log(`[SMTP] Port ${port} failed:`, error.message);
+            const err = error as any; // Use 'any' to access SMTP-specific properties
+            console.log(`[SMTP] Port ${port} failed:`, err.message);
             
             // Check for specific SMTP error codes (based on Google's guide)
-            if (error.code === 'EAUTH' || error.responseCode === 535) {
+            if (err.code === 'EAUTH' || err.responseCode === 535) {
               console.error(`[SMTP] ❌ Authentication failed. Check credentials.`);
               break; // Don't try other ports for auth errors
             }
             
-            if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+            if (err.code === 'ECONNECTION' || err.code === 'ETIMEDOUT') {
               console.log(`[SMTP] Connection issue on port ${port}, trying next port...`);
               continue; // Try next port
             }
