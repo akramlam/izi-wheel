@@ -6,7 +6,7 @@ import { createError } from '../middlewares/error.middleware';
 // Validation schema for creating/updating a slot
 const slotSchema = z.object({
   label: z.string().min(1).max(100),
-  weight: z.number().int().min(1),
+  weight: z.number().int().min(0).max(100),
   prizeCode: z.string().min(1).max(50),
   color: z.string().optional(),
 });
