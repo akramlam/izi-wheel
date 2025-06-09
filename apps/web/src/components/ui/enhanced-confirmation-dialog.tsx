@@ -8,154 +8,217 @@ import {
   DialogTitle,
 } from './dialog';
 import { Button } from './button';
-import { AlertTriangle, Trash2, X, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Trash2, X, CheckCircle, Loader2 } from 'lucide-react';
 import { BorderBeam } from '../magicui/border-beam';
 import confetti from '../magicui/confetti';
+import { Input } from './input';
+import { Label } from './label';
 
 interface EnhancedConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  title?: string;
-  description?: string;
+  onConfirm: (force?: boolean) => Promise<void>;
+  title: string;
+  description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'default' | 'destructive' | 'success';
-  icon?: React.ReactNode;
+  variant?: 'destructive' | 'default';
   isLoading?: boolean;
-  showConfetti?: boolean;
+  
+  // Enhanced props for force deletion
+  requireNameConfirmation?: boolean;
+  itemName?: string; // Name of the item being deleted (company name)
+  forceDeleteMessage?: string; // Custom message explaining why force delete is needed
+  activeWheelsCount?: number;
+  adminsCount?: number;
 }
 
 export const EnhancedConfirmationDialog: React.FC<EnhancedConfirmationDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Êtes-vous sûr ?',
-  description = 'Cette action ne peut pas être annulée.',
+  title,
+  description,
   confirmText = 'Confirmer',
   cancelText = 'Annuler',
   variant = 'default',
-  icon,
   isLoading = false,
-  showConfetti = false,
+  requireNameConfirmation = false,
+  itemName = '',
+  forceDeleteMessage = '',
+  activeWheelsCount = 0,
+  adminsCount = 0,
 }) => {
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [step, setStep] = useState<'normal' | 'force'>('normal');
+  const [nameInput, setNameInput] = useState('');
+  const [isNameValid, setIsNameValid] = useState(false);
 
+  // Reset state when dialog opens/closes
   useEffect(() => {
-    if (showConfetti && !isLoading) {
-      setShowSuccess(true);
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      const timer = setTimeout(() => {
-        setShowSuccess(false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    if (isOpen) {
+      setStep('normal');
+      setNameInput('');
+      setIsNameValid(false);
     }
-  }, [showConfetti, isLoading]);
+  }, [isOpen]);
 
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'destructive':
-        return {
-          iconColor: 'text-red-500',
-          buttonVariant: 'destructive' as const,
-          borderColor: 'border-red-200',
-          bgColor: 'bg-red-50'
-        };
-      case 'success':
-        return {
-          iconColor: 'text-green-500',
-          buttonVariant: 'default' as const,
-          borderColor: 'border-green-200',
-          bgColor: 'bg-green-50'
-        };
-      default:
-        return {
-          iconColor: 'text-amber-500',
-          buttonVariant: 'default' as const,
-          borderColor: 'border-amber-200',
-          bgColor: 'bg-amber-50'
-        };
+  // Validate name input
+  useEffect(() => {
+    setIsNameValid(nameInput.trim() === itemName.trim());
+  }, [nameInput, itemName]);
+
+  const handleNormalConfirm = async () => {
+    try {
+      await onConfirm(false); // Normal deletion
+    } catch (error: any) {
+      // Check if error is due to active wheels
+      if (error?.response?.status === 409 && requireNameConfirmation) {
+        setStep('force'); // Switch to force deletion mode
+      } else {
+        // Re-throw other errors
+        throw error;
+      }
     }
   };
 
-  const styles = getVariantStyles();
-  
-  const defaultIcon = variant === 'destructive' ? 
-    <AlertTriangle className={`h-6 w-6 ${styles.iconColor}`} /> : 
-    variant === 'success' ?
-    <CheckCircle className={`h-6 w-6 ${styles.iconColor}`} /> :
-    <AlertTriangle className={`h-6 w-6 ${styles.iconColor}`} />;
-
-  const handleConfirm = () => {
-    onConfirm();
+  const handleForceConfirm = async () => {
+    if (isNameValid) {
+      await onConfirm(true); // Force deletion
+    }
   };
 
-  if (showSuccess) {
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[425px] relative overflow-hidden">
-          <BorderBeam size={250} duration={12} delay={9} />
-          <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <DialogTitle className="text-xl font-semibold text-green-600 mb-2">
-              Succès !
-            </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              L'action a été effectuée avec succès.
-            </DialogDescription>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const handleClose = () => {
+    setStep('normal');
+    setNameInput('');
+    setIsNameValid(false);
+    onClose();
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`sm:max-w-[425px] relative ${variant === 'destructive' ? 'border-red-200' : ''}`}>
-        {variant === 'destructive' && <BorderBeam size={250} duration={12} delay={9} colorFrom="#ef4444" colorTo="#dc2626" />}
-        
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className={`flex items-center gap-3 mb-2 p-3 rounded-lg ${styles.bgColor}`}>
-            {icon || defaultIcon}
-            <DialogTitle className="text-lg font-semibold">
-              {title}
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-sm text-gray-600 px-3">
-            {description}
-          </DialogDescription>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className={`h-5 w-5 ${variant === 'destructive' ? 'text-red-500' : 'text-yellow-500'}`} />
+            {step === 'force' ? 'Suppression forcée requise' : title}
+          </DialogTitle>
         </DialogHeader>
-        
-        <DialogFooter className="flex gap-2 mt-6">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1 hover:bg-gray-50"
-          >
-            <X className="h-4 w-4 mr-2" />
-            {cancelText}
-          </Button>
-          <Button
-            variant={styles.buttonVariant}
-            onClick={handleConfirm}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-            ) : variant === 'destructive' ? (
-              <Trash2 className="h-4 w-4 mr-2" />
-            ) : null}
-            {confirmText}
-          </Button>
-        </DialogFooter>
+
+        {step === 'normal' ? (
+          // Normal confirmation step
+          <>
+            <DialogDescription className="text-sm text-gray-600 mb-4">
+              {description}
+            </DialogDescription>
+            
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={isLoading}
+              >
+                {cancelText}
+              </Button>
+              <Button
+                variant={variant}
+                onClick={handleNormalConfirm}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                {confirmText}
+              </Button>
+            </div>
+          </>
+        ) : (
+          // Force deletion step
+          <>
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-red-800 mb-2">
+                      Impossible de supprimer l'entreprise
+                    </p>
+                    <p className="text-red-700 mb-3">
+                      L'entreprise <strong>"{itemName}"</strong> contient:
+                    </p>
+                    <ul className="list-disc list-inside text-red-700 space-y-1 mb-3">
+                      <li><strong>{activeWheelsCount}</strong> roue(s) active(s)</li>
+                      <li><strong>{adminsCount}</strong> administrateur(s)</li>
+                    </ul>
+                    <p className="text-red-700">
+                      La suppression supprimera <strong>définitivement</strong> toutes les données associées 
+                      (roues, utilisateurs, parties jouées, etc.).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="company-name" className="text-sm font-medium">
+                  Pour confirmer, tapez le nom exact de l'entreprise:
+                </Label>
+                <Input
+                  id="company-name"
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder={itemName}
+                  className={`w-full ${
+                    nameInput && !isNameValid 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
+                      : nameInput && isNameValid
+                      ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
+                      : ''
+                  }`}
+                  disabled={isLoading}
+                  autoComplete="off"
+                />
+                {nameInput && !isNameValid && (
+                  <p className="text-xs text-red-600">
+                    Le nom ne correspond pas. Tapez exactement: <strong>{itemName}</strong>
+                  </p>
+                )}
+                {isNameValid && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    ✓ Nom confirmé
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleForceConfirm}
+                disabled={!isNameValid || isLoading}
+                className="flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4" />
+                )}
+                Supprimer définitivement
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

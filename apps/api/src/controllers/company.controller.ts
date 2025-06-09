@@ -334,30 +334,90 @@ export const createCompany = async (req: Request, res: Response) => {
 export const deleteCompany = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { force } = req.query; // Check for force parameter
 
     // Check if company exists
     const company = await prisma.company.findUnique({
       where: { id },
-      include: { wheels: { where: { isActive: true } } }
+      include: { 
+        wheels: true, // Get all wheels, not just active ones
+        admins: true,
+        _count: {
+          select: {
+            wheels: true,
+            admins: true,
+            // Add any other relations that might exist
+          }
+        }
+      }
     });
 
     if (!company) {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    // Check if company has active wheels
-    if (company.wheels && company.wheels.length > 0) {
-      return res.status(409).json({ 
-        error: 'Cannot delete company with active wheels' 
-      });
+    // If not forcing deletion, check for active wheels
+    if (force !== 'true') {
+      const activeWheels = company.wheels.filter(wheel => wheel.isActive);
+      
+      if (activeWheels.length > 0) {
+        return res.status(409).json({ 
+          error: 'Cannot delete company with active wheels',
+          details: {
+            companyName: company.name,
+            activeWheelsCount: activeWheels.length,
+            totalWheelsCount: company.wheels.length,
+            adminsCount: company.admins.length,
+            message: `L'entreprise "${company.name}" contient ${activeWheels.length} roue(s) active(s) et ${company.admins.length} administrateur(s). Pour supprimer définitivement cette entreprise et toutes ses données, vous devez confirmer en tapant le nom exact de l'entreprise.`
+          }
+        });
+      }
     }
 
-    // Hard delete the company (will cascade delete related records)
+    // Force deletion - delete all related data
+    if (force === 'true') {
+      console.log(`[FORCE DELETE] Deleting company "${company.name}" and all related data...`);
+      
+      // Delete all wheels and their associated data (slots, plays, etc.)
+      for (const wheel of company.wheels) {
+        // Delete wheel slots first
+        await prisma.slot.deleteMany({
+          where: { wheelId: wheel.id }
+        });
+        
+        // Delete wheel plays
+        await prisma.play.deleteMany({
+          where: { wheelId: wheel.id }
+        });
+        
+        // Delete the wheel
+        await prisma.wheel.delete({
+          where: { id: wheel.id }
+        });
+        
+        console.log(`[FORCE DELETE] Deleted wheel: ${wheel.name}`);
+      }
+      
+      // Delete all company admins
+      await prisma.user.deleteMany({
+        where: { companyId: id }
+      });
+      
+      console.log(`[FORCE DELETE] Deleted ${company.admins.length} admin(s)`);
+    }
+
+    // Finally delete the company
     await prisma.company.delete({
       where: { id }
     });
 
-    res.json({ message: 'Company permanently deleted' });
+    const message = force === 'true' 
+      ? `Company "${company.name}" and all associated data permanently deleted`
+      : 'Company permanently deleted';
+      
+    console.log(`[DELETE] ${message}`);
+    res.json({ message });
+    
   } catch (error) {
     console.error('Delete company error:', error);
     res.status(500).json({ error: 'Failed to delete company' });

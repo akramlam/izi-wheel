@@ -191,8 +191,11 @@ export const api = {
     return apiClient.patch(`/companies/${companyId}/plan`, data);
   },
   
-  deleteCompany: async (companyId: string) => {
-    return apiClient.delete(`/companies/${companyId}`);
+  deleteCompany: async (companyId: string, force: boolean = false) => {
+    const url = force 
+      ? `/companies/${companyId}?force=true`
+      : `/companies/${companyId}`;
+    return apiClient.delete(url);
   },
   
   // Users & Sub-admins

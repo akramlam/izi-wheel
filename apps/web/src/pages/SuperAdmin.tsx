@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { Plus, Pencil, Trash2, Check, X, UserPlus } from 'lucide-react';
-import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
+import { EnhancedConfirmationDialog } from '../components/ui/enhanced-confirmation-dialog';
 
 type Company = {
   id: string;
@@ -39,10 +39,14 @@ const SuperAdmin = () => {
     isOpen: boolean;
     companyId: string | null;
     companyName: string;
+    activeWheelsCount?: number;
+    adminsCount?: number;
   }>({
     isOpen: false,
     companyId: null,
     companyName: '',
+    activeWheelsCount: 0,
+    adminsCount: 0,
   });
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -154,30 +158,53 @@ const SuperAdmin = () => {
       isOpen: true,
       companyId: companyId,
       companyName: company?.name || 'cette entreprise',
+      activeWheelsCount: company?.maxWheels || 0,
+      adminsCount: company?.adminCount || 0,
     });
   };
 
-  const confirmDeleteCompany = async () => {
+  const confirmDeleteCompany = async (force: boolean = false) => {
     if (!deleteConfirmation.companyId) return;
     
     try {
       setIsDeleting(true);
-      await api.deleteCompany(deleteConfirmation.companyId);
+      await api.deleteCompany(deleteConfirmation.companyId, force);
       
       setCompanies(prev => prev.filter(company => company.id !== deleteConfirmation.companyId));
-      setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' });
+      setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '', activeWheelsCount: 0, adminsCount: 0 });
+      
+      const successMessage = force 
+        ? `Entreprise "${deleteConfirmation.companyName}" et toutes ses données supprimées définitivement`
+        : "Entreprise supprimée avec succès";
       
       toast({
         title: 'Success',
-        description: "Entreprise supprimée avec succès"
+        description: successMessage
       });
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || "Impossible de supprimer l'entreprise";
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: errorMessage
-      });
+      console.error("Error deleting company:", error);
+      
+      // If this is a 409 error (active wheels) and we're not forcing, let the dialog handle it
+      if (error.response?.status === 409 && !force) {
+        // Update the confirmation state with detailed info from the error
+        const errorDetails = error.response?.data?.details;
+        if (errorDetails) {
+          setDeleteConfirmation(prev => ({
+            ...prev,
+            activeWheelsCount: errorDetails.activeWheelsCount,
+            adminsCount: errorDetails.adminsCount,
+          }));
+        }
+        throw error; // Re-throw for the enhanced dialog to catch
+      } else {
+        // For other errors, show a toast
+        const errorMessage = error.response?.data?.error || "Impossible de supprimer l'entreprise";
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: errorMessage
+        });
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -587,16 +614,20 @@ const SuperAdmin = () => {
       </div>
 
       {/* Delete confirmation dialog */}
-      <ConfirmationDialog
+      <EnhancedConfirmationDialog
         isOpen={deleteConfirmation.isOpen}
         onConfirm={confirmDeleteCompany}
-        onClose={() => setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '' })}
+        onClose={() => setDeleteConfirmation({ isOpen: false, companyId: null, companyName: '', activeWheelsCount: 0, adminsCount: 0 })}
         title="Supprimer l'entreprise"
         description={`Êtes-vous sûr de vouloir supprimer l'entreprise "${deleteConfirmation.companyName}" ? Toutes les données associées (roues, utilisateurs, parties) seront définitivement perdues. Cette action est irréversible.`}
         confirmText="Supprimer"
         cancelText="Annuler"
         variant="destructive"
         isLoading={isDeleting}
+        requireNameConfirmation={true}
+        itemName={deleteConfirmation.companyName}
+        activeWheelsCount={deleteConfirmation.activeWheelsCount}
+        adminsCount={deleteConfirmation.adminsCount}
       />
     </div>
   );
