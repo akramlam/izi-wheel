@@ -14,6 +14,7 @@ import { apiClient, api } from "@/services/api"
 import { useAuth } from "../hooks/useAuth"
 import UpgradePlanModal from "../components/UpgradePlanModal"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../components/ui/dropdown-menu"
+import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
 
 interface Roue {
   id: string
@@ -38,6 +39,15 @@ const Roues: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [selectedWheelForQR, setSelectedWheelForQR] = useState<string | null>(null)
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    wheelId: string | null;
+    wheelName: string;
+  }>({
+    isOpen: false,
+    wheelId: null,
+    wheelName: '',
+  });
   
   // Add companies state for super admin
   const [companies, setCompanies] = useState<Company[]>([])
@@ -354,9 +364,20 @@ const Roues: React.FC = () => {
     navigate(`/roues/edit/${id}`)
   }
 
-  const handleDeleteRoue = async (id: string) => {
+  const confirmDeleteRoue = (id: string) => {
+    const roue = roues.find(r => r.id === id);
+    setDeleteConfirmation({
+      isOpen: true,
+      wheelId: id,
+      wheelName: roue?.nom || 'cette roue',
+    });
+  };
+
+  const handleDeleteRoue = async () => {
+    if (!deleteConfirmation.wheelId) return;
+
     try {
-      setDeleting(id)
+      setDeleting(deleteConfirmation.wheelId);
       
       // Use the current company ID for API calls
       const companyIdToUse = isSuperAdmin ? selectedCompanyId : localStorage.getItem('companyId');
@@ -365,8 +386,9 @@ const Roues: React.FC = () => {
         throw new Error("No company ID available");
       }
       
-      await apiClient.delete(`/companies/${companyIdToUse}/wheels/${id}`);
-      setRoues(roues.filter(roue => roue.id !== id));
+      await apiClient.delete(`/companies/${companyIdToUse}/wheels/${deleteConfirmation.wheelId}`);
+      setRoues(roues.filter(roue => roue.id !== deleteConfirmation.wheelId));
+      setDeleteConfirmation({ isOpen: false, wheelId: null, wheelName: '' });
       
       toast({
         title: "Succès",
@@ -669,7 +691,7 @@ const Roues: React.FC = () => {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
-                                onClick={() => handleDeleteRoue(roue.id)}
+                                onClick={() => confirmDeleteRoue(roue.id)}
                                 className="text-red-600"
                                 disabled={deleting === roue.id}
                               >
@@ -752,6 +774,19 @@ const Roues: React.FC = () => {
         ))}
         <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onConfirm={handleDeleteRoue}
+        onClose={() => setDeleteConfirmation({ isOpen: false, wheelId: null, wheelName: '' })}
+        title="Supprimer la roue"
+        description={`Êtes-vous sûr de vouloir supprimer la roue "${deleteConfirmation.wheelName}" ? Toutes les données associées (cases, parties jouées) seront définitivement perdues. Cette action est irréversible.`}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="destructive"
+        isLoading={!!deleting}
+      />
     </div>
   )
 }
