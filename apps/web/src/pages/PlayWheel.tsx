@@ -1347,7 +1347,7 @@ const PlayWheel = () => {
         />
       )} */}
 
-      {showConfetti && (
+      {/* {showConfetti && (
         <TimedConfetti
           // key="confetti-active"
           isActive={true}
@@ -1364,7 +1364,7 @@ const PlayWheel = () => {
             shapes: ['star', 'circle', 'square'],
           }}  
         />
-      )}
+      )} */}
 
       {/* Social redirect dialog */}
       <SocialRedirectDialog
