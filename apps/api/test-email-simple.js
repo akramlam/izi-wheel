@@ -48,7 +48,7 @@ transporter.verify()
     console.log('📧 Sending test email...');
     return transporter.sendMail({
       from: EMAIL_FROM || 'test@izikado.fr',
-      to: 'test@example.com',
+      to: 'boulboul1507@gmail.com',
       subject: 'Test Email from IZI Wheel',
       html: '<h1>Test Email</h1><p>This is a test email from your SMTP configuration.</p>',
       text: 'Test Email - This is a test email from your SMTP configuration.'

@@ -1356,6 +1356,10 @@ const PlayWheel = () => {
             particleCount: 160,
             angle: 90,
             spread: 120,
+            origin: { x: 0.5, y: 0.3 },
+            gravity: 1,
+            decay: 0.9,
+            ticks: 200,
             colors: CONFETTI_COLORS,
             shapes: ['star', 'circle', 'square'],
           }}  
