@@ -330,7 +330,7 @@ export const getWheel = async (req: Request, res: Response) => {
 export const createWheel = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
-    const { name, mode, formSchema, isActive, socialNetwork, redirectUrl, redirectText, playLimit } = req.body;
+    const { name, mode, formSchema, isActive, socialNetwork, redirectUrl, redirectText, playLimit, bannerImage, backgroundImage, gameRules, footerText, mainTitle } = req.body;
 
     // Validate companyId
     if (!companyId) {
@@ -384,6 +384,11 @@ export const createWheel = async (req: Request, res: Response) => {
         redirectUrl,
         redirectText,
         playLimit: playLimit || PlayLimit.ONCE_PER_DAY,
+        bannerImage: bannerImage || "https://roue.izikado.fr/images/banner.png",
+        backgroundImage: backgroundImage || "https://roue.izikado.fr/images/background.png",
+        gameRules: gameRules || "https://roue.izikado.fr/images/game-rules.png",
+        footerText: footerText || "",
+        mainTitle: mainTitle || '',
       },
     });
 

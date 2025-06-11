@@ -127,10 +127,10 @@ const WheelEdit = () => {
     companyId: '',
     socialNetwork: undefined,
     redirectUrl: '',
-    redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
+    redirectText: '',
     playLimit: 'ONCE_PER_DAY',
-    gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
-    footerText: `© ${new Date().getFullYear()} IZI Wheel`,
+    gameRules: '',
+    footerText: '',
     mainTitle: '',
     bannerImage: '',
     backgroundImage: '',
@@ -194,10 +194,10 @@ const WheelEdit = () => {
         companyId: '',
         socialNetwork: undefined,
         redirectUrl: '',
-        redirectText: 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
+        redirectText: '',
         playLimit: 'ONCE_PER_DAY',
-        gameRules: 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
-        footerText: `© ${new Date().getFullYear()} IZI Wheel`,
+        gameRules: '',
+        footerText: '',
         mainTitle: '',
         bannerImage: '',
         backgroundImage: '',
@@ -287,10 +287,10 @@ const WheelEdit = () => {
             companyId: wheelFromApi.companyId || '',
             socialNetwork: wheelFromApi.socialNetwork,
             redirectUrl: wheelFromApi.redirectUrl || '',
-            redirectText: wheelFromApi.redirectText || 'Vous allez être redirigé vers une page pour mettre des avis 5 étoiles',
+            redirectText: wheelFromApi.redirectText || '',
             playLimit: wheelFromApi.playLimit || 'ONCE_PER_DAY',
-            gameRules: wheelFromApi.gameRules || 'Une seule participation par personne est autorisée. Les informations saisies doivent être exactes pour valider la participation et la remise du lot.',
-            footerText: wheelFromApi.footerText || `© ${new Date().getFullYear()} IZI Wheel`,
+            gameRules: wheelFromApi.gameRules || '',
+            footerText: wheelFromApi.footerText || '',
             mainTitle: wheelFromApi.mainTitle || '',
             slots: [],
             bannerImage: wheelFromApi.bannerImage || '',
@@ -819,7 +819,7 @@ const WheelEdit = () => {
     setIsSaving(true);
       
     const payload: any = {
-          name: wheel.name,
+      name: wheel.name,
       mode: wheel.type,
       isActive: wheel.statut === 'Actif',
       companyId: isSuperAdmin ? selectedCompanyId : user?.companyId,
@@ -830,30 +830,47 @@ const WheelEdit = () => {
         prizeCode: slot.prizeCode,
         color: slot.color,
       })),
-      playLimit: wheel.playLimit,
-      gameRules: wheel.gameRules,
-      footerText: wheel.footerText,
-      mainTitle: wheel.mainTitle,
-      bannerImage: wheel.bannerImage,
-      backgroundImage: wheel.backgroundImage,
       formSchema: {},
     };
 
+    // Only include play limit if it's different from default
+    if (wheel.playLimit && wheel.playLimit !== 'ONCE_PER_DAY') {
+      payload.playLimit = wheel.playLimit;
+    }
+
+    // Only include optional customization fields if they have values
+    if (wheel.mainTitle && wheel.mainTitle.trim() !== '') {
+      payload.mainTitle = wheel.mainTitle.trim();
+    }
+
+    if (wheel.bannerImage && wheel.bannerImage.trim() !== '') {
+      payload.bannerImage = wheel.bannerImage.trim();
+    }
+
+    if (wheel.backgroundImage && wheel.backgroundImage.trim() !== '') {
+      payload.backgroundImage = wheel.backgroundImage.trim();
+    }
+
+    if (wheel.gameRules && wheel.gameRules.trim() !== '') {
+      payload.gameRules = wheel.gameRules.trim();
+    }
+
+    if (wheel.footerText && wheel.footerText.trim() !== '') {
+      payload.footerText = wheel.footerText.trim();
+    }
+
     // Conditionally add social network fields
-          if (wheel.socialNetwork && wheel.socialNetwork.trim() !== '' && wheel.socialNetwork !== 'NONE') {
-        payload.socialNetwork = wheel.socialNetwork;
-        payload.redirectUrl = wheel.redirectUrl;
-        payload.redirectText = wheel.redirectText;
+    if (wheel.socialNetwork && wheel.socialNetwork.trim() !== '' && wheel.socialNetwork !== 'NONE') {
+      payload.socialNetwork = wheel.socialNetwork;
+      
+      if (wheel.redirectUrl && wheel.redirectUrl.trim() !== '') {
+        payload.redirectUrl = wheel.redirectUrl.trim();
       }
       
-      // Add game rules and footer text if provided
-      if (wheel.gameRules && wheel.gameRules.trim() !== '') {
-        payload.gameRules = wheel.gameRules;
+      if (wheel.redirectText && wheel.redirectText.trim() !== '') {
+        payload.redirectText = wheel.redirectText.trim();
       }
-      
-      if (wheel.footerText && wheel.footerText.trim() !== '') {
-        payload.footerText = wheel.footerText;
-      }
+    }
 
     // Log the final payload before sending
 
@@ -1465,7 +1482,7 @@ const WheelEdit = () => {
             
             <TabsContent value="social" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="socialNetwork">Réseau social</Label>
+                <Label htmlFor="socialNetwork">Réseau social (optionnel)</Label>
                 <Select
                   value={wheel.socialNetwork ?? ''}
                   onValueChange={(value) => {
@@ -1476,7 +1493,7 @@ const WheelEdit = () => {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un réseau social" />
+                    <SelectValue placeholder="Sélectionner un réseau social (optionnel)" />
                   </SelectTrigger>
                   <SelectContent>
                     {SOCIAL_NETWORKS.map((network) => (
@@ -1492,7 +1509,7 @@ const WheelEdit = () => {
             </div>
 
               <div className="space-y-2">
-                <Label htmlFor="redirectUrl">Lien de redirection</Label>
+                <Label htmlFor="redirectUrl">Lien de redirection (optionnel)</Label>
                 <Input
                   id="redirectUrl"
                   type="url"
@@ -1508,14 +1525,15 @@ const WheelEdit = () => {
         </div>
 
               <div className="space-y-2">
-                <Label htmlFor="redirectText">Texte de redirection</Label>
+                <Label htmlFor="redirectText">Texte de redirection (optionnel)</Label>
                 <Textarea
                   id="redirectText"
-                  placeholder="Vous allez être redirigé vers..."
+                  placeholder="Ex: Vous allez être redirigé vers... (optionnel)"
                   value={wheel.redirectText || ''}
                   onChange={(e) => setWheel({ ...wheel, redirectText: e.target.value })}
                   rows={3}
                 />
+                <p className="text-xs text-gray-500">Texte affiché dans la popup de redirection (optionnel).</p>
               </div>
             </TabsContent>
             
@@ -1542,6 +1560,7 @@ const WheelEdit = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-500">Définit la fréquence à laquelle un utilisateur peut jouer (par défaut: une fois par jour).</p>
         </div>
                           </TabsContent>
               
@@ -1572,14 +1591,14 @@ const WheelEdit = () => {
              */}
             <TabsContent value="custom" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="mainTitle">Titre principal</Label>
+                <Label htmlFor="mainTitle">Titre principal (optionnel)</Label>
                 <Input
                   id="mainTitle"
-                  placeholder="Titre affiché au-dessus de la roue (ex: Votre marque, Votre événement...)"
+                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI Wheel')"
                   value={wheel.mainTitle || ''}
                   onChange={(e) => setWheel({ ...wheel, mainTitle: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">Personnalisez le titre affiché en haut de la page de jeu.</p>
+                <p className="text-xs text-gray-500">Personnalisez le titre affiché en haut de la page de jeu (optionnel).</p>
               </div>
               
               {/* Banner Image */}
@@ -1587,8 +1606,8 @@ const WheelEdit = () => {
                 onImageUpload={(url) => setWheel({ ...wheel, bannerImage: url })}
                 currentImageUrl={wheel.bannerImage}
                 imageType="banner"
-                title="Image de bannière"
-                description="Image de bannière à afficher en haut de la page"
+                title="Image de bannière (optionnel)"
+                description="Image de bannière à afficher en haut de la page (optionnel)"
                 recommendedSize="1200x300px"
               />
               
@@ -1597,31 +1616,31 @@ const WheelEdit = () => {
                 onImageUpload={(url) => setWheel({ ...wheel, backgroundImage: url })}
                 currentImageUrl={wheel.backgroundImage}
                 imageType="background"
-                title="Image de fond"
-                description="Image de fond pour personnaliser l'arrière-plan de la page"
+                title="Image de fond (optionnel)"
+                description="Image de fond pour personnaliser l'arrière-plan de la page (optionnel)"
                 recommendedSize="1920x1080px"
               />
               
               <div className="space-y-2">
-                <Label htmlFor="gameRules">Règles du jeu</Label>
+                <Label htmlFor="gameRules">Règles du jeu (optionnel)</Label>
                 <Textarea
                   id="gameRules"
-                  placeholder="Règles et instructions du jeu..."
+                  placeholder="Règles et instructions personnalisées... (laissez vide pour utiliser les règles par défaut)"
                   value={wheel.gameRules || ''}
                   onChange={(e) => setWheel({ ...wheel, gameRules: e.target.value })}
                   rows={5}
                 />
-                <p className="text-xs text-gray-500">Personnalisez les règles qui seront affichées aux joueurs.</p>
+                <p className="text-xs text-gray-500">Personnalisez les règles affichées aux joueurs (optionnel - des règles par défaut seront utilisées si vide).</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="footerText">Texte du pied de page</Label>
+                <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
                 <Input
                   id="footerText"
-                  placeholder="© 2024 Votre Entreprise"
+                  placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Wheel')"
                   value={wheel.footerText || ''}
                   onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page.</p>
+                <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page (optionnel).</p>
               </div>
             </TabsContent>
           </Tabs>

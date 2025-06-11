@@ -21,8 +21,8 @@ const UpgradePlanModal = ({ isOpen, onClose, limitType, remainingPlays = 0 }: Up
   const navigate = useNavigate();
 
   const handleUpgrade = () => {
-    // Navigate to the account settings page with the billing tab active
-    navigate('/account-settings?tab=billing');
+    // Navigate to the profile page (billing tab not implemented yet)
+    navigate('/profile');
     onClose();
   };
 
@@ -31,37 +31,37 @@ const UpgradePlanModal = ({ isOpen, onClose, limitType, remainingPlays = 0 }: Up
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
-            {limitType === 'wheel' ? 'Maximum Wheels Reached' : 'Play Limit Reached'}
+            {limitType === 'wheel' ? 'Limite de roues atteinte' : 'Limite de jeux atteinte'}
           </DialogTitle>
           <DialogDescription className="text-center pt-2">
             {limitType === 'wheel' 
-              ? 'You have reached the maximum number of wheels allowed on the free plan.' 
-              : `You have used all ${50 - remainingPlays} plays included in your free plan.`}
+              ? 'Vous avez atteint le nombre maximum de roues autorisées avec le plan gratuit.' 
+              : `Vous avez utilisé les ${50 - remainingPlays} jeux inclus dans votre plan gratuit.`}
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4">
           <div className="rounded-lg bg-blue-50 p-4 mb-4">
-            <h3 className="font-medium text-blue-800 mb-2">Upgrade to a paid plan to:</h3>
+            <h3 className="font-medium text-blue-800 mb-2">Passez à un plan payant pour :</h3>
             <ul className="list-disc pl-5 text-blue-700 space-y-1">
-              <li>Create unlimited wheels</li>
-              <li>Get unlimited plays</li>
-              <li>Access premium features</li>
-              <li>Priority customer support</li>
+              <li>Créer un nombre illimité de roues</li>
+              <li>Obtenir des jeux illimités</li>
+              <li>Accéder aux fonctionnalités premium</li>
+              <li>Support client prioritaire</li>
             </ul>
           </div>
           
           <div className="text-sm text-gray-500">
-            Your free trial includes 1 wheel and 50 plays. Upgrade now to continue using IZI Wheel without interruption.
+            Votre essai gratuit inclut 1 roue et 50 jeux. Passez à un plan payant pour continuer à utiliser IZI Wheel sans interruption.
           </div>
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} className="sm:w-1/2">
-            Maybe Later
+            Plus tard
           </Button>
           <Button onClick={handleUpgrade} className="sm:w-1/2 bg-blue-600 hover:bg-blue-700">
-            Upgrade Now
+            Améliorer maintenant
           </Button>
         </DialogFooter>
       </DialogContent>

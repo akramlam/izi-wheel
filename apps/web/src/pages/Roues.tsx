@@ -522,6 +522,31 @@ const Roues: React.FC = () => {
               <Plus className="h-4 w-4" />
               <span>Nouvelle roue</span>
             </Button>
+            {/* Temporary test buttons for upgrade modal */}
+            <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setUpgradeModalType('wheel');
+                  setShowUpgradeModal(true);
+                }}
+                className="text-xs"
+              >
+                Test Wheel Limit
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setUpgradeModalType('play');
+                  setShowUpgradeModal(true);
+                }}
+                className="text-xs"
+              >
+                Test Play Limit
+              </Button>
+            </div>
           </div>
         )}
       </div>

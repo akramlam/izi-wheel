@@ -173,7 +173,7 @@ const SocialRedirectDialog = ({
     if (redirectUrl) {
       window.open(redirectUrl, '_blank');
     }
-    onClose();
+    // onClose();
   };
 
   const getTitle = () => {
@@ -427,7 +427,7 @@ const PlayWheel = () => {
 
   const [userFlowState, setUserFlowState] = useState<
     'initial' | 'completedSocial' | 'spinning' | 'won' | 'claimed'
-  >('completedSocial');
+  >('initial'); // Changed from 'completedSocial' to 'initial'
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
@@ -626,6 +626,17 @@ const PlayWheel = () => {
         }
       }
       setFormFields(fields);
+
+      // Initialize state based on social network requirement
+      if (wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
+        console.log('[DEBUG] Social network required, setting state to initial');
+        setCurrentStep('initial');
+        setUserFlowState('initial');
+      } else {
+        console.log('[DEBUG] No social network required, setting state to spinWheel');
+        setCurrentStep('spinWheel');
+        setUserFlowState('completedSocial');
+      }
     }
   }, [wheelData]);
 
@@ -1285,6 +1296,8 @@ const PlayWheel = () => {
     currentStep,
     userFlowState,
     socialNetwork: wheelData?.socialNetwork,
+    bannerImage: wheelData?.bannerImage,
+    backgroundImage: wheelData?.backgroundImage,
   });
 
   return (
@@ -1307,7 +1320,12 @@ const PlayWheel = () => {
             alt="Banner"
             className="w-full h-24 sm:h-32 md:h-40 lg:h-48 object-cover shadow-lg"
             onError={(e) => {
+              console.log('[DEBUG] Banner image failed to load:', wheelData.bannerImage);
+              // Hide the image if it fails to load
               e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {
+              console.log('[DEBUG] Banner image loaded successfully:', wheelData.bannerImage);
             }}
           />
         </div>
@@ -1715,6 +1733,33 @@ const PlayWheel = () => {
               )}
             </div>
           ))
+        ) : currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE') ? (
+          // Show wheel immediately if no social network is required
+          <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
+            <div className="relative w-full max-w-[95vw] sm:max-w-[450px] md:max-w-[500px] lg:max-w-[550px] mx-auto flex items-center justify-center">
+              <Wheel
+                config={wheelConfig}
+                isSpinning={mustSpin}
+                prizeIndex={prizeIndex}
+                onSpin={handleWheelFinishedSpin}
+                showSpinButton={false}
+              />
+            </div>
+            {!mustSpin && (
+              <div className="w-full max-w-[90vw] sm:max-w-[320px] flex flex-col items-center space-y-3">
+                <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
+                  Tentez votre chance de gagner !
+                </p>
+                <Button
+                  onClick={handleSpinClick}
+                  className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  disabled={isSpinning}
+                >
+                  Tourner la roue !
+                </Button>
+              </div>
+            )}
+          </div>
         ) : (
           // Loading or processing state
           ((() => {
