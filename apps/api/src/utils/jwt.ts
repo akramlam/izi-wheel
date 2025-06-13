@@ -1,4 +1,4 @@
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { User, Role } from '@prisma/client';
 
 // Interface for JWT payload
@@ -63,7 +63,6 @@ export const verifyToken = (token: string): JwtPayload => {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     
     console.log('[JWT] Token verified for user:', decoded.email);
-    
     // Validate payload structure
     const requiredFields = ['id', 'email', 'role'];
     for (const field of requiredFields) {
