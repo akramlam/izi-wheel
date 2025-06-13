@@ -1,4 +1,4 @@
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { User, Role } from '@prisma/client';
 
 // Interface for JWT payload
