@@ -66,9 +66,14 @@ cd ../..
 # Create super user if needed
 echo "Ensuring super user exists..."
 if [ -f "create-super-user.js" ]; then
-  node create-super-user.js
+  cd apps/api
+  node ../../create-super-user.js
+  cd ../..
 else
-  echo "Super user creation script not found, skipping..."
+  echo "Super user creation script not found, running seed script instead..."
+  cd apps/api
+  npx prisma db seed
+  cd ../..
 fi
 
 # Build API

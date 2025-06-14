@@ -1,3 +1,9 @@
+const path = require('path');
+
+// Set the correct path for Prisma client
+const apiDir = path.join(__dirname, 'apps', 'api');
+process.chdir(apiDir);
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
