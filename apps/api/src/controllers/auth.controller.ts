@@ -66,13 +66,22 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { email, isActive: true, password},
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        role: true,
+        companyId: true,
+        name: true,
+        isPaid: true,
+        forcePasswordChange: true,
+        isActive: true,
+        createdAt: true,
+        deletedAt: true,
+      }
     });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
 
     // Verify password
     const isPasswordValid = await comparePassword(password, user.password!);
