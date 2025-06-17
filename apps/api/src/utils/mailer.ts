@@ -60,11 +60,23 @@ const createSmtpTransporter = async (port = SMTP_PORT) => {
 const sendViaSmtpComApi = async (mailOptions: any) => {
   console.log(`[SMTP.COM API] Sending email to ${mailOptions.to}`);
   
-  // SMTP.com API expects specific format based on error messages
+  // SMTP.com API v4 official format from documentation
   const emailData = {
-    channel: 'contact_izitouch_fr', // Use your actual channel name from dashboard
-    originator: mailOptions.from, // Simple string format, not object
-    recipients: [mailOptions.to], // Simple string array, not objects
+    channel: 'contact_izitouch_fr', // Your actual channel name from dashboard
+    originator: {
+      from: {
+        name: process.env.EMAIL_FROM_NAME || 'IZI Wheel',
+        address: mailOptions.from
+      }
+    },
+    recipients: {
+      to: [
+        {
+          name: mailOptions.toName || '',
+          address: mailOptions.to
+        }
+      ]
+    },
     subject: mailOptions.subject,
     body: {
       parts: [

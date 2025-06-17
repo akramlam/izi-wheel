@@ -29,8 +29,20 @@ async function testSmtpComAPI() {
     
     const emailData = {
       channel: 'contact_izitouch_fr', // Your actual channel name
-      originator:'contact@izitouch.fr', // Simple string format
-      recipients: ['boulboul1507@gmail.com'], // Simple string array
+      originator: {
+        from: {
+          name: process.env.EMAIL_FROM_NAME || 'IZI Wheel Test',
+          address: emailFrom || 'contact@izitouch.fr'
+        }
+      },
+      recipients: {
+        to: [
+          {
+            name: 'Test Recipient',
+            address: 'boulboul1507@gmail.com'
+          }
+        ]
+      },
       subject: '🎯 SMTP.com API Test - IZI Wheel Integration',
       body: {
         parts: [
