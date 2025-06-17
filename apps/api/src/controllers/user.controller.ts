@@ -233,7 +233,7 @@ export const inviteUser = async (req: Request, res: Response) => {
     
     try {
       // Send invite email with temporary password
-      await sendInviteEmail(email, tempPassword, company.name, adminName, name);
+      await sendInviteEmail(email, tempPassword, company.name, adminName, name, companyId, user.id);
       console.log('Invitation email sent or logged (test mode)');
     } catch (emailError) {
       // Just log the error but don't fail the request - user is already created

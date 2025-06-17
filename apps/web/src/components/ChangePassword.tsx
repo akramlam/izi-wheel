@@ -9,6 +9,28 @@ const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Password strength indicator
+  const getPasswordStrength = (password: string) => {
+    if (password.length < 6) return { score: 0, text: 'Très faible', color: 'bg-red-500' };
+    if (password.length < 8) return { score: 1, text: 'Faible', color: 'bg-orange-500' };
+    
+    let score = 1;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    switch (score) {
+      case 2: return { score: 2, text: 'Moyen', color: 'bg-yellow-500' };
+      case 3: return { score: 3, text: 'Bon', color: 'bg-blue-500' };
+      case 4: 
+      case 5: return { score: 4, text: 'Excellent', color: 'bg-green-500' };
+      default: return { score: 1, text: 'Faible', color: 'bg-orange-500' };
+    }
+  };
+  
+  const passwordStrength = getPasswordStrength(newPassword);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
@@ -76,12 +98,21 @@ const ChangePassword = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <h1 className="mb-6 text-center text-2xl font-bold text-gray-900">
-          Changer votre mot de passe
+          {user?.forcePasswordChange ? '🔒 Sécurisez votre compte' : 'Changer votre mot de passe'}
         </h1>
         
-        <p className="mb-6 text-center text-gray-600">
-          Pour des raisons de sécurité, vous devez modifier votre mot de passe temporaire avant de continuer.
-        </p>
+        {user?.forcePasswordChange ? (
+          <div className="mb-6 rounded-lg bg-blue-50 p-4 text-center">
+            <p className="text-blue-800 font-medium mb-2">🎯 Bienvenue sur IZI Wheel !</p>
+            <p className="text-blue-700 text-sm">
+              Pour des raisons de sécurité, vous devez créer un nouveau mot de passe personnalisé avant d'accéder à la plateforme.
+            </p>
+          </div>
+        ) : (
+          <p className="mb-6 text-center text-gray-600">
+            Modifiez votre mot de passe actuel pour un nouveau mot de passe sécurisé.
+          </p>
+        )}
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -111,6 +142,27 @@ const ChangePassword = () => {
               minLength={8}
               required
             />
+            {newPassword && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                  <span>Force du mot de passe:</span>
+                  <span className={`font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                    {passwordStrength.text}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div 
+                    className={`${passwordStrength.color} h-1.5 rounded-full transition-all duration-300`}
+                    style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                  ></div>
+                </div>
+                {passwordStrength.score < 3 && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    <p>💡 Utilisez au moins 8 caractères avec majuscules, chiffres et symboles</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="mb-6">

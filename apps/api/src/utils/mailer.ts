@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
+import { logEmailAttempt, updateEmailStatus, EmailType, EmailStatus } from './email-logger';
 
 // Get SMTP configuration from environment variables
 const SMTP_HOST = process.env.SMTP_HOST || 'smtp.smtp.com';
@@ -276,48 +277,81 @@ export const sendInviteEmail = async (
   password: string,
   companyName: string,
   adminName?: string,
-  userName?: string
+  userName?: string,
+  companyId?: string,
+  userId?: string
 ): Promise<void> => {
+  let emailLogId: string | null = null;
+  
   try {
+    // Log the email attempt
+    emailLogId = await logEmailAttempt({
+      type: EmailType.INVITATION,
+      recipient: email,
+      subject: `Bienvenue sur IZI Wheel - ${companyName}`,
+      companyId,
+      userId,
+      metadata: {
+        companyName,
+        adminName,
+        userName,
+        hasPassword: !!password
+      }
+    });
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
     const invitedBy = adminName ? `par <strong>${adminName}</strong>` : '';
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
+      from: process.env.EMAIL_FROM || 'noreply@izikado.fr',
       to: email,
       subject: `Bienvenue sur IZI Wheel - ${companyName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #4f46e5;">Bienvenue sur IZI Wheel!</h1>
+            <h1 style="color: #4f46e5;">🎯 Bienvenue sur IZI Wheel!</h1>
           </div>
           
-          <p>${greeting}</p>
+          <p style="font-size: 16px;">${greeting}</p>
           
-          <p>Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Wheel.</p>
+          <p style="font-size: 16px;">Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Wheel.</p>
           
-          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0; font-weight: bold;">Voici vos identifiants de connexion:</p>
-            <ul style="padding-left: 20px;">
-              <li><strong>Email:</strong> ${email}</li>
-              <li><strong>Mot de passe temporaire:</strong> ${password}</li>
-            </ul>
+          <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
+            <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🔑 Vos identifiants de connexion :</p>
+            <div style="margin: 15px 0; padding: 15px; background-color: white; border-radius: 6px;">
+              <p style="margin: 0 0 10px 0; font-size: 16px;"><strong>Email :</strong> ${email}</p>
+              <p style="margin: 0; font-size: 16px;"><strong>Mot de passe temporaire :</strong> <span style="font-family: monospace; font-size: 18px; color: #d32f2f; font-weight: bold; background-color: #ffebee; padding: 4px 8px; border-radius: 4px;">${password}</span></p>
+            </div>
           </div>
           
-          <p><strong>Important:</strong> Pour des raisons de sécurité, vous devrez changer ce mot de passe temporaire lors de votre première connexion.</p>
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+            <p style="margin: 0; font-weight: bold; color: #e65100; font-size: 16px;">🔒 Important - Sécurité :</p>
+            <p style="margin: 10px 0 0 0; color: #e65100;">Vous devrez <strong>changer ce mot de passe temporaire</strong> lors de votre première connexion pour des raisons de sécurité.</p>
+          </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${frontendUrl}/login" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-              Se connecter maintenant
+            <a href="${frontendUrl}/login" style="background-color: #4f46e5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              🚀 Se connecter maintenant
             </a>
           </div>
           
-          <p>Si vous avez des questions, n'hésitez pas à contacter votre administrateur.</p>
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #495057;">📋 Étapes de connexion :</p>
+            <ol style="margin: 0; padding-left: 20px; color: #495057;">
+              <li style="margin-bottom: 5px;">Cliquez sur le bouton ci-dessus</li>
+              <li style="margin-bottom: 5px;">Saisissez votre email et mot de passe temporaire</li>
+              <li style="margin-bottom: 5px;">Créez votre nouveau mot de passe sécurisé</li>
+              <li>Commencez à utiliser IZI Wheel ! 🎉</li>
+            </ol>
+          </div>
           
-          <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+          <p style="font-size: 14px; color: #6b7280;">Si vous avez des questions, n'hésitez pas à contacter votre administrateur.</p>
+          
+          <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
             Cordialement,<br>
-            L'équipe IZI Wheel
+            <strong>L'équipe IZI Wheel</strong><br>
+            <small>Plateforme de roues de la fortune digitales</small>
           </p>
         </div>
       `,
@@ -325,13 +359,32 @@ export const sendInviteEmail = async (
 
     if (!isSmtpConfigured) {
       console.log(`[TEST MODE] Invitation email would be sent to ${email} with password ${password}`);
+      if (emailLogId) {
+        await updateEmailStatus(emailLogId, EmailStatus.SENT, 'test-mode');
+      }
       return;
     }
 
-    await transporter.sendMail(mailOptions);
+    const result = await transporter.sendMail(mailOptions);
     console.log(`Invitation email sent to ${email}`);
+    
+    // Update email status to SENT
+    if (emailLogId) {
+      await updateEmailStatus(emailLogId, EmailStatus.SENT, result.messageId);
+    }
   } catch (error) {
     console.error('Failed to send invitation email:', error);
+    
+    // Update email status to FAILED
+    if (emailLogId) {
+      await updateEmailStatus(
+        emailLogId, 
+        EmailStatus.FAILED, 
+        undefined, 
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+    
     // Don't throw the error, just log it - we don't want API calls to fail if email fails
   }
 };
@@ -347,12 +400,30 @@ export const sendPrizeEmail = async (
   email: string,
   prizeName: string,
   qrCode: string,
-  pin: string
+  pin: string,
+  playId?: string,
+  companyId?: string
 ): Promise<void> => {
+  let emailLogId: string | null = null;
+  
   try {
     console.log(`[EMAIL] Attempting to send prize email to: ${email}`);
     console.log(`[EMAIL] Prize: ${prizeName}, PIN: ${pin}`);
     console.log(`[EMAIL] SMTP Config - Host: ${SMTP_HOST}, Port: ${SMTP_PORT}, User: ${SMTP_USER}`);
+    
+    // Log the email attempt
+    emailLogId = await logEmailAttempt({
+      type: EmailType.PRIZE_NOTIFICATION,
+      recipient: email,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Wheel`,
+      companyId,
+      playId,
+      metadata: {
+        prizeName,
+        pin,
+        hasQrCode: !!qrCode
+      }
+    });
     
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
@@ -366,12 +437,12 @@ export const sendPrizeEmail = async (
           
           <p>Vous avez gagné <strong>${prizeName}</strong> sur IZI Wheel !</p>
           
-          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0; font-weight: bold;">Pour récupérer votre prix, vous avez deux options :</p>
-            <ul style="padding-left: 20px;">
-              <li><strong>Code PIN :</strong> ${pin}</li>
-              ${qrCode ? `<li><strong>Code QR :</strong> Scannez le code ci-dessous</li>` : ''}
-            </ul>
+          <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
+            <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🎁 Vos codes de récupération :</p>
+            <div style="margin: 15px 0; padding: 10px; background-color: white; border-radius: 6px;">
+              <p style="margin: 0; font-size: 18px;"><strong>Code PIN :</strong> <span style="font-family: monospace; font-size: 20px; color: #d32f2f; font-weight: bold;">${pin}</span></p>
+            </div>
+            ${qrCode ? `<p style="margin: 10px 0 0 0; font-size: 14px; color: #01579b;"><strong>Ou scannez le QR code ci-dessous</strong></p>` : ''}
           </div>
           
           ${qrCode ? `
@@ -380,12 +451,14 @@ export const sendPrizeEmail = async (
           </div>
           ` : ''}
           
-          <p><strong>Comment récupérer votre prix :</strong></p>
-          <ol>
-            <li>Présentez-vous au point de vente</li>
-            <li>Montrez ce code PIN : <strong>${pin}</strong> ${qrCode ? 'ou scannez le code QR' : ''}</li>
-            <li>Profitez de votre prix !</li>
-          </ol>
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #495057;">📍 Comment récupérer votre prix :</p>
+            <ol style="margin: 0; padding-left: 20px; color: #495057;">
+              <li style="margin-bottom: 5px;">Présentez-vous au point de vente</li>
+              <li style="margin-bottom: 5px;">Montrez votre <strong>code PIN : ${pin}</strong> ${qrCode ? 'ou scannez le QR code' : ''}</li>
+              <li>Profitez de votre prix ! 🎉</li>
+            </ol>
+          </div>
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
             Merci d'avoir participé !<br>
@@ -401,6 +474,10 @@ export const sendPrizeEmail = async (
       console.log(`[EMAIL] SMTP not configured - would send email to ${email}`);
       console.log(`[EMAIL] Subject: ${mailOptions.subject}`);
       console.log(`[EMAIL] Missing config - Host: ${SMTP_HOST}, User: ${SMTP_USER}, Pass: ${SMTP_PASS ? '[SET]' : '[MISSING]'}`);
+      
+      if (emailLogId) {
+        await updateEmailStatus(emailLogId, EmailStatus.SENT, 'test-mode');
+      }
       return;
     }
 
@@ -408,6 +485,11 @@ export const sendPrizeEmail = async (
     const result = await transporter.sendMail(mailOptions);
     console.log(`[EMAIL] ✅ Prize notification email sent successfully to ${email}`);
     console.log(`[EMAIL] Message ID: ${result.messageId}`);
+    
+    // Update email status to SENT
+    if (emailLogId) {
+      await updateEmailStatus(emailLogId, EmailStatus.SENT, result.messageId);
+    }
   } catch (error) {
     console.error(`[EMAIL] ❌ Failed to send prize email to ${email}:`, error);
     console.error(`[EMAIL] Error details:`, {
@@ -416,6 +498,17 @@ export const sendPrizeEmail = async (
       command: (error as any)?.command,
       response: (error as any)?.response
     });
+    
+    // Update email status to FAILED
+    if (emailLogId) {
+      await updateEmailStatus(
+        emailLogId, 
+        EmailStatus.FAILED, 
+        undefined, 
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+    
     // Don't throw the error, just log it
   }
 };

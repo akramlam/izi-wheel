@@ -1464,25 +1464,14 @@ const PlayWheel = () => {
           <div className="py-4 sm:py-6 text-center space-y-3 sm:space-y-4">
             {spinResult?.play.result === 'WIN' ? (
               <>
-                <p className="text-base sm:text-lg text-gray-700">
+                <p className="text-base sm:text-lg text-gray-700 mb-4">
                   Vous avez gagné : <strong>{spinResult.slot.label}</strong>
                 </p>
-                {spinResult.play.prize && (
-                  <div className="bg-green-50 p-3 sm:p-4 rounded-lg space-y-2">
-                    <p className="font-semibold text-sm sm:text-base text-green-800">
-                      Votre code PIN : {spinResult.play.prize.pin}
-                    </p>
-                    {spinResult.play.prize.qrLink && (
-                      <div className="flex justify-center">
-                        <img
-                          src={spinResult.play.prize.qrLink}
-                          alt="QR Code"
-                          className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 border rounded-lg"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                  <p className="text-sm sm:text-base text-blue-800 font-medium">
+                    🎉 Félicitations ! Cliquez sur "Récupérer mon prix" pour recevoir vos codes de récupération par email.
+                  </p>
+                </div>
               </>
             ) : (
               <p className="text-base sm:text-lg text-gray-700">

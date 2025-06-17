@@ -728,7 +728,9 @@ export const claimPrize = async (req: Request, res: Response) => {
         email,
         play.slot.label || 'Your Prize',
         play.qrLink || '',
-        play.pin || ''
+        play.pin || '',
+        playId,
+        play.companyId
       );
       console.log(`Prize notification email sent to ${email} for play ${playId}`);
     } catch (emailError) {

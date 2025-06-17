@@ -89,9 +89,9 @@ async function testSmtpComAPI() {
       const result = await response.json();
       console.log('✅ SMTP.com API Test Successful!');
       console.log('📬 Email Details:');
-      console.log(`   Message ID: ${result.data?.message_id || 'N/A'}`);
+      console.log(`   Message ID: ${result.data?.message_id || result.message_id || 'N/A'}`);
       console.log(`   Status: ${result.status || 'success'}`);
-      console.log(`   To: ${emailData.to[0].email}`);
+      console.log(`   To: ${emailData.recipients.to[0].address}`);
       console.log(`   Subject: ${emailData.subject}`);
       console.log('');
       console.log('🎉 Your SMTP.com API integration is working perfectly!');

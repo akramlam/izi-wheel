@@ -11,32 +11,34 @@ datasource db {
 }
 
 model Company {
-  id            String    @id @default(uuid())
-  name          String    @unique
-  plan          Plan      @default(BASIC)
-  maxWheels     Int       @default(5)
-  remainingPlays Int      @default(50)
+  id            String     @id @default(uuid())
+  name          String     @unique
+  plan          Plan       @default(BASIC)
+  maxWheels     Int        @default(5)
+  remainingPlays Int       @default(50)
   wheels        Wheel[]
   admins        User[]
-  plays         Play[] // Track plays by company
-  isActive      Boolean   @default(true)
+  plays         Play[]     // Track plays by company
+  emailLogs     EmailLog[] // Track emails sent by this company
+  isActive      Boolean    @default(true)
   deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime   @default(now())
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  name                String    @default("")
-  email               String    @unique
+  id                  String     @id @default(uuid())
+  name                String     @default("")
+  email               String     @unique
   password            String
   role                Role
   companyId           String?
-  company             Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  isActive            Boolean   @default(true)
+  company             Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  isActive            Boolean    @default(true)
   deletedAt           DateTime?
-  createdAt           DateTime  @default(now())
-  isPaid              Boolean   @default(false)
-  forcePasswordChange Boolean   @default(false)
+  createdAt           DateTime   @default(now())
+  isPaid              Boolean    @default(false)
+  forcePasswordChange Boolean    @default(false)
+  emailLogs           EmailLog[] // Track emails sent to this user
 }
 
 model Wheel {
@@ -101,6 +103,29 @@ model Play {
   claimedAt        DateTime?
   ip               String?
   createdAt        DateTime         @default(now())
+  emailLogs        EmailLog[] // Track emails sent for this play
+}
+
+model EmailLog {
+  id          String       @id @default(uuid())
+  type        EmailType
+  recipient   String       // Email address
+  subject     String
+  status      EmailStatus  @default(PENDING)
+  messageId   String?      // Message ID from email provider
+  errorMessage String?     // Error message if failed
+  sentAt      DateTime?    // When email was successfully sent
+  // Relations
+  companyId   String?
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  playId      String?      // For prize emails
+  play        Play?        @relation(fields: [playId], references: [id], onDelete: SetNull)
+  userId      String?      // For invitation emails
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Metadata
+  metadata    Json?        // Additional data (template used, variables, etc.)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 enum Role {
@@ -151,4 +176,21 @@ enum PlayLimit {
   UNLIMITED
   ONCE_PER_DAY
   ONCE_PER_MONTH
+}
+
+// Email tracking enums
+enum EmailType {
+  INVITATION      // Admin/sub-admin invitation emails
+  PRIZE_NOTIFICATION // Prize claim emails
+  PASSWORD_RESET  // Password reset emails
+  WELCOME        // Welcome emails
+  NOTIFICATION   // General notifications
+}
+
+enum EmailStatus {
+  PENDING        // Email queued for sending
+  SENT          // Successfully sent
+  FAILED        // Failed to send
+  BOUNCED       // Email bounced
+  DELIVERED     // Confirmed delivery
 }

@@ -389,35 +389,14 @@ const PlayWheelV2 = () => {
                   </span>
                 </p>
                 
-                {/* Enhanced PIN code display */}
+                {/* Simplified win message - no PIN/QR display */}
                 <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-5 shadow-inner">
-                  <p className="mb-2 font-semibold">Votre code PIN:</p>
-                  <p className="text-3xl font-extrabold tracking-widest text-indigo-600 animate-pulse">
-                    {spinResult.play.prize?.pin || generateRandomPin()}
+                  <p className="text-lg font-semibold text-indigo-700 mb-2">
+                    🎉 Félicitations !
                   </p>
-                  <p className="mt-2 text-base text-gray-500">
-                    Conservez ce code PIN pour récupérer votre lot
+                  <p className="text-base text-gray-600">
+                    Cliquez sur "Récupérer mon prix" pour recevoir vos codes de récupération par email.
                   </p>
-                </div>
-                
-                {/* Enhanced QR code display */}
-                <div className="mx-auto max-w-xs">
-                  <p className="mb-2 font-semibold">Scannez le QR code pour récupérer votre lot:</p> 
-                  <div className="p-2 bg-white rounded-2xl shadow-lg border-2 border-indigo-100 inline-block">
-                    <img
-                      src={spinResult.play.prize?.qrLink ||
-                          `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${window.location.origin}/redeem/${spinResult.play.id}`}
-                      alt="QR Code"
-                      className="h-44 w-44 rounded-xl"
-                      onError={(e) => {
-                        // Fallback if QR code fails to load
-                        console.log('QR code image failed to load, using fallback');
-                        // Create a QR code with the current URL as the base, and the play ID
-                        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/redeem/' + spinResult.play.id)}`;
-                        e.currentTarget.src = fallbackUrl;
-                      }}
-                    />
-                  </div>
                 </div>
               </div>
             ) : (
