@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Get SMTP configuration from environment variables
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp.smtp.com';
+const SMTP_HOST = process.env.SMTP_HOST || 'send.smtp.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '2525');
 const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
 const SMTP_USER = process.env.SMTP_USER || '';
@@ -15,7 +15,7 @@ const FALLBACK_PORTS = [2525, 587, 465, 25];
 // SMTP.com API configuration
 const SMTP_COM_API_KEY = process.env.SMTP_COM_API_KEY || '';
 const SMTP_COM_API_URL = 'https://api.smtp.com/v4';
-const USE_SMTP_COM_API = process.env.USE_SMTP_COM_API === 'true' && SMTP_COM_API_KEY;
+const USE_SMTP_COM_API = false; // Temporarily disabled until we get correct API format
 
 // Check if SMTP configuration is valid
 const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
@@ -61,23 +61,15 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
   console.log(`[SMTP.COM API] Sending email to ${mailOptions.to}`);
   
   const emailData = {
-    from: {
-      email: mailOptions.from,
-      name: process.env.EMAIL_FROM_NAME || 'IZI Wheel'
-    },
-    to: [
-      {
-        email: mailOptions.to,
-        name: mailOptions.toName || ''
-      }
-    ],
+    from: mailOptions.from,
+    to: mailOptions.to,
     subject: mailOptions.subject,
-    html: mailOptions.html,
-    text: mailOptions.text || ''
+    htmlbody: mailOptions.html,
+    textbody: mailOptions.text || ''
   };
 
   try {
-    const response = await fetch(`${SMTP_COM_API_URL}/messages`, {
+    const response = await fetch(`${SMTP_COM_API_URL}/send`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${SMTP_COM_API_KEY}`,
