@@ -32,16 +32,7 @@ fi
 # Install dependencies
 pnpm install
 
-# Fix JWT deployment issues
-echo "Fixing JWT deployment issues..."
-if [ -f "fix-jwt-deployment.js" ]; then
-  node fix-jwt-deployment.js
-else
-  echo "JWT fix script not found, proceeding with manual fixes..."
-  cd apps/api
-  pnpm add jsonwebtoken @types/jsonwebtoken
-  cd ../..
-fi
+
 
 # Build common packages
 cd packages/common-types
@@ -52,29 +43,11 @@ cd ../..
 cd apps/api
 npx prisma generate
 
-# Run direct-fix.js to fix database schema issues
-if [ -f "direct-fix.js" ]; then
-  echo "Running direct-fix.js to fix database schema issues..."
-  node direct-fix.js
-  echo "Database schema fix completed."
-fi
 
 # Continue with migrations
 npx prisma migrate deploy
 cd ../..
 
-# Create super user if needed
-echo "Ensuring super user exists..."
-if [ -f "create-super-user.js" ]; then
-  cd apps/api
-  node ../../create-super-user.js
-  cd ../..
-else
-  echo "Super user creation script not found, running seed script instead..."
-  cd apps/api
-  npx prisma db seed
-  cd ../..
-fi
 
 # Build API
 cd apps/api
