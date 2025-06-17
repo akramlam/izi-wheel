@@ -60,20 +60,24 @@ const createSmtpTransporter = async (port = SMTP_PORT) => {
 const sendViaSmtpComApi = async (mailOptions: any) => {
   console.log(`[SMTP.COM API] Sending email to ${mailOptions.to}`);
   
+  // SMTP.com API expects different field names than standard
   const emailData = {
-    from: {
+    channel: 'transactional',
+    originator: {
       email: mailOptions.from,
       name: process.env.EMAIL_FROM_NAME || 'IZI Wheel'
     },
-    to: [
+    recipients: [
       {
         email: mailOptions.to,
         name: mailOptions.toName || ''
       }
     ],
     subject: mailOptions.subject,
-    html: mailOptions.html,
-    text: mailOptions.text || ''
+    body: {
+      html: mailOptions.html,
+      text: mailOptions.text || ''
+    }
   };
 
   try {
