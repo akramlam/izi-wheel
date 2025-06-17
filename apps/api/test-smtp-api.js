@@ -28,35 +28,36 @@ async function testSmtpComAPI() {
     console.log('🔗 Testing SMTP.com API connection...');
     
     const emailData = {
-      channel: 'transactional',
-      originator: {
-        email: emailFrom || 'contact@izitouch.fr',
-        name: process.env.EMAIL_FROM_NAME || 'IZI Wheel Test'
-      },
-      recipients: [
-        {
-          email: emailFrom || 'contact@izitouch.fr', // Send to yourself for testing
-          name: 'Test Recipient'
-        }
-      ],
+      channel: 'contact_izitouch_fr', // Your actual channel name
+      originator:'contact@izitouch.fr', // Simple string format
+      recipients: ['boulboul1507@gmail.com'], // Simple string array
       subject: '🎯 SMTP.com API Test - IZI Wheel Integration',
       body: {
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #4f46e5;">✅ SMTP.com API Test Successful!</h2>
-            <p>This is a test email from your IZI Wheel application using SMTP.com API.</p>
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <h3>Configuration Details:</h3>
-              <ul>
-                <li><strong>API Endpoint:</strong> https://api.smtp.com/v4/messages</li>
-                <li><strong>Authentication:</strong> Bearer Token</li>
-                <li><strong>Time:</strong> ${new Date().toISOString()}</li>
-              </ul>
-            </div>
-            <p>Your SMTP.com integration is working correctly!</p>
-          </div>
-        `,
-        text: 'SMTP.com API Test - Your integration is working correctly!'
+        parts: [
+          {
+            type: 'text/html',
+            content: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #4f46e5;">✅ SMTP.com API Test Successful!</h2>
+                <p>This is a test email from your IZI Wheel application using SMTP.com API.</p>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <h3>Configuration Details:</h3>
+                  <ul>
+                    <li><strong>API Endpoint:</strong> https://api.smtp.com/v4/messages</li>
+                    <li><strong>Authentication:</strong> Bearer Token</li>
+                    <li><strong>Channel:</strong> contact_izitouch_fr</li>
+                    <li><strong>Time:</strong> ${new Date().toISOString()}</li>
+                  </ul>
+                </div>
+                <p>Your SMTP.com integration is working correctly!</p>
+              </div>
+            `
+          },
+          {
+            type: 'text/plain',
+            content: 'SMTP.com API Test - Your integration is working correctly!'
+          }
+        ]
       }
     };
 
