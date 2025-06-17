@@ -74,10 +74,15 @@ export const verifyToken = (token: string): JwtPayload => {
     
     return decoded;
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      console.error('[JWT] Token verification failed:', error.message);
-    } else if (error instanceof jwt.TokenExpiredError) {
-      console.error('[JWT] Token has expired');
+    // Properly handle different error types
+    if (error && typeof error === 'object' && 'name' in error) {
+      if (error.name === 'JsonWebTokenError') {
+        console.error('[JWT] Token verification failed:', (error as any).message);
+      } else if (error.name === 'TokenExpiredError') {
+        console.error('[JWT] Token has expired');
+      } else {
+        console.error('[JWT] Token verification error:', error);
+      }
     } else {
       console.error('[JWT] Token verification error:', error);
     }
