@@ -13,6 +13,7 @@ import playRoutes from './routes/play.routes';
 import userRoutes from './routes/user.routes';
 import wheelRoutes from './routes/wheel.routes';
 import publicRoutes from './routes/public.routes';
+import emailTrackingRoutes from './routes/email-tracking.routes';
 
 // Load environment variables
 dotenv.config();
@@ -120,6 +121,7 @@ app.use('/users', userRoutes);
 app.use('/plays', playRoutes);
 app.use('/public', publicRoutes);
 app.use('/wheels', wheelRoutes);
+app.use('/emails', emailTrackingRoutes);
 
 // Add direct access to wheels without requiring public/ prefix
 app.use('/public/wheels', publicRoutes);

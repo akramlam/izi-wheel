@@ -17,6 +17,7 @@ import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
 import Register from './pages/Register';
 import Statistiques from './pages/Statistiques';
+import EmailTracking from './pages/EmailTracking';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -136,6 +137,7 @@ function App() {
         <Route path="roues/:id" element={<WheelEdit />} />
         
         <Route path="statistiques" element={<Statistiques />} />
+        <Route path="emails" element={<EmailTracking />} />
         <Route path="profile" element={<Profile />} />
         <Route path="account-settings" element={<AccountSettings />} />
         

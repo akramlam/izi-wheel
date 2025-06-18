@@ -3,7 +3,7 @@
 import type React from "react"
 import { NavLink } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
-import { LayoutDashboard, Target, BarChart3, Building2, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Target, BarChart3, Building2, Users, LogOut, Mail } from "lucide-react"
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth()
@@ -26,6 +26,12 @@ const Sidebar: React.FC = () => {
       href: "/statistiques",
       icon: BarChart3,
       allowed: ["SUPER", "ADMIN", "SUB"],
+    },
+    {
+      name: "E-mails",
+      href: "/emails",
+      icon: Mail,
+      allowed: ["SUPER", "ADMIN"],
     },
     {
       name: "Entreprises",
