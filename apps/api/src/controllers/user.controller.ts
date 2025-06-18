@@ -411,4 +411,87 @@ export const deleteUser = async (req: Request, res: Response) => {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
+};
+
+/**
+ * @openapi
+ * /companies/{companyId}/users/{userId}/reset-password:
+ *   put:
+ *     summary: Reset a user's password
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: companyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: User not found
+ */
+export const resetUserPassword = async (req: Request, res: Response) => {
+  try {
+    const { companyId, uid } = req.params;
+    const { password } = req.body;
+    
+    if (!password || password.length < 8) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 8 characters long' 
+      });
+    }
+    
+    // Check if user exists and belongs to the company
+    const user = await prisma.user.findFirst({
+      where: {
+        id: uid,
+        companyId
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found in this company' });
+    }
+    
+    // Don't allow resetting SUPER user passwords
+    if (user.role === Role.SUPER) {
+      return res.status(403).json({ error: 'Super user passwords cannot be reset' });
+    }
+    
+    // Hash the new password
+    const hashedPassword = await hashPassword(password);
+    
+    // Update the user's password and set forcePasswordChange to true
+    await prisma.user.update({
+      where: { id: uid },
+      data: {
+        password: hashedPassword,
+        forcePasswordChange: true
+      }
+    });
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset user password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
 }; 

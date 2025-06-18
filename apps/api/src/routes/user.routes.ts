@@ -5,7 +5,8 @@ import {
   getCompanyUsers, 
   inviteUser, 
   updateUser, 
-  deleteUser 
+  deleteUser,
+  resetUserPassword
 } from '../controllers/user.controller';
 
 const router: Router = Router({ mergeParams: true });
@@ -21,6 +22,9 @@ router.post('/', roleGuard([Role.ADMIN, Role.SUPER]), inviteUser);
 
 // Update a user's role or active status (ADMIN or SUPER)
 router.put('/:uid', roleGuard([Role.ADMIN, Role.SUPER]), updateUser);
+
+// Reset a user's password (ADMIN or SUPER)
+router.put('/:uid/reset-password', roleGuard([Role.ADMIN, Role.SUPER]), resetUserPassword);
 
 // Delete a user (ADMIN or SUPER)
 router.delete('/:uid', roleGuard([Role.ADMIN, Role.SUPER]), deleteUser);
