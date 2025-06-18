@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import { 
   getEmailStatistics, 
   getEmailLogs, 
   getEmailDashboard 
 } from '../controllers/email-tracking.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // All email tracking routes require authentication
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 /**
  * GET /api/emails/stats

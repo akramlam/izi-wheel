@@ -565,4 +565,9 @@ export const api = {
     const response = await apiClient.post(`/wheels/${wheelId}/fix`);
     return response;
   },
+
+  // Email tracking
+  getEmailDashboard: async () => {
+    return apiClient.get('/email-tracking/dashboard');
+  },
 }; 

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/Badge';
+import  Badge  from '../components/ui/Badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { 
   Mail, 
   Send, 
   AlertCircle, 
-  CheckCircle, 
+  CheckCircle,
   Clock, 
   BarChart3,
   Filter,
@@ -62,7 +62,7 @@ const EmailTracking: React.FC = () => {
   const fetchEmailData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/emails/dashboard');
+      const response = await api.getEmailDashboard();
       
       if (response.data.success) {
         setStats(response.data.data.statistics);
@@ -107,7 +107,7 @@ const EmailTracking: React.FC = () => {
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
+      <Badge variant={config.variant as any} className="flex items-center gap-1">
         <Icon className={`h-3 w-3 ${config.color}`} />
         {status}
       </Badge>

@@ -515,9 +515,9 @@ export const spinWheel = async (req: Request, res: Response) => {
         companyId: actualCompanyId,
         result: isWin ? 'WIN' : 'LOSE',
         slotLabel: slot.label,
-        pin: pin,
+        pin: pin || undefined,
         ipAddress: ip,
-        userAgent: req.get('User-Agent'),
+        userAgent: req.get('User-Agent') || undefined,
         leadInfo: lead
       });
     } catch (logError) {

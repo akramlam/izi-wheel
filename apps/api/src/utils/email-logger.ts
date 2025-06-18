@@ -138,10 +138,10 @@ export const getEmailStats = async (companyId?: string) => {
 /**
  * Get recent email logs for admin interface
  */
-export const getRecentEmailLogs = async (companyId?: string, limit: number = 50) => {
+export const getRecentEmailLogs = async (companyId?: string, limit: number = 50): Promise<any[]> => {
   try {
     // Mock data for now - in production this would query the database
-    const logs = [];
+    const logs: any[] = [];
 
     console.log(`[EMAIL_LOG] 📋 Recent email logs requested for company: ${companyId || 'all'}, limit: ${limit}`);
     

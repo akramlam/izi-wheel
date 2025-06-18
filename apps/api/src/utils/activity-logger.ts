@@ -341,10 +341,10 @@ export const getActivityStats = async (companyId?: string, timeframe?: 'day' | '
 /**
  * Get recent activities
  */
-export const getRecentActivities = async (companyId?: string, limit: number = 50) => {
+export const getRecentActivities = async (companyId?: string, limit: number = 50): Promise<any[]> => {
   try {
     // Mock data for now - in production this would query the database
-    const activities = [];
+    const activities: any[] = [];
 
     console.log(`[ACTIVITY_LOG] 📋 Recent activities requested for company: ${companyId || 'all'}, limit: ${limit}`);
     
@@ -358,10 +358,10 @@ export const getRecentActivities = async (companyId?: string, limit: number = 50
 /**
  * Get user activity history
  */
-export const getUserActivityHistory = async (userId: string, limit: number = 100) => {
+export const getUserActivityHistory = async (userId: string, limit: number = 100): Promise<any[]> => {
   try {
     // Mock data for now - in production this would query the database
-    const activities = [];
+    const activities: any[] = [];
 
     console.log(`[ACTIVITY_LOG] 👤 User activity history requested for user: ${userId}, limit: ${limit}`);
     

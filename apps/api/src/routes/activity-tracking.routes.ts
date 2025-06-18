@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middlewares/auth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import { 
   getActivityStatistics,
   getPlayHistory,
@@ -8,10 +8,10 @@ import {
   exportPlayData
 } from '../controllers/activity-tracking.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // All activity tracking routes require authentication
-router.use(authenticateToken);
+router.use(authMiddleware);
 
 /**
  * GET /api/activity/stats
