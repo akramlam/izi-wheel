@@ -570,4 +570,17 @@ export const api = {
   getEmailDashboard: async () => {
     return apiClient.get('/email-tracking/dashboard');
   },
+
+  // Activity tracking
+  getActivityDashboard: async () => {
+    return apiClient.get('/activity-tracking/dashboard');
+  },
+
+  getActivityPlays: async (params: string) => {
+    return apiClient.get(`/activity-tracking/plays?${params}`);
+  },
+
+  getActivityExport: async (params: string, options?: any) => {
+    return apiClient.get(`/activity-tracking/export?${params}`, options);
+  },
 }; 

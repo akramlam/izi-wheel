@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/Badge';
+import  Badge  from '../components/ui/Badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { 
@@ -100,7 +100,7 @@ const ActivityTracking: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/activity/dashboard');
+      const response = await api.getActivityDashboard();
       if (response.data.success) {
         setDashboardData(response.data.data);
       }
@@ -121,7 +121,7 @@ const ActivityTracking: React.FC = () => {
       if (resultFilter !== 'ALL') params.append('result', resultFilter);
       if (statusFilter !== 'ALL') params.append('status', statusFilter);
 
-      const response = await api.get(`/activity/plays?${params.toString()}`);
+      const response = await api.getActivityPlays(params.toString());
       if (response.data.success) {
         const newPlays = response.data.data.plays;
         setPlays(append ? [...plays, ...newPlays] : newPlays);
@@ -144,7 +144,7 @@ const ActivityTracking: React.FC = () => {
       if (exportStartDate) params.append('startDate', exportStartDate);
       if (exportEndDate) params.append('endDate', exportEndDate);
 
-      const response = await api.get(`/activity/export?${params.toString()}`, {
+      const response = await api.getActivityExport(params.toString(), {
         responseType: exportFormat === 'csv' ? 'blob' : 'json'
       });
 
@@ -445,7 +445,7 @@ const ActivityTracking: React.FC = () => {
               <Activity className="w-5 h-5 mr-2" />
               Historique des Parties
             </span>
-            <Badge variant="outline">{statistics?.total || 0} parties</Badge>
+            <Badge variant="default" className="bg-blue-500 text-white">{statistics?.total || 0} parties</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
