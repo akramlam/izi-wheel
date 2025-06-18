@@ -1470,7 +1470,7 @@ const WheelEdit = () => {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Paramètres de redirection</CardTitle>
+          <CardTitle>Paramètres de la Roue {wheel.name}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs defaultValue="social" className="w-full">
