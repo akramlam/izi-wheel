@@ -4,6 +4,7 @@ import { generateQRCode } from '../utils/qrcode';
 import { generatePIN } from '../utils/pin';
 import { ensureWheelHasSlots } from '../utils/db-init';
 import { sendPrizeEmail } from '../utils/mailer';
+import { logPlayActivity } from '../utils/activity-logger';
 
 /**
  * Get public wheel data
@@ -505,6 +506,24 @@ export const spinWheel = async (req: Request, res: Response) => {
         ip: ip
       }
     });
+
+    // Log the play activity for traceability
+    try {
+      await logPlayActivity({
+        playId: play.id,
+        wheelId: wheelId,
+        companyId: actualCompanyId,
+        result: isWin ? 'WIN' : 'LOSE',
+        slotLabel: slot.label,
+        pin: pin,
+        ipAddress: ip,
+        userAgent: req.get('User-Agent'),
+        leadInfo: lead
+      });
+    } catch (logError) {
+      console.error('Failed to log play activity:', logError);
+      // Don't fail the request if logging fails
+    }
 
     // If this is a winning play, update the QR code with the actual playId
     if (isWin && qrLink) {
