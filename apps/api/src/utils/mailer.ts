@@ -299,7 +299,7 @@ export const sendInviteEmail = async (
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://dashboard.izikado.fr';
     const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
     const invitedBy = adminName ? `par <strong>${adminName}</strong>` : '';
     
