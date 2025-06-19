@@ -983,24 +983,26 @@ const WheelEdit = () => {
               }));
               
               // Use normalized slots for creation
-              for (const slot of normalizedSlots) {
+              for (const [index, slot] of normalizedSlots.entries()) {
                 await api.createSlot(id!, {
                   label: slot.label,
                   weight: slot.weight,
                   prizeCode: slot.prizeCode,
                   color: slot.color,
+                  position: index, // CRITICAL: Set position to maintain order
                   isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
                 });
 
               }
             } else {
               // Weights already total 100%, create slots as is
-              for (const slot of wheel.slots) {
+              for (const [index, slot] of wheel.slots.entries()) {
                 await api.createSlot(id!, {
                   label: slot.label,
                   weight: slot.weight,
                   prizeCode: slot.prizeCode,
                   color: slot.color,
+                  position: index, // CRITICAL: Set position to maintain order
                   isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
                 });
 
