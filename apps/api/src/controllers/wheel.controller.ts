@@ -580,9 +580,13 @@ export const updateWheel = async (req: Request, res: Response) => {
     const validatedData = validationResult.data;
     console.log('Updating wheel with validated data:', JSON.stringify(validatedData, null, 2));
     console.log('Wheel mode:', validatedData.mode);
+    console.log('Banner image:', validatedData.bannerImage);
+    console.log('Background image:', validatedData.backgroundImage);
     
     // Remove probability field if it exists (not in schema)
     const { probability, ...wheelDataForDb } = validatedData;
+    
+    console.log('Data to be saved to DB:', JSON.stringify(wheelDataForDb, null, 2));
 
     // Check if wheel exists and belongs to the company
     const existingWheel = await prisma.wheel.findFirst({
@@ -624,12 +628,65 @@ export const updateWheel = async (req: Request, res: Response) => {
     }
 
     // Update the wheel
-    const wheel = await prisma.wheel.update({
-      where: { id: wheelId },
-      data: wheelDataForDb,
-    });
+    try {
+      console.log('About to update wheel in database with ID:', wheelId);
+      console.log('Update data keys:', Object.keys(wheelDataForDb));
+      
+      // Ensure image fields are properly formatted
+      if (wheelDataForDb.bannerImage === '') {
+        wheelDataForDb.bannerImage = undefined;
+      }
+      if (wheelDataForDb.backgroundImage === '') {
+        wheelDataForDb.backgroundImage = undefined;
+      }
+      
+      console.log('Final data for DB update:', JSON.stringify(wheelDataForDb, null, 2));
+      
+      const wheel = await prisma.wheel.update({
+        where: { id: wheelId },
+        data: wheelDataForDb,
+      });
 
-    res.status(200).json({ wheel });
+      console.log('Wheel updated successfully. Final wheel data:', JSON.stringify(wheel, null, 2));
+      console.log('Saved banner image:', wheel.bannerImage);
+      console.log('Saved background image:', wheel.backgroundImage);
+
+      res.status(200).json({ wheel });
+    } catch (dbError: any) {
+      console.error('Database update error:', dbError);
+      console.error('Error details:', {
+        message: dbError?.message,
+        code: dbError?.code,
+        meta: dbError?.meta
+      });
+      
+      // Try a simpler update with just the image fields
+      if (wheelDataForDb.bannerImage || wheelDataForDb.backgroundImage) {
+        try {
+          console.log('Attempting simplified image-only update...');
+          const imageUpdate = await prisma.wheel.update({
+            where: { id: wheelId },
+            data: {
+              bannerImage: wheelDataForDb.bannerImage,
+              backgroundImage: wheelDataForDb.backgroundImage,
+            },
+          });
+          console.log('Image-only update successful:', imageUpdate.bannerImage, imageUpdate.backgroundImage);
+          
+          // Now try the full update again
+          const fullWheel = await prisma.wheel.update({
+            where: { id: wheelId },
+            data: wheelDataForDb,
+          });
+          
+          return res.status(200).json({ wheel: fullWheel });
+        } catch (retryError) {
+          console.error('Retry update also failed:', retryError);
+        }
+      }
+      
+      throw dbError;
+    }
   } catch (error) {
     console.error('Error updating wheel:', error);
     
