@@ -450,18 +450,32 @@ export const spinWheel = async (req: Request, res: Response) => {
       }))
     });
 
+    // CRITICAL: Apply stable sorting to match frontend behavior
+    // This ensures backend and frontend use identical slot ordering
+    const stableSortedSlots = applyStableSorting(wheel.slots);
+    
+    console.log(`🎯 After stable sorting:`, {
+      stableSortedSlots: stableSortedSlots.map((s, index) => ({
+        stableIndex: index,
+        position: s.position,
+        id: s.id,
+        label: s.label,
+        isWinning: s.isWinning
+      }))
+    });
+
     // --- NEW LOGIC FOR ALL_WIN MODE ---
     let slot: { id: string; weight: number; isWinning: boolean; label: string; position?: number | null };
     if (wheel.mode === 'ALL_WIN') {
-      // Filter winning slots (maintaining position order)
-      let winningSlots = wheel.slots.filter(s => s.isWinning);
+      // Filter winning slots from stable sorted slots
+      let winningSlots = stableSortedSlots.filter(s => s.isWinning);
       if (winningSlots.length === 0) {
         // Auto-fix: set all slots to winning
         await prisma.slot.updateMany({
           where: { wheelId: wheel.id, isActive: true },
           data: { isWinning: true }
         });
-        // Reload slots WITH POSITION ORDER
+        // Reload slots WITH POSITION ORDER and apply stable sorting
         const updatedWheel = await prisma.wheel.findUnique({
           where: { id: wheel.id, isActive: true },
           include: { 
@@ -474,7 +488,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
           return res.status(400).json({ error: 'No slots available for ALL_WIN wheel after auto-fix' });
         }
-        winningSlots = updatedWheel.slots;
+        winningSlots = applyStableSorting(updatedWheel.slots);
         wheel = updatedWheel; // Update the wheel reference
       }
       // Select a random winning slot
@@ -484,17 +498,17 @@ export const spinWheel = async (req: Request, res: Response) => {
         selectedSlotId: slot.id,
         selectedSlotLabel: slot.label,
         selectedSlotPosition: slot.position,
-        positionInWheelArray: wheel.slots.findIndex(s => s.id === slot.id)
+        positionInStableSortedArray: stableSortedSlots.findIndex(s => s.id === slot.id)
       });
     } else {
-      // Select a slot based on weights (position-ordered slots)
-      slot = selectSlotByWeight(wheel.slots);
+      // Select a slot based on weights using stable sorted slots
+      slot = selectSlotByWeight(stableSortedSlots);
       
       console.log(`🎯 Weight-based selection - Selected slot:`, {
         selectedSlotId: slot.id,
         selectedSlotLabel: slot.label,
         selectedSlotPosition: slot.position,
-        positionInWheelArray: wheel.slots.findIndex(s => s.id === slot.id)
+        positionInStableSortedArray: stableSortedSlots.findIndex(s => s.id === slot.id)
       });
     }
     // --- END NEW LOGIC ---
@@ -585,7 +599,7 @@ export const spinWheel = async (req: Request, res: Response) => {
       selectedSlotId: slot.id,
       selectedSlotLabel: slot.label,
       selectedSlotPosition: slot.position,
-      frontendShouldShowIndex: wheel.slots.findIndex(s => s.id === slot.id)
+      frontendShouldShowIndex: stableSortedSlots.findIndex(s => s.id === slot.id)
     });
 
     // Return the result
@@ -1035,4 +1049,22 @@ export const debugWheelData = async (req: Request, res: Response) => {
 };
 
 // Export sendPrizeEmail for testing
-export { sendPrizeEmail }; 
+export { sendPrizeEmail };
+
+/**
+ * Apply stable sorting to slots - matches frontend logic exactly
+ * When positions are equal, uses slot ID as tiebreaker for consistent ordering
+ */
+function applyStableSorting(slots: any[]) {
+  return [...slots].sort((a, b) => {
+    const posA = a.position !== undefined ? a.position : 999;
+    const posB = b.position !== undefined ? b.position : 999;
+    
+    // If positions are equal, use slot ID as stable tiebreaker
+    if (posA === posB) {
+      return a.id.localeCompare(b.id);
+    }
+    
+    return posA - posB;
+  });
+} 
