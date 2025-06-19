@@ -1314,11 +1314,17 @@ const PlayWheel = () => {
     >
       {/* Banner Image */}
       {wheelData?.bannerImage && (
-        <div className="w-full">
+        <div className="w-full relative z-10">
           <img
             src={wheelData.bannerImage}
             alt="Banner"
             className="w-full h-24 sm:h-32 md:h-40 lg:h-48 object-cover shadow-lg"
+            style={{
+              transform: 'none',
+              willChange: 'auto',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+            }}
             onError={(e) => {
               console.log('[DEBUG] Banner image failed to load:', wheelData.bannerImage);
               // Hide the image if it fails to load
