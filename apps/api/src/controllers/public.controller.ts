@@ -989,7 +989,10 @@ export const debugWheelData = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in debug endpoint:', error);
-    return res.status(500).json({ error: 'Internal server error', details: error.message });
+    return res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
