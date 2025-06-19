@@ -850,6 +850,14 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
   try {
     const { wheelId } = req.params;
 
+    console.log(`getCompanyWheel called with params:`, {
+      wheelId,
+      path: req.path,
+      originalUrl: req.originalUrl,
+      hostname: req.hostname,
+      ip: req.ip
+    });
+
     // Validate wheel ID - this is always required
     if (!wheelId) {
       return res.status(400).json({
@@ -857,7 +865,7 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`Looking for wheel ${wheelId} using company route`);
+    console.log(`Looking for wheel ${wheelId} via company route`);
 
     // Find the wheel without requiring a specific company
     const wheel = await prisma.wheel.findUnique({
@@ -879,13 +887,27 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Wheel not found' });
     }
 
+    // Debug: Log the raw wheel data from database
+    console.log(`Raw wheel data from database:`, {
+      id: wheel.id,
+      name: wheel.name,
+      bannerImage: wheel.bannerImage,
+      backgroundImage: wheel.backgroundImage,
+      gameRules: wheel.gameRules,
+      footerText: wheel.footerText,
+      mainTitle: wheel.mainTitle,
+      hasCompany: !!wheel.company,
+      companyActive: wheel.company?.isActive,
+      slotsCount: wheel.slots?.length || 0
+    });
+
     // Verify the wheel's company is active
     if (!wheel.company || !wheel.company.isActive) {
       return res.status(403).json({ error: 'Company is not active' });
     }
 
-    // Return only necessary data for public view
-    return res.status(200).json({
+    // Prepare the response data
+    const responseData = {
       wheel: {
         id: wheel.id,
         name: wheel.name,
@@ -908,7 +930,22 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
           position: slot.position
         }))
       }
+    };
+
+    // Debug: Log what we're about to return
+    console.log(`Response data being sent:`, {
+      wheelId: responseData.wheel.id,
+      name: responseData.wheel.name,
+      bannerImage: responseData.wheel.bannerImage,
+      backgroundImage: responseData.wheel.backgroundImage,
+      gameRules: responseData.wheel.gameRules,
+      footerText: responseData.wheel.footerText,
+      mainTitle: responseData.wheel.mainTitle,
+      responseKeys: Object.keys(responseData.wheel)
     });
+
+    // Return only necessary data for public view
+    return res.status(200).json(responseData);
   } catch (error) {
     console.error('Error fetching company wheel:', error);
     return res.status(500).json({ error: 'Internal server error' });
