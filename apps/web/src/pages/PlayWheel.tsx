@@ -573,11 +573,19 @@ const PlayWheel = () => {
           },
         });
       } else {
-        // Ensure slots have position values
+        // Ensure slots have position values with STABLE sorting
         const sortedSlots = [...wheelData.slots].sort(
-          (a, b) =>
-            (a.position !== undefined ? a.position : 999) -
-            (b.position !== undefined ? b.position : 999)
+          (a: WheelData['slots'][0], b: WheelData['slots'][0]) => {
+            const posA = a.position !== undefined ? a.position : 999;
+            const posB = b.position !== undefined ? b.position : 999;
+            
+            // If positions are equal, use slot ID as stable tiebreaker
+            if (posA === posB) {
+              return a.id.localeCompare(b.id);
+            }
+            
+            return posA - posB;
+          }
         );
 
         // Check if any slot is marked as winning

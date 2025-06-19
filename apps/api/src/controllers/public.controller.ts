@@ -91,7 +91,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           company: true,
           slots: {
             where: { isActive: true },
-            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
+            orderBy: { position: 'asc' }
           }
         }
       });
@@ -350,7 +350,7 @@ export const spinWheel = async (req: Request, res: Response) => {
           company: true,
           slots: {
             where: { isActive: true },
-            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
+            orderBy: { position: 'asc' }
           }
         }
       });
@@ -378,7 +378,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         include: {
           slots: {
             where: { isActive: true },
-            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
+            orderBy: { position: 'asc' }
           }
         }
       });
@@ -467,7 +467,7 @@ export const spinWheel = async (req: Request, res: Response) => {
           include: { 
             slots: { 
               where: { isActive: true },
-              orderBy: { position: 'asc' } // Maintain position order
+              orderBy: { position: 'asc' }
             } 
           }
         });
@@ -915,7 +915,7 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
         company: true,
         slots: {
           where: { isActive: true },
-          orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
+          orderBy: { position: 'asc' }
         }
       }
     });
