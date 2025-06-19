@@ -6,6 +6,7 @@ import {
   redeemPrize,
   claimPrize,
   debugPlayId,
+  debugWheelData,
   sendPrizeEmail
 } from '../controllers/public.controller';
 
@@ -81,5 +82,6 @@ router.post('/test-email', async (req: Request, res: Response) => {
 
 // Diagnostic endpoints
 router.get('/debug/plays/:playId', debugPlayId);
+router.get('/debug/wheels/:wheelId', debugWheelData);
 
 export default router; 

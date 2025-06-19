@@ -952,5 +952,46 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Debug endpoint to check raw wheel data
+ */
+export const debugWheelData = async (req: Request, res: Response) => {
+  try {
+    const { wheelId } = req.params;
+
+    if (!wheelId) {
+      return res.status(400).json({ error: 'Wheel ID is required' });
+    }
+
+    console.log(`Debug: Fetching raw data for wheel ${wheelId}`);
+
+    // Get raw wheel data
+    const wheel = await prisma.wheel.findUnique({
+      where: { id: wheelId }
+    });
+
+    if (!wheel) {
+      return res.status(404).json({ error: 'Wheel not found' });
+    }
+
+    // Return absolutely everything
+    return res.status(200).json({
+      debug: true,
+      rawWheel: wheel,
+      imageFields: {
+        bannerImage: wheel.bannerImage,
+        backgroundImage: wheel.backgroundImage,
+        bannerImageType: typeof wheel.bannerImage,
+        backgroundImageType: typeof wheel.backgroundImage,
+        bannerImageLength: wheel.bannerImage?.length || 0,
+        backgroundImageLength: wheel.backgroundImage?.length || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error in debug endpoint:', error);
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+};
+
 // Export sendPrizeEmail for testing
 export { sendPrizeEmail }; 

@@ -88,6 +88,8 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
           gameRules: updatedWheel.gameRules,
           footerText: updatedWheel.footerText,
           mainTitle: updatedWheel.mainTitle,
+          bannerImage: updatedWheel.bannerImage,
+          backgroundImage: updatedWheel.backgroundImage,
           slots: updatedWheel.slots.map(slot => ({
             id: slot.id,
             label: slot.label,
@@ -113,6 +115,8 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
         gameRules: wheel.gameRules,
         footerText: wheel.footerText,
         mainTitle: wheel.mainTitle,
+        bannerImage: wheel.bannerImage,
+        backgroundImage: wheel.backgroundImage,
         slots: wheel.slots.map(slot => ({
           id: slot.id,
           label: slot.label,
