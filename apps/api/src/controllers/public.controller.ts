@@ -91,7 +91,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           company: true,
           slots: {
             where: { isActive: true },
-            orderBy: { position: 'asc' }
+            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
           }
         }
       });
@@ -349,7 +349,8 @@ export const spinWheel = async (req: Request, res: Response) => {
         include: {
           company: true,
           slots: {
-            where: { isActive: true }
+            where: { isActive: true },
+            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
           }
         }
       });
@@ -367,7 +368,7 @@ export const spinWheel = async (req: Request, res: Response) => {
       }
     } else {
       // Standard flow with company ID validation
-      // Find the wheel with its slots (include mode)
+      // Find the wheel with its slots (include mode) - ORDER BY POSITION
       wheel = await prisma.wheel.findUnique({
         where: {
           id: wheelId,
@@ -376,7 +377,8 @@ export const spinWheel = async (req: Request, res: Response) => {
         },
         include: {
           slots: {
-            where: { isActive: true }
+            where: { isActive: true },
+            orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
           }
         }
       });
@@ -437,11 +439,21 @@ export const spinWheel = async (req: Request, res: Response) => {
 
     // Log the slots for debugging
     console.log(`Found ${wheel.slots.length} active slots for wheel ${wheelId}`);
+    console.log(`🎯 Prize selection debug - Wheel ${wheelId}:`, {
+      totalSlots: wheel.slots.length,
+      slotsInPositionOrder: wheel.slots.map((s, index) => ({
+        dbIndex: index,
+        position: s.position,
+        id: s.id,
+        label: s.label,
+        isWinning: s.isWinning
+      }))
+    });
 
     // --- NEW LOGIC FOR ALL_WIN MODE ---
     let slot;
     if (wheel.mode === 'ALL_WIN') {
-      // Filter winning slots
+      // Filter winning slots (maintaining position order)
       let winningSlots = wheel.slots.filter(s => s.isWinning);
       if (winningSlots.length === 0) {
         // Auto-fix: set all slots to winning
@@ -449,21 +461,41 @@ export const spinWheel = async (req: Request, res: Response) => {
           where: { wheelId: wheel.id, isActive: true },
           data: { isWinning: true }
         });
-        // Reload slots
+        // Reload slots WITH POSITION ORDER
         const updatedWheel = await prisma.wheel.findUnique({
-          where: { id: wheelId, isActive: true },
-          include: { slots: { where: { isActive: true } } }
+          where: { id: wheel.id, isActive: true },
+          include: { 
+            slots: { 
+              where: { isActive: true },
+              orderBy: { position: 'asc' } // Maintain position order
+            } 
+          }
         });
         if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
           return res.status(400).json({ error: 'No slots available for ALL_WIN wheel after auto-fix' });
         }
         winningSlots = updatedWheel.slots;
+        wheel = updatedWheel; // Update the wheel reference
       }
       // Select a random winning slot
       slot = winningSlots[Math.floor(Math.random() * winningSlots.length)];
+      
+      console.log(`🎯 ALL_WIN mode - Selected slot:`, {
+        selectedSlotId: slot.id,
+        selectedSlotLabel: slot.label,
+        selectedSlotPosition: slot.position,
+        positionInWheelArray: wheel.slots.findIndex(s => s.id === slot.id)
+      });
     } else {
-      // Select a slot based on weights (original logic)
+      // Select a slot based on weights (position-ordered slots)
       slot = selectSlotByWeight(wheel.slots);
+      
+      console.log(`🎯 Weight-based selection - Selected slot:`, {
+        selectedSlotId: slot.id,
+        selectedSlotLabel: slot.label,
+        selectedSlotPosition: slot.position,
+        positionInWheelArray: wheel.slots.findIndex(s => s.id === slot.id)
+      });
     }
     // --- END NEW LOGIC ---
     
@@ -546,6 +578,15 @@ export const spinWheel = async (req: Request, res: Response) => {
         // Keep the temporary QR code; it will be unusable but at least something displays
       }
     }
+
+    console.log(`🎯 Final spin result:`, {
+      playId: play.id,
+      result: play.result,
+      selectedSlotId: slot.id,
+      selectedSlotLabel: slot.label,
+      selectedSlotPosition: slot.position,
+      frontendShouldShowIndex: wheel.slots.findIndex(s => s.id === slot.id)
+    });
 
     // Return the result
     return res.status(200).json({
@@ -867,17 +908,14 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
 
     console.log(`Looking for wheel ${wheelId} via company route`);
 
-    // Find the wheel without requiring a specific company
+    // Special handling for company routes where companyId might be "company"
     const wheel = await prisma.wheel.findUnique({
-      where: {
-        id: wheelId,
-        isActive: true
-      },
+      where: { id: wheelId, isActive: true },
       include: {
         company: true,
         slots: {
           where: { isActive: true },
-          orderBy: { position: 'asc' }
+          orderBy: { position: 'asc' } // CRITICAL: Order by position to match frontend
         }
       }
     });
