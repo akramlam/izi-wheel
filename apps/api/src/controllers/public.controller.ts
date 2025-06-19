@@ -451,7 +451,7 @@ export const spinWheel = async (req: Request, res: Response) => {
     });
 
     // --- NEW LOGIC FOR ALL_WIN MODE ---
-    let slot;
+    let slot: { id: string; weight: number; isWinning: boolean; label: string; position?: number | null };
     if (wheel.mode === 'ALL_WIN') {
       // Filter winning slots (maintaining position order)
       let winningSlots = wheel.slots.filter(s => s.isWinning);
@@ -811,9 +811,9 @@ export const claimPrize = async (req: Request, res: Response) => {
 };
 
 /**
- * Helper function to select a slot based on weights
+ * Select a slot based on weight distribution
  */
-function selectSlotByWeight(slots: { id: string; weight: number; isWinning: boolean; label: string }[]) {
+function selectSlotByWeight(slots: { id: string; weight: number; isWinning: boolean; label: string; position?: number }[]) {
   // Calculate total weight
   const totalWeight = slots.reduce((sum, slot) => sum + slot.weight, 0);
   
