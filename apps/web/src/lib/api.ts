@@ -568,19 +568,19 @@ export const api = {
 
   // Email tracking
   getEmailDashboard: async () => {
-    return apiClient.get('/email-tracking/dashboard');
+    return apiClient.get('/emails/dashboard');
   },
 
   // Activity tracking
   getActivityDashboard: async () => {
-    return apiClient.get('/activity-tracking/dashboard');
+    return apiClient.get('/activity/dashboard');
   },
 
   getActivityPlays: async (params: string) => {
-    return apiClient.get(`/activity-tracking/plays?${params}`);
+    return apiClient.get(`/activity/plays?${params}`);
   },
 
   getActivityExport: async (params: string, options?: any) => {
-    return apiClient.get(`/activity-tracking/export?${params}`, options);
+    return apiClient.get(`/activity/export?${params}`, options);
   },
 }; 
