@@ -26,39 +26,181 @@ ChartJS.register(
   Legend
 );
 
+interface DashboardData {
+  overview: {
+    totalPlays: number;
+    totalWins: number;
+    totalClaimed: number;
+    totalRedeemed: number;
+    todayPlays: number;
+    winRate: number;
+    claimRate: number;
+    redeemRate: number;
+  };
+  topWheels: Array<{
+    id: string;
+    name: string;
+    totalPlays: number;
+    wins: number;
+    winRate: number;
+  }>;
+}
+
+interface Company {
+  id: string;
+  name: string;
+  isActive: boolean;
+  totalPlays?: number;
+  totalWins?: number;
+  winRate?: number;
+}
+
+interface CompanyStatistics {
+  totalWheels: number;
+  activeWheels: number;
+  totalPlays: number;
+  totalPrizes: number;
+  playsByDay: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companyStats, setCompanyStats] = useState<CompanyStatistics | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'all'>('30');
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const companyId = user?.companyId;
-        if (!companyId) return;
-        const { data } = await api.getCompanyStatistics(companyId, { range: `${dateRange}d` });
-        setStats(data);
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStats();
+    fetchDashboardData();
   }, [user, dateRange]);
 
-  // Monthly scan data for the bar chart
-  const scanChartData = {
-    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
-        datasets: [
-          {
-        data: [5000, 25000, 12000, 30000, 2000, 20000, 7000, 25000, 12000, 30000, 3000, 15000],
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+
+      // Fetch activity dashboard data
+      const activityResponse = await api.getActivityDashboard();
+      if (activityResponse.data.success) {
+        setDashboardData(activityResponse.data.data);
+      }
+
+      // Fetch companies list for the table
+      if (user?.role === 'SUPER') {
+        const companiesResponse = await api.getAllCompanies();
+        if (companiesResponse.data.companies) {
+          // Fetch statistics for each company to get play counts
+          const companiesWithStats = await Promise.all(
+            companiesResponse.data.companies.map(async (company: any) => {
+              try {
+                const statsResponse = await api.getCompanyStatistics(company.id, { range: `${dateRange}d` });
+                return {
+                  ...company,
+                  totalPlays: statsResponse.data?.totalPlays || 0,
+                  totalWins: statsResponse.data?.totalPrizes || 0,
+                  winRate: statsResponse.data?.totalPlays > 0 
+                    ? Math.round((statsResponse.data?.totalPrizes / statsResponse.data?.totalPlays) * 100)
+                    : 0
+                };
+              } catch (error) {
+                console.error(`Error fetching stats for company ${company.id}:`, error);
+                return {
+                  ...company,
+                  totalPlays: 0,
+                  totalWins: 0,
+                  winRate: 0
+                };
+              }
+            })
+          );
+          setCompanies(companiesWithStats);
+        }
+      } else if (user?.companyId) {
+        // For regular admins, fetch their company statistics
+        const statsResponse = await api.getCompanyStatistics(user.companyId, { range: `${dateRange}d` });
+        if (statsResponse.data) {
+          setCompanyStats(statsResponse.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter companies based on search term
+  const filteredCompanies = companies.filter(company =>
+    company.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Generate chart data from real statistics
+  const generateScanChartData = () => {
+    if (companyStats?.playsByDay) {
+      const labels = companyStats.playsByDay.map(day => {
+        const date = new Date(day.date);
+        return date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });
+      });
+      const data = companyStats.playsByDay.map(day => day.count);
+      
+      return {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: '#9333EA',
+          borderRadius: 4,
+        }]
+      };
+    }
+    
+    // Fallback to current month data if no specific data
+    return {
+      labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'],
+      datasets: [{
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         backgroundColor: '#9333EA',
         borderRadius: 4,
-      }
-    ],
+      }]
+    };
   };
+
+  // Generate wheel distribution chart from real data
+  const generateWheelChartData = () => {
+    if (dashboardData?.topWheels && dashboardData.topWheels.length > 0) {
+      const topWheels = dashboardData.topWheels.slice(0, 3);
+      const labels = topWheels.map(wheel => wheel.name);
+      const data = topWheels.map(wheel => wheel.winRate);
+      const colors = ['#4ade80', '#60a5fa', '#111827'];
+      
+      return {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderWidth: 0,
+          cutout: '70%',
+        }]
+      };
+    }
+    
+    // Fallback data
+    return {
+      labels: ['Aucune roue', 'Données', 'Disponibles'],
+      datasets: [{
+        data: [33.3, 33.3, 33.3],
+        backgroundColor: ['#4ade80', '#60a5fa', '#111827'],
+        borderWidth: 0,
+        cutout: '70%',
+      }]
+    };
+  };
+
+  const scanChartData = generateScanChartData();
+  const routesChartData = generateWheelChartData();
 
   const scanChartOptions = {
     responsive: true,
@@ -91,19 +233,6 @@ const Dashboard = () => {
         },
       },
     },
-  };
-
-  // Donut chart data for the routes
-  const routesChartData = {
-    labels: ['Voyages', '100% gagnant', 'iPhone'],
-    datasets: [
-      {
-        data: [67.6, 26.4, 6],
-        backgroundColor: ['#4ade80', '#60a5fa', '#111827'],
-        borderWidth: 0,
-        cutout: '70%',
-      },
-    ],
   };
 
   const routesChartOptions = {
@@ -177,10 +306,13 @@ const Dashboard = () => {
         {/* Scans Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm text-gray-500">Scans</span>
-            <span className="text-2xl sm:text-3xl font-bold">2 987</span>
+            <span className="text-xs sm:text-sm text-gray-500">Parties</span>
+            <span className="text-2xl sm:text-3xl font-bold">
+              {dashboardData?.overview.totalPlays || companyStats?.totalPlays || 0}
+            </span>
             <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />+11.02%
+              <ArrowUpRight className="mr-1 h-3 w-3" />
+              Aujourd'hui: {dashboardData?.overview.todayPlays || 0}
             </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
@@ -193,10 +325,13 @@ const Dashboard = () => {
         {/* Prospects Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm text-gray-500">Prospects</span>
-            <span className="text-2xl sm:text-3xl font-bold">1 943</span>
-            <span className="mt-1 flex items-center text-xs font-medium text-red-600">
-              <ArrowDownRight className="mr-1 h-3 w-3" />-0.03%
+            <span className="text-xs sm:text-sm text-gray-500">Prix Gagnés</span>
+            <span className="text-2xl sm:text-3xl font-bold">
+              {dashboardData?.overview.totalWins || companyStats?.totalPrizes || 0}
+            </span>
+            <span className="mt-1 flex items-center text-xs font-medium text-green-600">
+              <ArrowUpRight className="mr-1 h-3 w-3" />
+              Taux: {dashboardData?.overview.winRate || 0}%
             </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
@@ -212,10 +347,13 @@ const Dashboard = () => {
         {/* Clients Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm text-gray-500">Clients</span>
-            <span className="text-2xl sm:text-3xl font-bold">1 265</span>
+            <span className="text-xs sm:text-sm text-gray-500">Prix Réclamés</span>
+            <span className="text-2xl sm:text-3xl font-bold">
+              {dashboardData?.overview.totalClaimed || 0}
+            </span>
             <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />+15.03%
+              <ArrowUpRight className="mr-1 h-3 w-3" />
+              Taux: {dashboardData?.overview.claimRate || 0}%
             </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
@@ -231,10 +369,13 @@ const Dashboard = () => {
         {/* Productivity Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm text-gray-500">Productivité</span>
-            <span className="text-2xl sm:text-3xl font-bold">65.1%</span>
+            <span className="text-xs sm:text-sm text-gray-500">Prix Échangés</span>
+            <span className="text-2xl sm:text-3xl font-bold">
+              {dashboardData?.overview.totalRedeemed || 0}
+            </span>
             <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />+4.08%
+              <ArrowUpRight className="mr-1 h-3 w-3" />
+              Taux: {dashboardData?.overview.redeemRate || 0}%
             </span>
         </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
@@ -250,101 +391,127 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         {/* Roues section */}
         <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
-          <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-medium">Roues</h2>
+          <h2 className="mb-3 sm:mb-4 text-base sm:text-lg font-medium">Roues Performantes</h2>
           <div className="flex items-center justify-center pb-3 sm:pb-4">
             <div className="relative h-40 w-40 sm:h-48 sm:w-48 lg:h-52 lg:w-52">
               <Doughnut data={routesChartData} options={routesChartOptions} />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#4ade80]"></div>
-                <span className="ml-2 text-xs sm:text-sm">Voyages</span>
-              </div>
-              <span className="font-medium text-xs sm:text-sm">67.6%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#60a5fa]"></div>
-                <span className="ml-2 text-xs sm:text-sm">100% gagnant</span>
-              </div>
-              <span className="font-medium text-xs sm:text-sm">26.4%</span>
-        </div>
-                  <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-[#111827]"></div>
-                <span className="ml-2 text-xs sm:text-sm">iPhone</span>
-              </div>
-              <span className="font-medium text-xs sm:text-sm">6%</span>
-            </div>
+            {dashboardData?.topWheels && dashboardData.topWheels.length > 0 ? (
+              dashboardData.topWheels.slice(0, 3).map((wheel, index) => {
+                const colors = ['#4ade80', '#60a5fa', '#111827'];
+                return (
+                  <div key={wheel.id} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div 
+                        className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full" 
+                        style={{ backgroundColor: colors[index] }}
+                      ></div>
+                      <span className="ml-2 text-xs sm:text-sm">{wheel.name}</span>
                     </div>
+                    <span className="font-medium text-xs sm:text-sm">{wheel.winRate}%</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center text-gray-500 text-sm">
+                Aucune donnée de roue disponible
+              </div>
+            )}
+          </div>
         </Card>
 
         {/* Entreprises section */}
         <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
           <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-medium">Entreprises</h2>
-            <div className="relative w-full sm:w-auto">
-              <input
-                type="text"
-                placeholder="Rechercher"
-                className="w-full sm:w-auto rounded-md border border-gray-300 pl-8 pr-3 py-1.5 sm:py-1 text-xs sm:text-sm"
-              />
-              <SearchIcon className="absolute left-2 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-gray-500" />
-                    </div>
-                  </div>
+            <h2 className="text-base sm:text-lg font-medium">
+              {user?.role === 'SUPER' ? 'Entreprises' : 'Statistiques'}
+            </h2>
+            {user?.role === 'SUPER' && (
+              <div className="relative w-full sm:w-auto">
+                <input
+                  type="text"
+                  placeholder="Rechercher"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full sm:w-auto rounded-md border border-gray-300 pl-8 pr-3 py-1.5 sm:py-1 text-xs sm:text-sm"
+                />
+                <SearchIcon className="absolute left-2 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-gray-500" />
+              </div>
+            )}
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="text-left text-xs sm:text-sm text-gray-500">
-                <tr>
-                  <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Nom</th>
-                  <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden sm:table-cell">Scans</th>
-                  <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden md:table-cell">Cadeaux</th>
-                  <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Productivité</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 text-xs sm:text-sm">
-                <tr>
-                  <td className="py-1.5 sm:py-2 font-medium">GOOGLE</td>
-                  <td className="py-1.5 sm:py-2 hidden sm:table-cell">3 200</td>
-                  <td className="py-1.5 sm:py-2 hidden md:table-cell">2 678</td>
-                  <td className="py-1.5 sm:py-2 text-green-600 font-medium">83.7%</td>
-                </tr>
-                <tr>
-                  <td className="py-1.5 sm:py-2 font-medium">MICROSOFT</td>
-                  <td className="py-1.5 sm:py-2 hidden sm:table-cell">10 567</td>
-                  <td className="py-1.5 sm:py-2 hidden md:table-cell">9 600</td>
-                  <td className="py-1.5 sm:py-2 text-green-600 font-medium">96%</td>
-                </tr>
-                <tr>
-                  <td className="py-1.5 sm:py-2 font-medium">TIKTOK</td>
-                  <td className="py-1.5 sm:py-2 hidden sm:table-cell">6 743</td>
-                  <td className="py-1.5 sm:py-2 hidden md:table-cell">1 287</td>
-                  <td className="py-1.5 sm:py-2 text-red-500 font-medium">19.1%</td>
-                </tr>
-                <tr>
-                  <td className="py-1.5 sm:py-2 font-medium">INSTAGRAM</td>
-                  <td className="py-1.5 sm:py-2 hidden sm:table-cell">5 000</td>
-                  <td className="py-1.5 sm:py-2 hidden md:table-cell">2 490</td>
-                  <td className="py-1.5 sm:py-2 text-orange-500 font-medium">49.8%</td>
-                </tr>
-                <tr>
-                  <td className="py-1.5 sm:py-2 font-medium">META</td>
-                  <td className="py-1.5 sm:py-2 hidden sm:table-cell">103</td>
-                  <td className="py-1.5 sm:py-2 hidden md:table-cell">24</td>
-                  <td className="py-1.5 sm:py-2 text-red-500 font-medium">23.3%</td>
-                </tr>
-              </tbody>
-            </table>
+            {user?.role === 'SUPER' ? (
+              <table className="w-full">
+                <thead className="text-left text-xs sm:text-sm text-gray-500">
+                  <tr>
+                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Nom</th>
+                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden sm:table-cell">Parties</th>
+                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden md:table-cell">Prix</th>
+                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Taux Gain</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 text-xs sm:text-sm">
+                  {filteredCompanies.length > 0 ? (
+                    filteredCompanies.slice(0, 5).map((company) => (
+                      <tr key={company.id}>
+                        <td className="py-1.5 sm:py-2 font-medium">{company.name}</td>
+                        <td className="py-1.5 sm:py-2 hidden sm:table-cell">{company.totalPlays || 0}</td>
+                        <td className="py-1.5 sm:py-2 hidden md:table-cell">{company.totalWins || 0}</td>
+                        <td className={`py-1.5 sm:py-2 font-medium ${
+                          (company.winRate || 0) > 50 ? 'text-green-600' : 
+                          (company.winRate || 0) > 25 ? 'text-orange-500' : 'text-red-500'
+                        }`}>
+                          {company.winRate || 0}%
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-gray-500">
+                        Aucune entreprise trouvée
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              // For regular admins, show their company stats
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Roues actives</span>
+                  <span className="font-semibold">{companyStats?.activeWheels || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total parties</span>
+                  <span className="font-semibold">{companyStats?.totalPlays || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Prix distribués</span>
+                  <span className="font-semibold">{companyStats?.totalPrizes || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Taux de gain</span>
+                  <span className={`font-semibold ${
+                    companyStats?.totalPlays && companyStats.totalPrizes ? 
+                    Math.round((companyStats.totalPrizes / companyStats.totalPlays) * 100) > 50 ? 'text-green-600' : 'text-orange-500'
+                    : 'text-gray-500'
+                  }`}>
+                    {companyStats?.totalPlays && companyStats.totalPrizes ? 
+                      Math.round((companyStats.totalPrizes / companyStats.totalPlays) * 100) : 0}%
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </Card>
                 </div>
 
-      {/* Monthly scan chart section - Mobile responsive */}
+      {/* Monthly activity chart section - Mobile responsive */}
       <div className="mt-4 sm:mt-6">
         <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
-          <h2 className="mb-2 text-base sm:text-lg font-medium">Nombre de scan</h2>
+          <h2 className="mb-2 text-base sm:text-lg font-medium">Activité des Parties</h2>
           <div className="h-60 sm:h-72">
             <Bar data={scanChartData} options={scanChartOptions} />
           </div>
