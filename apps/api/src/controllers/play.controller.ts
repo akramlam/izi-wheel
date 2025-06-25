@@ -255,7 +255,7 @@ export const spinWheel = async (req: Request, res: Response) => {
       } catch (qrError) {
         console.error('Failed to generate QR code:', qrError);
         // Continue without QR code - the PIN will still work
-        qrLink = null;
+        qrLink = undefined;
       }
     }
     
