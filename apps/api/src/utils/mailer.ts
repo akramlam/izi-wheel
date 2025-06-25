@@ -331,7 +331,7 @@ export const sendInviteEmail = async (
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${frontendUrl}/login" style="background-color: #4f46e5; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <a href="${frontendUrl}/admin-login" style="background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
               🚀 Se connecter maintenant
             </a>
           </div>

@@ -64,15 +64,15 @@ const Login: React.FC = () => {
         </div>
         <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
           <Link
-            to="/register"
+            to="/admin-login"
             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
           >
-            S'inscrire
+            Admin
           </Link>
           <span
             className="rounded-lg bg-black text-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm hover:bg-gray-900 transition-colors duration-150 border border-black"
           >
-            Se connecter
+            Super Admin
           </span>
         </div>
       </div>
@@ -135,9 +135,9 @@ const Login: React.FC = () => {
 
             <div className="text-center">
               <span className="text-xs text-gray-500">
-                Pas encore membre ? {" "}
-                <Link to="/register" className="text-purple-500 hover:underline">
-                  S'inscrire
+                Administrateur d'entreprise ? {" "}
+                <Link to="/admin-login" className="text-purple-500 hover:underline">
+                  Connexion Admin
                 </Link>
               </span>
             </div>

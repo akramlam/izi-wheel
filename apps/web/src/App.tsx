@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import AdminLogin from './pages/AdminLogin';
 import NotFound from './pages/NotFound';
 import Roues from './pages/Roues';
 import WheelEdit from './pages/WheelEdit';
@@ -106,6 +107,7 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
       
