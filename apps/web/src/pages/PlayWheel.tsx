@@ -1469,8 +1469,29 @@ const PlayWheel = () => {
       </Dialog>
 
       {/* Prize Result Modal - Mobile responsive */}
-      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg mx-auto">
+      <Dialog open={showResultModal} onOpenChange={(open) => {
+        // Only allow closing if it's a losing result
+        if (!open && spinResult?.play.result === 'WIN') {
+          // Prevent closing for winning results - user must claim prize
+          return;
+        }
+        setShowResultModal(open);
+      }}>
+        <DialogContent 
+          className="w-[calc(100vw-2rem)] max-w-lg mx-auto"
+          onInteractOutside={(e) => {
+            // Prevent closing by clicking outside for winning results
+            if (spinResult?.play.result === 'WIN') {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevent closing with Escape key for winning results
+            if (spinResult?.play.result === 'WIN') {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
               {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
@@ -1497,14 +1518,7 @@ const PlayWheel = () => {
           </div>
 
           <div className="flex gap-2 sm:gap-3 justify-center">
-            {/* <Button 
-              variant="outline" 
-              onClick={() => setShowResultModal(false)}
-              className="flex-1 text-sm sm:text-base"
-            >
-              Fermer
-            </Button> */}
-            {spinResult?.play.result === 'WIN' && (
+            {spinResult?.play.result === 'WIN' ? (
               <Button
                 onClick={() => {
                   setShowResultModal(false);
@@ -1513,6 +1527,13 @@ const PlayWheel = () => {
                 className="flex-2 text-sm sm:text-base"
               >
                 Récupérer mon prix
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowResultModal(false)}
+                className="flex-2 text-sm sm:text-base"
+              >
+                Fermer
               </Button>
             )}
           </div>
