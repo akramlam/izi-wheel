@@ -190,7 +190,9 @@ export const getPlayHistory = async (req: Request, res: Response) => {
           total: totalPlays,
           limit,
           offset,
-          hasMore: offset + limit < totalPlays
+          hasMore: offset + limit < totalPlays,
+          totalPages: Math.ceil(totalPlays / limit),
+          currentPage: Math.floor(offset / limit) + 1
         }
       },
       companyId: companyId || 'all'

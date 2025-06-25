@@ -3,6 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import  Badge  from '../components/ui/Badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../components/ui/pagination';
 import { 
   Activity,
   Users,
@@ -90,8 +99,9 @@ const ActivityTracking: React.FC = () => {
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const itemsPerPage = 50;
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20; // Reduced from 50 for better pagination
 
   // Export settings
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('csv');
@@ -109,7 +119,7 @@ const ActivityTracking: React.FC = () => {
     }
   };
 
-  const fetchPlays = async (page = 1, append = false) => {
+  const fetchPlays = async (page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -124,9 +134,14 @@ const ActivityTracking: React.FC = () => {
       const response = await api.getActivityPlays(params.toString());
       if (response.data.success) {
         const newPlays = response.data.data.plays;
-        setPlays(append ? [...plays, ...newPlays] : newPlays);
+        setPlays(newPlays);
         setStatistics(response.data.data.statistics);
-        setHasMore(response.data.data.pagination.hasMore);
+        
+        // Use pagination info from API response
+        const pagination = response.data.data.pagination;
+        setTotalItems(pagination.total);
+        setTotalPages(pagination.totalPages);
+        setCurrentPage(pagination.currentPage);
       }
     } catch (error) {
       console.error('Failed to fetch plays:', error);
@@ -178,7 +193,7 @@ const ActivityTracking: React.FC = () => {
     if (activeTab === 'dashboard') {
       fetchDashboardData();
     } else if (activeTab === 'plays') {
-      fetchPlays(1, false);
+      fetchPlays(1);
     }
   };
 
@@ -186,14 +201,14 @@ const ActivityTracking: React.FC = () => {
     if (activeTab === 'dashboard') {
       fetchDashboardData();
     } else if (activeTab === 'plays') {
-      fetchPlays(1, false);
+      fetchPlays(1);
     }
   }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 'plays') {
       const timeoutId = setTimeout(() => {
-        fetchPlays(1, false);
+        fetchPlays(1);
         setCurrentPage(1);
       }, 300);
       return () => clearTimeout(timeoutId);
@@ -525,19 +540,114 @@ const ActivityTracking: React.FC = () => {
             </table>
           </div>
 
-          {hasMore && (
-            <div className="mt-4 text-center">
-              <Button 
-                onClick={() => {
-                  const nextPage = currentPage + 1;
-                  setCurrentPage(nextPage);
-                  fetchPlays(nextPage, true);
-                }}
-                variant="outline"
-                disabled={loading}
-              >
-                {loading ? 'Chargement...' : 'Charger plus'}
-              </Button>
+          {totalPages > 1 && (
+            <div className="mt-6 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) {
+                          fetchPlays(currentPage - 1);
+                        }
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {/* Show first page */}
+                  {currentPage > 3 && (
+                    <>
+                      <PaginationItem>
+                        <PaginationLink 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            fetchPlays(1);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                      {currentPage > 4 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Show pages around current page */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageStart = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                    const pageNum = pageStart + i;
+                    
+                    if (pageNum > totalPages) return null;
+                    
+                    return (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            fetchPlays(pageNum);
+                          }}
+                          isActive={pageNum === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  {/* Show last page */}
+                  {currentPage < totalPages - 2 && (
+                    <>
+                      {currentPage < totalPages - 3 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+                      <PaginationItem>
+                        <PaginationLink 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            fetchPlays(totalPages);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    </>
+                  )}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) {
+                          fetchPlays(currentPage + 1);
+                        }
+                      }}
+                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+          
+          {/* Show pagination info */}
+          {totalItems > 0 && (
+            <div className="mt-4 text-center text-sm text-gray-600">
+              Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, totalItems)} sur {totalItems} résultats
             </div>
           )}
         </CardContent>
