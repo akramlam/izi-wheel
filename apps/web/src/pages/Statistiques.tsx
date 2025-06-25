@@ -6,6 +6,7 @@ import { Search, Folder, DollarSign, Users, TrendingUp, TrendingDown } from "luc
 import { api } from '../lib/api'
 import { useToast } from '../hooks/use-toast'
 import { useAuth } from '../hooks/useAuth'
+import { showErrorToast } from '../utils/errorHandler'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -109,11 +110,7 @@ const Statistiques: React.FC = () => {
       setStatsData(response.data)
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Échec de la récupération des statistiques. Veuillez réessayer.',
-      })
+      showErrorToast(toast, error, 'Erreur', 'Échec de la récupération des statistiques. Veuillez réessayer.')
     } finally {
       setIsLoading(false)
     }
