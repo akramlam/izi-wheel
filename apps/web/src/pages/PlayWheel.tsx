@@ -60,7 +60,6 @@ const inputIcons: Record<string, React.ReactNode> = {
   name: <User className="h-4 w-4 text-gray-400" />,
   email: <Mail className="h-4 w-4 text-gray-400" />,
   phone: <Phone className="h-4 w-4 text-gray-400" />,
-  birthDate: <Calendar className="h-4 w-4 text-gray-400" />,
 };
 
 // Brand colors
@@ -173,7 +172,6 @@ const SocialRedirectDialog = ({
     if (redirectUrl) {
       window.open(redirectUrl, '_blank');
     }
-    // onClose();
   };
 
   const getTitle = () => {
@@ -289,8 +287,12 @@ const SocialRedirectDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent 
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold">{getTitle()}</DialogTitle>
 
@@ -309,7 +311,11 @@ const SocialRedirectDialog = ({
           {getInstructions()}
           <Button
             className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-purple-500"
-            onClick={handleRedirect}
+            onClick={() => {
+              handleRedirect();
+              // Call onClose after the redirect to allow the user to proceed
+              onClose();
+            }}
           >
             {getButtonText()}
           </Button>
@@ -625,10 +631,9 @@ const PlayWheel = () => {
         } else if (typeof wheelData.formSchema === 'object') {
           // If formSchema is directly defining fields
           const defaultFields = [
-            { name: 'name', label: 'Nom', type: 'text', required: true },
+            { name: 'name', label: 'Prénom', type: 'text', required: true },
             { name: 'email', label: 'Email', type: 'email', required: true },
             { name: 'phone', label: 'Téléphone', type: 'tel', required: false },
-            { name: 'birthDate', label: 'Date de naissance', type: 'date', required: false },
           ];
           fields.push(...defaultFields);
         }
@@ -959,7 +964,6 @@ const PlayWheel = () => {
       name: data.name,
       email: data.email,
       phone: data.phone || '',
-      birthDate: data.birthDate || '',
       playId: spinResult?.play.id || '',
       prize: spinResult?.slot.label || '',
       timestamp: new Date().toISOString(),
@@ -978,7 +982,6 @@ const PlayWheel = () => {
             name: data.name,
             email: data.email,
             phone: data.phone || undefined,
-            birthDate: data.birthDate || undefined,
           }),
         });
 
@@ -1428,7 +1431,7 @@ const PlayWheel = () => {
                 <div className="relative">
                   {inputIcons[field.type]}
                   <input
-                    type={field.type === 'birthDate' ? 'date' : field.type}
+                    type={field.type}
                     value={claimFormData[field.name] || ''}
                     onChange={(e) =>
                       setClaimFormData({
@@ -1453,7 +1456,6 @@ const PlayWheel = () => {
                   name: claimFormData.name || '',
                   email: claimFormData.email || '',
                   phone: claimFormData.phone,
-                  birthDate: claimFormData.birthDate,
                 };
                 handleClaimFormSubmit(playerData);
               }}

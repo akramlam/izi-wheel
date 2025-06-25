@@ -4,7 +4,7 @@ import PlayerForm, { FormField } from '../components/PlayerForm';
 
 // Mock fields for testing
 const mockFields: FormField[] = [
-  { name: 'name', label: 'Nom', type: 'text', required: true },
+  { name: 'name', label: 'Prénom', type: 'text', required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
   { name: 'phone', label: 'Téléphone', type: 'tel', required: false },
   { name: 'birthDate', label: 'Date de naissance', type: 'date', required: false },

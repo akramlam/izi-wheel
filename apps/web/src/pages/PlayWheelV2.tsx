@@ -67,10 +67,9 @@ const PlayWheelV2 = () => {
           fields.push(...wheelData.formSchema.fields);
         } else if (typeof wheelData.formSchema === 'object') {
           fields.push(
-            { name: 'name', label: 'Nom', type: 'text', required: true },
+            { name: 'name', label: 'Prénom', type: 'text', required: true },
             { name: 'email', label: 'Email', type: 'email', required: true },
-            { name: 'phone', label: 'Téléphone', type: 'tel', required: false },
-            { name: 'birthDate', label: 'Date de naissance', type: 'date', required: false }
+            { name: 'phone', label: 'Téléphone', type: 'tel', required: false }
           );
         }
       }
@@ -253,7 +252,6 @@ const PlayWheelV2 = () => {
     if (data.name) apiFormData.name = data.name;
     if (data.email) apiFormData.email = data.email;
     if (data.phone) apiFormData.phone = data.phone;
-    if (data.birthDate) apiFormData.birthDate = data.birthDate;
     // Prevent empty lead submissions
     if (Object.keys(apiFormData).length === 0) {
       Toast({

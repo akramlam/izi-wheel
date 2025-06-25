@@ -18,23 +18,22 @@ import { Button } from '../components/ui/button';
 // Define form schema
 export const playerFormSchema = z.object({
   name: z.string().min(2, {
-    message: 'Le nom doit contenir au moins 2 caractères.',
+    message: 'Le prénom doit contenir au moins 2 caractères.',
   }),
   email: z.string().email({
     message: 'Veuillez entrer une adresse email valide.',
   }),
   phone: z.string().optional(),
-  birthDate: z.string().optional(),
 });
 
-export type FormField = {
+export type PlayerFormData = z.infer<typeof playerFormSchema>;
+
+export interface FormField {
   name: string;
   label: string;
   type: string;
   required: boolean;
-};
-
-export type PlayerFormData = z.infer<typeof playerFormSchema>;
+}
 
 interface PlayerFormProps {
   fields: FormField[];
@@ -50,13 +49,12 @@ export function PlayerForm({ fields, onSubmit, isSubmitting = false }: PlayerFor
       name: '',
       email: '',
       phone: '',
-      birthDate: '',
     },
   });
 
   // Filter fields that should be displayed
   const visibleFields = fields.filter(field => 
-    ['name', 'email', 'phone', 'birthDate'].includes(field.name)
+    ['name', 'email', 'phone'].includes(field.name)
   );
 
   // Handle form submission
@@ -69,7 +67,6 @@ export function PlayerForm({ fields, onSubmit, isSubmitting = false }: PlayerFor
     name: <User className="h-5 w-5 text-gray-500" />,
     email: <Mail className="h-5 w-5 text-gray-500" />,
     phone: <Phone className="h-5 w-5 text-gray-500" />,
-    birthDate: <Calendar className="h-5 w-5 text-gray-500" />,
   };
 
   return (

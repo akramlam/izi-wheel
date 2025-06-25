@@ -4,10 +4,9 @@ import PlayerForm, { FormField } from '../components/PlayerForm';
 
 // Mock fields for testing
 const mockFields: FormField[] = [
-  { name: 'name', label: 'Nom', type: 'text', required: true },
+  { name: 'name', label: 'Prénom', type: 'text', required: true },
   { name: 'email', label: 'Email', type: 'email', required: true },
   { name: 'phone', label: 'Téléphone', type: 'tel', required: false },
-  { name: 'birthDate', label: 'Date de naissance', type: 'date', required: false },
 ];
 
 describe('PlayerForm', () => {
@@ -21,10 +20,9 @@ describe('PlayerForm', () => {
     render(<PlayerForm fields={mockFields} onSubmit={mockSubmit} />);
     
     // Check if all fields are rendered
-    expect(screen.getByLabelText(/Nom/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Prénom/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Téléphone/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Date de naissance/i)).toBeInTheDocument();
     
     // Check if the submit button is rendered
     expect(screen.getByRole('button', { name: /Récupérer mon prix/i })).toBeInTheDocument();
@@ -38,7 +36,7 @@ describe('PlayerForm', () => {
     
     // Wait for validation messages
     await waitFor(() => {
-      expect(screen.getByText(/Le nom doit contenir au moins 2 caractères/i)).toBeInTheDocument();
+      expect(screen.getByText(/Le prénom doit contenir au moins 2 caractères/i)).toBeInTheDocument();
       expect(screen.getByText(/Veuillez entrer une adresse email valide/i)).toBeInTheDocument();
     });
     
