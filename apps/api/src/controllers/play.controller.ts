@@ -7,6 +7,8 @@ import { PlayResult, WheelMode, Plan } from '@prisma/client';
 import crypto from 'crypto';
 import { createObjectCsvStringifier } from 'csv-writer';
 import { subDays } from 'date-fns';
+import { generateQRCode } from '../utils/qrcode';
+import { generatePIN } from '../utils/pin';
 
 // Validation schema for play request
 const playSchema = z.object({
@@ -56,16 +58,6 @@ const selectRandomSlot = (slots: Array<{ id: string; weight: number }>) => {
 const generatePin = (): string => {
   // Generate a 6-digit numeric PIN
   return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-/**
- * Generate a QR code link for prize redemption
- */
-const generateQrLink = (playId: string, pin: string): string => {
-  // In a real implementation, this would generate a link to a QR code service
-  // For now, we'll just create a URL with the playId and pin
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  return `${baseUrl}/redeem/${playId}/${pin}`;
 };
 
 /**
@@ -251,11 +243,20 @@ export const spinWheel = async (req: Request, res: Response) => {
       
     // If it was a win and we now have a play.id, generate the actual QR link
     if (result === PlayResult.WIN && play.pin) {
-      qrLink = generateQrLink(play.id, play.pin);
-      await prisma.play.update({
-        where: { id: play.id },
-        data: { qrLink: qrLink },
-      });
+      try {
+        const baseUrl = process.env.FRONTEND_URL || 'https://roue.izikado.fr';
+        const redemptionUrl = `${baseUrl}/redeem/${play.id}`;
+        qrLink = await generateQRCode(redemptionUrl);
+        await prisma.play.update({
+          where: { id: play.id },
+          data: { qrLink: qrLink },
+        });
+        console.log(`Generated QR code for play ${play.id}`);
+      } catch (qrError) {
+        console.error('Failed to generate QR code:', qrError);
+        // Continue without QR code - the PIN will still work
+        qrLink = null;
+      }
     }
     
     // Increment rate limits (or rather, ensure they are set for the current period)
