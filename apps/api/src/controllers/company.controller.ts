@@ -220,9 +220,9 @@ export const updateCompany = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Company ID is required' });
     }
 
-    const { name, plan, maxWheels, isActive } = req.body;
+    const { name, plan, maxWheels, isActive, admins } = req.body;
 
-    console.log('Updating company:', { companyId, name, plan, maxWheels, isActive });
+    console.log('Updating company:', { companyId, name, plan, maxWheels, isActive, admins });
 
     // Validate the plan value if provided
     if (plan !== undefined) {
@@ -233,6 +233,21 @@ export const updateCompany = async (req: Request, res: Response) => {
       }
     }
 
+    // Validate admins array if provided
+    if (admins && !Array.isArray(admins)) {
+      return res.status(400).json({ error: 'Admins must be an array' });
+    }
+
+    // First, get the company to use its name for email invitations
+    const existingCompany = await prisma.company.findUnique({
+      where: { id: companyId }
+    });
+
+    if (!existingCompany) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    // Update the company
     const company = await prisma.company.update({
       where: { id: companyId },
       data: {
@@ -243,7 +258,65 @@ export const updateCompany = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({ company });
+    // Create admin users if provided (same logic as createCompany)
+    let createdAdmins: any[] = [];
+    if (admins && admins.length > 0) {
+      console.log(`Processing ${admins.length} admin invitations for company update`);
+      
+      for (const admin of admins) {
+        if (!admin.email || !admin.role) {
+          console.warn('Skipping admin creation due to missing email or role:', admin);
+          continue; // Skip if essential fields are missing
+        }
+        
+        // Check if user already exists
+        const existingUser = await prisma.user.findFirst({
+          where: { email: admin.email }
+        });
+        
+        if (existingUser) {
+          console.log(`User ${admin.email} already exists, skipping invitation`);
+          continue;
+        }
+        
+        const tempPassword = generateRandomPassword();
+        const hashedPassword = await hashPassword(tempPassword);
+        try {
+          const newUser = await prisma.user.create({
+            data: {
+              name: admin.name || '',
+              email: admin.email,
+              password: hashedPassword,
+              role: admin.role as Role,
+              companyId: company.id,
+              forcePasswordChange: true,
+            },
+          });
+          
+          // Send invitation email
+          console.log(`Sending invitation email to ${admin.email} for company ${company.name}`);
+          await sendInviteEmail(
+            admin.email, 
+            tempPassword, 
+            company.name, 
+            req.user?.name, 
+            admin.name,
+            company.id,
+            newUser.id
+          );
+          
+          const { password, ...adminWithoutPassword } = newUser;
+          createdAdmins.push(adminWithoutPassword);
+          console.log(`Successfully created and invited admin: ${admin.email}`);
+        } catch (userError) {
+          console.error(`Failed to create admin user ${admin.email}:`, userError);
+          // Continue with other admins even if one fails
+        }
+      }
+    }
+
+    console.log(`Company update completed. Created ${createdAdmins.length} new admin(s)`);
+    res.json({ company, admins: createdAdmins });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid data', details: error.format() });

@@ -204,6 +204,7 @@ const Dashboard = () => {
 
   const scanChartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -237,6 +238,7 @@ const Dashboard = () => {
 
   const routesChartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -511,8 +513,8 @@ const Dashboard = () => {
       {/* Monthly activity chart section - Mobile responsive */}
       <div className="mt-4 sm:mt-6">
         <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
-          <h2 className="mb-2 text-base sm:text-lg font-medium">Activité des Parties</h2>
-          <div className="h-60 sm:h-72">
+          <h2 className="mb-4 text-base sm:text-lg font-medium">Activité des Parties</h2>
+          <div className="h-80 sm:h-96 lg:h-[500px]">
             <Bar data={scanChartData} options={scanChartOptions} />
           </div>
         </Card>
