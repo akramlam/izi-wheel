@@ -1320,7 +1320,7 @@ const PlayWheel = () => {
 
   return (
     <div
-      className="min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100"
+      className="wheel-page-container play-wheel-page min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100"
       style={{
         backgroundImage: wheelData?.backgroundImage
           ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${wheelData.backgroundImage})`
@@ -1694,87 +1694,81 @@ const PlayWheel = () => {
           </div>
         ) : currentStep === 'spinWheel' ? (
           // Wheel View - Responsive mobile wheel container
-          ((() => {
-            console.log('[DEBUG] Rendering wheel view - currentStep is spinWheel');
-            return null;
-          })(),
-          (
-            <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
-              {/* Responsive wheel container that adapts to screen size */}
-              <div className="relative w-full max-w-[95vw] sm:max-w-[450px] md:max-w-[500px] lg:max-w-[550px] mx-auto flex items-center justify-center">
-                <Wheel
-                  config={wheelConfig}
-                  isSpinning={mustSpin}
-                  prizeIndex={prizeIndex}
-                  onSpin={handleWheelFinishedSpin}
-                  showSpinButton={false} // The main button is now handled below
-                />
-              </div>
-
-              {/* Spin button and message area - Mobile responsive */}
-              {!mustSpin && userFlowState === 'completedSocial' && (
-                <div className="w-full max-w-[90vw] sm:max-w-[320px] flex flex-col items-center space-y-3">
-                  <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
-                    Vous pouvez maintenant tenter de gagner
-                  </p>
-                  <Button
-                    onClick={handleSpinClick}
-                    className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
-                    disabled={isSpinning}
-                  >
-                    {isSpinning ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        <span>Rotation en cours...</span>
-                      </>
-                    ) : (
-                      'Tourner la roue !'
-                    )}
-                  </Button>
-                </div>
-              )}
-              {/* Initial button when social action is required first */}
-              {!mustSpin && userFlowState === 'initial' && (
-                <div className="w-full max-w-[90vw] sm:max-w-[320px] flex flex-col items-center space-y-3">
-                  <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
-                    Tentez votre chance de gagner !
-                  </p>
-                  <Button
-                    onClick={handleSpinClick}
-                    className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
-                    disabled={isSpinning}
-                  >
-                    Tourner la roue !
-                  </Button>
-                </div>
-              )}
+          <div className="wheel-content-area w-full flex flex-col items-center justify-center space-y-4 px-4">
+            {/* Responsive wheel container that adapts to screen size and fills available space */}
+            <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
+              <Wheel
+                config={wheelConfig}
+                isSpinning={mustSpin}
+                prizeIndex={prizeIndex}
+                onSpin={handleWheelFinishedSpin}
+                showSpinButton={false} // The main button is now handled below
+              />
             </div>
-          ))
+
+            {/* Spin button and message area - Mobile responsive */}
+            {!mustSpin && userFlowState === 'completedSocial' && (
+              <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
+                <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
+                  Vous pouvez maintenant tenter de gagner
+                </p>
+                <Button
+                  onClick={handleSpinClick}
+                  className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  disabled={isSpinning}
+                >
+                  {isSpinning ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span>Rotation en cours...</span>
+                    </>
+                  ) : (
+                    'Tourner la roue !'
+                  )}
+                </Button>
+              </div>
+            )}
+            {/* Initial button when social action is required first */}
+            {!mustSpin && userFlowState === 'initial' && (
+              <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
+                <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
+                  Tentez votre chance de gagner !
+                </p>
+                <Button
+                  onClick={handleSpinClick}
+                  className="w-full px-6 py-3 text-base sm:text-lg bg-gradient-to-r from-indigo-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-bold rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  disabled={isSpinning}
+                >
+                  Tourner la roue !
+                </Button>
+              </div>
+            )}
+          </div>
         ) : currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE') ? (
           // Show wheel immediately if no social network is required
-          <div className="w-full flex flex-col items-center justify-center space-y-4 px-4">
-            <div className="relative w-full max-w-[95vw] sm:max-w-[450px] md:max-w-[500px] lg:max-w-[550px] mx-auto flex items-center justify-center">
+          <div className="wheel-content-area w-full flex flex-col items-center justify-center space-y-4 px-4">
+            <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
               <Wheel
                 config={wheelConfig}
                 isSpinning={mustSpin}
@@ -1784,7 +1778,7 @@ const PlayWheel = () => {
               />
             </div>
             {!mustSpin && (
-              <div className="w-full max-w-[90vw] sm:max-w-[320px] flex flex-col items-center space-y-3">
+              <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
                 <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
                   Tentez votre chance de gagner !
                 </p>

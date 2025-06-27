@@ -14,13 +14,15 @@ interface WheelProps {
 const getWheelSize = () => {
   if (typeof window !== 'undefined') {
     const screenWidth = window.innerWidth;
-    // Scale wheel size based on screen width - increased sizes for better visibility
-    if (screenWidth < 480) return 320; // Mobile phones (was 240)
-    if (screenWidth < 768) return 380; // Small tablets (was 300)
-    if (screenWidth < 1024) return 420; // Tablets (was 340)
-    return 480; // Desktop (was 420)
+    // Scale wheel size based on screen width - increased sizes for better screen utilization
+    if (screenWidth < 480) return 320; // Mobile phones
+    if (screenWidth < 768) return 420; // Small tablets (increased from 380)
+    if (screenWidth < 1024) return 500; // Tablets (increased from 420)
+    if (screenWidth < 1440) return 580; // Small desktop (increased from 480)
+    if (screenWidth < 1920) return 650; // Large desktop (new)
+    return 750; // Extra large screens (new)
   }
-  return 480; // Default for SSR (was 420)
+  return 580; // Default for SSR (increased from 480)
 };
 
 const WHEEL_SIZE = 500; // Base size for viewBox calculations
@@ -35,9 +37,11 @@ const getResponsiveFontSize = () => {
     if (screenWidth < 480) return 16; // Mobile phones
     if (screenWidth < 768) return 18; // Small tablets
     if (screenWidth < 1024) return 20; // Tablets
-    return 22; // Desktop
+    if (screenWidth < 1440) return 24; // Small desktop (increased from 22)
+    if (screenWidth < 1920) return 26; // Large desktop (new)
+    return 28; // Extra large screens (new)
   }
-  return 22; // Default for SSR
+  return 24; // Default for SSR (increased from 22)
 };
 
 const NEW_FONT_SIZE = 22;
