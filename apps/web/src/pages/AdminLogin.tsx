@@ -143,7 +143,6 @@ const AdminLogin: React.FC = () => {
               </label>
               <PasswordInput
                 id="password"
-                type="password"
                 name="password"
                 placeholder="Mot de passe temporaire ou personnel"
                 value={formData.password}
