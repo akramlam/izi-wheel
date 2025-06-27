@@ -65,7 +65,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           mainTitle: wheel.mainTitle,
           bannerImage: wheel.bannerImage,
           backgroundImage: wheel.backgroundImage,
-          slots: wheel.slots.map(slot => ({
+          slots: applyStableSorting(wheel.slots).map(slot => ({
             id: slot.id,
             label: slot.label,
             color: slot.color,
@@ -144,7 +144,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
             mainTitle: updatedWheel.mainTitle,
             bannerImage: updatedWheel.bannerImage,
             backgroundImage: updatedWheel.backgroundImage,
-            slots: updatedWheel.slots.map(slot => ({
+            slots: applyStableSorting(updatedWheel.slots).map(slot => ({
               id: slot.id,
               label: slot.label,
               color: slot.color,
@@ -171,7 +171,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           mainTitle: wheel.mainTitle,
           bannerImage: wheel.bannerImage,
           backgroundImage: wheel.backgroundImage,
-          slots: wheel.slots.map(slot => ({
+          slots: applyStableSorting(wheel.slots).map(slot => ({
             id: slot.id,
             label: slot.label,
             color: slot.color,
@@ -260,7 +260,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           mainTitle: updatedWheel.mainTitle,
           bannerImage: updatedWheel.bannerImage,
           backgroundImage: updatedWheel.backgroundImage,
-          slots: updatedWheel.slots.map(slot => ({
+          slots: applyStableSorting(updatedWheel.slots).map(slot => ({
             id: slot.id,
             label: slot.label,
             color: slot.color,
@@ -287,7 +287,7 @@ export const getPublicWheel = async (req: Request, res: Response) => {
         mainTitle: wheel.mainTitle,
         bannerImage: wheel.bannerImage,
         backgroundImage: wheel.backgroundImage,
-        slots: wheel.slots.map(slot => ({
+        slots: applyStableSorting(wheel.slots).map(slot => ({
           id: slot.id,
           label: slot.label,
           color: slot.color,
@@ -973,14 +973,14 @@ export const getCompanyWheel = async (req: Request, res: Response) => {
         mainTitle: wheel.mainTitle,
         bannerImage: wheel.bannerImage,
         backgroundImage: wheel.backgroundImage,
-        slots: wheel.slots.map(slot => ({
-          id: slot.id,
-          label: slot.label,
-          color: slot.color,
-          weight: slot.weight,
-          isWinning: slot.isWinning,
-          position: slot.position
-        }))
+                  slots: applyStableSorting(wheel.slots).map(slot => ({
+            id: slot.id,
+            label: slot.label,
+            color: slot.color,
+            weight: slot.weight,
+            isWinning: slot.isWinning,
+            position: slot.position
+          }))
       }
     };
 
