@@ -853,35 +853,42 @@ const PlayWheel = () => {
     })));
     console.log('🎯 Backend returned slot:', {
       id: data.slot.id,
-      label: data.slot.label
+      label: data.slot.label,
+      prizeIndex: data.prizeIndex
     });
 
-    // Find the index of the winning slot ID within the wheelConfig.segments array
-    let prizeIndexFound = wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
-
-    if (prizeIndexFound === -1) {
-      console.log('⚠️ Prize index not found, using fallback index 0');
-      console.log('🔍 Detailed mismatch analysis:', {
-        backendSlotId: data.slot.id,
-        backendSlotLabel: data.slot.label,
-        frontendSegments: wheelConfig.segments.map((s, i) => `${i}: ${s.id} (${s.label})`),
-        possibleMatch: wheelConfig.segments.find(s => s.label === data.slot.label)
-      });
-      
-      toast({
-        title: 'Affichage désynchronisé',
-        description:
-          "Le prix gagné est correct (voir popup), mais l'affichage de la roue est désynchronisé. Contactez le support si cela persiste.",
-        variant: 'default',
-        duration: 15000, // Longer duration for this important warning
-      });
-
-      // Fallback: The wheel will visually spin to segment 0.
-      // The popup (from setSpinResult(data)) will show the CORRECT prize.
-      setPrizeIndex(0);
+    // CRITICAL FIX: Use prizeIndex directly from backend response
+    if (data.prizeIndex !== undefined && data.prizeIndex >= 0) {
+      console.log('✅ WHEEL ALIGNMENT FIX: Using prizeIndex from backend:', data.prizeIndex);
+      setPrizeIndex(data.prizeIndex);
     } else {
-      console.log('✅ Prize index found:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
-      setPrizeIndex(prizeIndexFound);
+      // Fallback: Find the index of the winning slot ID within the wheelConfig.segments array
+      let prizeIndexFound = wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
+
+      if (prizeIndexFound === -1) {
+        console.log('⚠️ Prize index not found, using fallback index 0');
+        console.log('🔍 Detailed mismatch analysis:', {
+          backendSlotId: data.slot.id,
+          backendSlotLabel: data.slot.label,
+          frontendSegments: wheelConfig.segments.map((s, i) => `${i}: ${s.id} (${s.label})`),
+          possibleMatch: wheelConfig.segments.find(s => s.label === data.slot.label)
+        });
+        
+        toast({
+          title: 'Affichage désynchronisé',
+          description:
+            "Le prix gagné est correct (voir popup), mais l'affichage de la roue est désynchronisé. Contactez le support si cela persiste.",
+          variant: 'default',
+          duration: 15000, // Longer duration for this important warning
+        });
+
+        // Fallback: The wheel will visually spin to segment 0.
+        // The popup (from setSpinResult(data)) will show the CORRECT prize.
+        setPrizeIndex(0);
+      } else {
+        console.log('✅ Prize index found via fallback calculation:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
+        setPrizeIndex(prizeIndexFound);
+      }
     }
 
     console.log('🎯 Setting spin result and triggering wheel animation');

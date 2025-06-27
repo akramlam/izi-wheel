@@ -602,6 +602,11 @@ export const spinWheel = async (req: Request, res: Response) => {
       frontendShouldShowIndex: stableSortedSlots.findIndex(s => s.id === slot.id)
     });
 
+    // CRITICAL FIX: Calculate the exact prizeIndex that frontend needs
+    const prizeIndex = stableSortedSlots.findIndex(s => s.id === slot.id);
+    
+    console.log(`🎯 WHEEL ALIGNMENT FIX: Returning prizeIndex ${prizeIndex} for slot "${slot.label}" (ID: ${slot.id})`);
+
     // Return the result
     return res.status(200).json({
       play: {
@@ -617,7 +622,8 @@ export const spinWheel = async (req: Request, res: Response) => {
       slot: {
         id: slot.id,
         label: slot.label
-      }
+      },
+      prizeIndex: prizeIndex // CRITICAL: Add the exact index for wheel alignment
     });
   } catch (error) {
     console.error('Error spinning wheel:', error);

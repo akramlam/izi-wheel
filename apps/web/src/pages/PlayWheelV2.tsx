@@ -131,25 +131,32 @@ const PlayWheelV2 = () => {
     onSuccess: (data) => {
       if (!wheelData || !wheelData.slots || wheelData.slots.length === 0) return;
       
-      // CRITICAL FIX: Find the correct slot precisely and keep track of the label
-      let slotIndex = wheelData.slots.findIndex((slot: any) => 
-        slot.label && data.slot.label && 
-        slot.label.trim().toLowerCase() === data.slot.label.trim().toLowerCase()
-      );
-      
-      // If exact match isn't found, try a partial match
-      if (slotIndex === -1 && data.slot.label) {
-        console.log('Exact slot match not found, trying partial match');
+      // CRITICAL FIX: Use prizeIndex directly from backend response
+      let slotIndex = 0;
+      if (data.prizeIndex !== undefined && data.prizeIndex >= 0) {
+        console.log('✅ WHEEL ALIGNMENT FIX: Using prizeIndex from backend:', data.prizeIndex);
+        slotIndex = data.prizeIndex;
+      } else {
+        // CRITICAL FIX: Find the correct slot precisely and keep track of the label
         slotIndex = wheelData.slots.findIndex((slot: any) => 
           slot.label && data.slot.label && 
-          slot.label.trim().toLowerCase().includes(data.slot.label.trim().toLowerCase())
+          slot.label.trim().toLowerCase() === data.slot.label.trim().toLowerCase()
         );
-      }
-      
-      // If still no match, use the first slot as fallback
-      if (slotIndex === -1) {
-        console.log('No slot match found, using fallback slot');
-        slotIndex = 0;
+        
+        // If exact match isn't found, try a partial match
+        if (slotIndex === -1 && data.slot.label) {
+          console.log('Exact slot match not found, trying partial match');
+          slotIndex = wheelData.slots.findIndex((slot: any) => 
+            slot.label && data.slot.label && 
+            slot.label.trim().toLowerCase().includes(data.slot.label.trim().toLowerCase())
+          );
+        }
+        
+        // If still no match, use the first slot as fallback
+        if (slotIndex === -1) {
+          console.log('No slot match found, using fallback slot');
+          slotIndex = 0;
+        }
       }
       
       // Clone the data to modify it
