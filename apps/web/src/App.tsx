@@ -4,7 +4,6 @@ import { useAuth } from './hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
-import ForgotPassword from './pages/ForgotPassword';
 import NotFound from './pages/NotFound';
 import Roues from './pages/Roues';
 import WheelEdit from './pages/WheelEdit';
@@ -109,7 +108,6 @@ function App() {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/admin-login" element={<AdminLogin />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
       
