@@ -8,12 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '../components/ui/label';
 import { Loader2, CheckCircle, AlertCircle, Home, User, Mail, Phone } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/input-otp"
 
 // import PrizeDebugger from '../components/PrizeDebugger';
 
@@ -177,11 +171,11 @@ const RedeemPrize = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Improved validation for PIN code
-    if (!pinCode || pinCode.length < 6) {
+    // Updated validation for PIN code - now supports 6-10 digits
+    if (!pinCode || pinCode.length < 6 || pinCode.length > 10) {
       toast({
         title: "Code PIN invalide",
-        description: "Veuillez entrer un code PIN à 6 chiffres",
+        description: "Veuillez entrer un code PIN de 6 à 10 chiffres",
         variant: "destructive"
       });
       return;
@@ -381,30 +375,32 @@ const RedeemPrize = () => {
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="pin">Entrez votre code PIN</Label>
-                  <InputOTP 
-                    maxLength={6} 
-                    value={pinCode} 
-                    onChange={setPinCode}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                    </InputOTPGroup>
-                    <InputOTPSeparator />
-                    <InputOTPGroup>
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
+                  <Label htmlFor="pin">Entrez votre code PIN (6-10 chiffres)</Label>
+                  <Input
+                    id="pin"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={10}
+                    minLength={6}
+                    value={pinCode}
+                    onChange={(e) => {
+                      // Only allow digits and limit to 10 characters
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPinCode(value);
+                    }}
+                    placeholder="Entrez votre code PIN"
+                    className="text-center text-lg font-mono tracking-wider"
+                  />
+                  <p className="text-xs text-gray-500 text-center">
+                    Le code PIN contient entre 6 et 10 chiffres
+                  </p>
                 </div>
                 <div className="pt-2">
                   <Button 
                     type="submit" 
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90"
-                    disabled={isRedeeming || pinCode.length < 6}
+                    disabled={isRedeeming || pinCode.length < 6 || pinCode.length > 10}
                   >
                     {isRedeeming ? (
                       <>
@@ -449,30 +445,32 @@ const RedeemPrize = () => {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="pin">Entrez votre code PIN</Label>
-                <InputOTP 
-                  maxLength={6} 
-                  value={pinCode} 
-                  onChange={setPinCode}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPSeparator />
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
+                <Label htmlFor="pin">Entrez votre code PIN (6-10 chiffres)</Label>
+                <Input
+                  id="pin"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={10}
+                  minLength={6}
+                  value={pinCode}
+                  onChange={(e) => {
+                    // Only allow digits and limit to 10 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setPinCode(value);
+                  }}
+                  placeholder="Entrez votre code PIN"
+                  className="text-center text-lg font-mono tracking-wider"
+                />
+                <p className="text-xs text-gray-500 text-center">
+                  Le code PIN contient entre 6 et 10 chiffres
+                </p>
               </div>
               <div className="pt-2">
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-indigo-500 to-pink-500 hover:opacity-90"
-                  disabled={isRedeeming || pinCode.length < 6}
+                  disabled={isRedeeming || pinCode.length < 6 || pinCode.length > 10}
                 >
                   {isRedeeming ? (
                     <>

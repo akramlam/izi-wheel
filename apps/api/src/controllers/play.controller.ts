@@ -53,11 +53,24 @@ const selectRandomSlot = (slots: Array<{ id: string; weight: number }>) => {
 };
 
 /**
- * Generate a unique PIN for prize redemption
+ * Generate a unique PIN for prize redemption (max 10 digits)
  */
 const generatePin = (): string => {
-  // Generate a 6-digit numeric PIN
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Generate a random PIN between 6-10 digits, but limit to maximum 10 digits
+  const minDigits = 6;
+  const maxDigits = 10;
+  const numDigits = Math.floor(Math.random() * (maxDigits - minDigits + 1)) + minDigits;
+  
+  // Ensure the first digit is not 0 to maintain the desired number of digits
+  const firstDigit = Math.floor(Math.random() * 9) + 1;
+  let pin = firstDigit.toString();
+  
+  // Generate remaining digits
+  for (let i = 1; i < numDigits; i++) {
+    pin += Math.floor(Math.random() * 10).toString();
+  }
+  
+  return pin;
 };
 
 /**
@@ -317,7 +330,10 @@ export const spinWheel = async (req: Request, res: Response) => {
  *             properties:
  *               pin:
  *                 type: string
- *                 description: The 6-digit PIN for prize redemption
+ *                 description: The PIN for prize redemption (6-10 digits)
+ *                 minLength: 6
+ *                 maxLength: 10
+ *                 pattern: '^[0-9]{6,10}$'
  *     responses:
  *       200:
  *         description: Prize redeemed successfully
