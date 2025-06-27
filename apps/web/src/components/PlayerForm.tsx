@@ -23,7 +23,10 @@ export const playerFormSchema = z.object({
   email: z.string().email({
     message: 'Veuillez entrer une adresse email valide.',
   }),
-  phone: z.string().optional(),
+  phone: z.string()
+    .max(10, { message: 'Le numéro de téléphone ne peut pas dépasser 10 chiffres.' })
+    .regex(/^\d*$/, { message: 'Le téléphone doit contenir uniquement des chiffres.' })
+    .optional(),
 });
 
 export type PlayerFormData = z.infer<typeof playerFormSchema>;
@@ -104,7 +107,17 @@ export function PlayerForm({ fields, onSubmit, isSubmitting = false }: PlayerFor
                             w-full
                           `}
                           required={field.required}
-                          {...formField}
+                          {...(field.name === 'phone' ? {
+                            maxLength: 10,
+                            inputMode: 'numeric' as const,
+                            pattern: '[0-9]*',
+                            onChange: (e) => {
+                              // For phone field, only allow digits and limit to 10 characters
+                              const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                              formField.onChange(value);
+                            }
+                          } : {})}
+                          {...(field.name !== 'phone' ? formField : { value: formField.value })}
                         />
                       </FormControl>
                       <FormMessage className="text-sm mt-1" />

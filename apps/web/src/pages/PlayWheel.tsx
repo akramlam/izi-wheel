@@ -1445,15 +1445,25 @@ const PlayWheel = () => {
                   <input
                     type={field.type}
                     value={claimFormData[field.name] || ''}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // For phone field, only allow digits and limit to 10 characters
+                      if (field.name === 'phone') {
+                        value = value.replace(/\D/g, '').slice(0, 10);
+                      }
                       setClaimFormData({
                         ...claimFormData,
-                        [field.name]: e.target.value,
-                      })
-                    }
+                        [field.name]: value,
+                      });
+                    }}
                     className="w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
                     placeholder={`Votre ${field.label.toLowerCase()}`}
                     required={field.required}
+                    {...(field.name === 'phone' ? {
+                      maxLength: 10,
+                      inputMode: 'numeric' as const,
+                      pattern: '[0-9]*'
+                    } : {})}
                   />
                 </div>
               </div>

@@ -310,12 +310,20 @@ const RedeemPrize = () => {
                     <Input
                       id="phone"
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={10}
                       placeholder="Votre numéro de téléphone"
                       value={claimData.phone}
-                      onChange={(e) => setClaimData({...claimData, phone: e.target.value})}
+                      onChange={(e) => {
+                        // Only allow digits and limit to 10 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setClaimData({...claimData, phone: value});
+                      }}
                       className="pl-10"
                     />
                   </div>
+                  <p className="text-xs text-gray-500">Maximum 10 chiffres</p>
                 </div>
                 
                 <div className="pt-2">
