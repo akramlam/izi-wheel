@@ -312,7 +312,16 @@ const PlayWheelV2 = () => {
 
   // --- UI ---
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 animate-gradient-move">
+    <div 
+      className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 animate-gradient-move"
+      style={{
+        // 🎯 SCROLLBAR EARTHQUAKE FIX - Prevent layout shifts during wheel spin
+        overflowY: 'auto',
+        scrollbarGutter: 'stable',
+        minHeight: '100vh',
+        position: 'relative',
+      }}
+    >
       {/* Enhanced animated background gradient */}
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 blur-2xl opacity-80 animate-gradient-move" />
       

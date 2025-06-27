@@ -49,9 +49,24 @@
     @apply border-border;
   }
 
+  /* 🎯 SCROLLBAR EARTHQUAKE FIX - Prevent layout shifts during wheel spin */
+  html {
+    /* Always reserve space for scrollbar to prevent layout shifts */
+    overflow-y: scroll;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-gray-50 text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent horizontal scrolling */
+    overflow-x: hidden;
+    /* Ensure consistent width regardless of scrollbar presence */
+    width: 100vw;
+    /* Prevent body from shifting when content height changes */
+    margin: 0;
+    padding: 0;
   }
   
   /* Ensure input text is always visible */
@@ -100,7 +115,7 @@
   }
 }
 
-/* Custom scrollbar for webkit browsers */
+/* 🎯 ENHANCED SCROLLBAR STYLES - Consistent and smooth */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -108,15 +123,51 @@
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #c5c5c5;
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 🎯 WHEEL SPECIFIC FIXES - Prevent content jumping during spin */
+.wheel-container {
+  /* Prevent content shifts during wheel animations */
+  contain: layout style;
+  /* Ensure smooth rendering during transforms */
+  will-change: auto;
+  /* Prevent subpixel rendering issues */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 🎯 PLAY WHEEL PAGE SPECIFIC FIXES */
+.play-wheel-page {
+  /* Always maintain consistent height */
+  min-height: 100vh;
+  /* Prevent horizontal scrolling */
+  overflow-x: hidden;
+  /* Ensure smooth scrolling */
+  scroll-behavior: smooth;
 }
 
 @layer base {

@@ -14,18 +14,35 @@
       * {
         touch-action: manipulation;
       }
+      
+      /* 🎯 SCROLLBAR EARTHQUAKE FIX - Prevent layout shifts during wheel spin */
+      html {
+        /* Always reserve space for scrollbar to prevent layout shifts */
+        overflow-y: scroll;
+        /* Modern scrollbar gutter support */
+        scrollbar-gutter: stable;
+        /* Smooth scrolling */
+        scroll-behavior: smooth;
+      }
+      
       /* Ensure body doesn't scroll horizontally on mobile */
       body {
         overflow-x: hidden;
         position: fixed;
         width: 100%;
         height: 100%;
+        /* Prevent body from shifting when content height changes */
+        margin: 0;
+        padding: 0;
       }
+      
       #root {
         width: 100%;
         height: 100%;
         overflow-y: auto;
         overflow-x: hidden;
+        /* Reserve space for scrollbar */
+        scrollbar-gutter: stable;
       }
     </style>
   </head>

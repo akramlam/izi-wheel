@@ -1328,6 +1328,11 @@ const PlayWheel = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        // 🎯 SCROLLBAR EARTHQUAKE FIX - Prevent layout shifts
+        overflowY: 'auto',
+        scrollbarGutter: 'stable',
+        minHeight: '100vh',
+        position: 'relative',
       }}
     >
       {/* Banner Image */}
