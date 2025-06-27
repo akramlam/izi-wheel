@@ -1,9 +1,22 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
 import { Plus, Pencil, Trash2, Check, X, RefreshCw } from 'lucide-react';
 import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
+import { Badge } from '../components/ui/Badge';
+import { 
+  Users, 
+  Edit, 
+  Key, 
+  UserPlus,
+  AlertTriangle,
+  Mail,
+  User
+} from 'lucide-react';
 
 type SubAdmin = {
   id: string;
@@ -626,8 +639,7 @@ const SubAdminManager = () => {
                         </div>
                       ) : resetPassword === subAdmin.id ? (
                         <div className="flex items-center justify-end space-x-2">
-                          <input
-                            type="password"
+                          <PasswordInput
                             name="password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}

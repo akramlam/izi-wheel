@@ -6,11 +6,13 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Filter, ArrowUpDown, MoreHorizontal, Edit, Trash2, Pencil, Check, X, RefreshCw } from "lucide-react"
+import { Plus, Search, Filter, ArrowUpDown, MoreHorizontal, Edit, Trash2, Pencil, Check, X, RefreshCw, User, Mail, UserCheck, UserX, Eye, EyeOff } from "lucide-react"
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
 import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
+import { Input } from '../components/ui/input';
+import { PasswordInput } from '../components/ui/password-input';
 
 // Data types from SubAdminManager.tsx
 type SubAdmin = {
@@ -616,7 +618,15 @@ const SousAdministrateurs: React.FC = () => {
              <form onSubmit={(e) => { e.preventDefault(); if(resetPasswordPrompt) handleResetPassword(resetPasswordPrompt); }} className="space-y-4">
                <div>
                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">Nouveau mot de passe (min 8 caractères)</label>
-                 <input type="password" name="newPassword" id="newPassword" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"/>
+                 <PasswordInput
+                   name="newPassword"
+                   id="newPassword"
+                   value={newPassword}
+                   onChange={(e) => setNewPassword(e.target.value)}
+                   required
+                   minLength={8}
+                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                 />
                </div>
                <div className="flex justify-end space-x-3">
                  <Button type="button" variant="outline" onClick={cancelAction} disabled={isLoading}>Annuler</Button>

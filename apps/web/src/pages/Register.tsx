@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
+import { PasswordInput } from "../components/ui/password-input"
 import { Zap, Eye, EyeOff, AlertCircle } from "lucide-react"
 
 const Register: React.FC = () => {
@@ -18,7 +19,6 @@ const Register: React.FC = () => {
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
 
   // Redirect if already logged in
   if (user) {
@@ -130,33 +130,21 @@ const Register: React.FC = () => {
             />
             {errors.email && <p className="text-xs text-red-500 px-1">{errors.email}</p>}
 
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Mot de passe"
-                value={formData.password}
-                onChange={handleChange}
-                className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2.5 sm:top-2 text-gray-500 hover:text-gray-700"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
-              </button>
-            </div>
+            <PasswordInput
+              name="password"
+              placeholder="Mot de passe"
+              value={formData.password}
+              onChange={handleChange}
+              className="rounded-lg bg-white border border-gray-200 px-3 sm:px-4 py-2.5 sm:py-2 placeholder-gray-500 text-sm sm:text-base"
+              required
+            />
             {errors.password && <p className="text-xs text-red-500 px-1">{errors.password}</p>}
 
             <div className="text-xs text-gray-500 px-1">
               Utilisez 8 caractères ou plus contenant des chiffres, lettres et symboles.
             </div>
 
-            <Input
-              type="password"
+            <PasswordInput
               name="confirmPassword"
               placeholder="Confirmez le mot de passe"
               value={formData.confirmPassword}

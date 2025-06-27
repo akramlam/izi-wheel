@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
+import { PasswordInput } from "../components/ui/password-input"
 import { Zap, AlertCircle, CheckCircle2 } from "lucide-react"
 
 const Login: React.FC = () => {
@@ -109,8 +110,7 @@ const Login: React.FC = () => {
               required
             />
 
-            <Input
-              type="password"
+            <PasswordInput
               name="password"
               placeholder="Mot de passe"
               value={formData.password}

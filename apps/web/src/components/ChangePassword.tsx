@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
+import { PasswordInput } from './ui/password-input';
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -119,12 +120,10 @@ const ChangePassword = () => {
             <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
               Mot de passe actuel
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="currentPassword"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               required
             />
           </div>
@@ -133,12 +132,10 @@ const ChangePassword = () => {
             <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
               Nouveau mot de passe
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="newPassword"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               minLength={8}
               required
             />
@@ -169,12 +166,10 @@ const ChangePassword = () => {
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirmer le nouveau mot de passe
             </label>
-            <input
-              type="password"
+            <PasswordInput
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               minLength={8}
               required
             />

@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ShineBorder } from '../components/magicui/shine-border';
+import { PasswordInput } from '../components/ui/password-input';
 
 const RegisterSuper: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -80,8 +81,7 @@ const RegisterSuper: React.FC = () => {
             </div>
             <div className="mb-4 sm:mb-6">
               <label className="mb-1.5 sm:mb-2 block text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="block w-full rounded-md border border-gray-300 px-3 py-2 sm:py-2.5 text-sm sm:text-base shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 value={password}
                 onChange={e => setPassword(e.target.value)}

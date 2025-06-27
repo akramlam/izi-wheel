@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
+import { PasswordInput } from "../components/ui/password-input"
 import { Zap, AlertCircle, CheckCircle2, Shield, Users, UserPlus } from "lucide-react"
 
 const AdminLogin: React.FC = () => {
@@ -140,7 +141,7 @@ const AdminLogin: React.FC = () => {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Mot de passe
               </label>
-              <Input
+              <PasswordInput
                 id="password"
                 type="password"
                 name="password"
