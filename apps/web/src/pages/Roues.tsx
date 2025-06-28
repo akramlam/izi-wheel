@@ -81,9 +81,14 @@ const Roues: React.FC = () => {
       if (company?.name) return company.name;
     }
     
-    // Get from state
-    if (displayCompanyName && displayCompanyName !== "N/A") {
+    // For sub-admins or regular users, use the stored display name
+    if (displayCompanyName && displayCompanyName !== "N/A" && displayCompanyName !== "Votre entreprise") {
       return displayCompanyName;
+    }
+    
+    // Try to get from user context if available
+    if (user?.company?.name) {
+      return user.company.name;
     }
     
     // Final fallback
@@ -100,9 +105,12 @@ const Roues: React.FC = () => {
           setSelectedCompanyId(profileResponse.data.user.company.id);
           setDisplayCompanyName(profileResponse.data.user.company.name);
           
-          // Set wheel limits
+          // Set wheel limits - IMPORTANT: This must be set here for sub-admins
           if (profileResponse.data.user.company.maxWheels) {
             setWheelsLimit(profileResponse.data.user.company.maxWheels);
+          } else {
+            // Fallback for companies without maxWheels set
+            setWheelsLimit(5); // Default to 5 for BASIC plan
           }
           
           // Check if user is on free plan
@@ -150,6 +158,16 @@ const Roues: React.FC = () => {
               if (company.name) {
                 setDisplayCompanyName(company.name);
                 console.log("Setting company name from profile:", company.name);
+              }
+              
+              // CRITICAL: Set wheel limits for sub-admins here too
+              if (company.maxWheels) {
+                setWheelsLimit(company.maxWheels);
+                console.log("Setting wheel limit from profile:", company.maxWheels);
+              } else {
+                // Fallback for companies without maxWheels set
+                setWheelsLimit(5); // Default to 5 for BASIC plan
+                console.log("Using default wheel limit: 5");
               }
               
               if (company.id) {
@@ -200,16 +218,25 @@ const Roues: React.FC = () => {
         // For super admin, use specific company ID
         response = await apiClient.get(`/companies/${specificCompanyId}/wheels`);
       } else {
-        // For regular users, try to get company name from profile
+        // For regular users (sub-admins), try to get company name from profile
         try {
           const profileResponse = await api.getProfile();
           if (profileResponse.data?.user?.company?.name) {
             companyNameToUse = profileResponse.data.user.company.name;
             
-            // Store wheel limit from company data
+            // Store wheel limit from company data - CRITICAL for sub-admins
             if (profileResponse.data.user.company.maxWheels) {
               setWheelsLimit(profileResponse.data.user.company.maxWheels);
+              console.log("Updated wheel limit in fetchRoues:", profileResponse.data.user.company.maxWheels);
+            } else {
+              // Fallback for companies without maxWheels set
+              setWheelsLimit(5); // Default to 5 for BASIC plan
+              console.log("Using default wheel limit in fetchRoues: 5");
             }
+            
+            // Also update the display company name state
+            setDisplayCompanyName(companyNameToUse);
+            console.log("Updated company name in fetchRoues:", companyNameToUse);
           }
         } catch (error) {
           console.error("Error getting user profile:", error);
@@ -236,6 +263,7 @@ const Roues: React.FC = () => {
         
         setRoues(mappedWheels);
         setWheelsUsed(mappedWheels.length);
+        console.log(`Set wheels used: ${mappedWheels.length}, wheel limit: ${wheelsLimit}`);
       } else {
         console.error("API returned non-array data:", response);
         setRoues([]);
