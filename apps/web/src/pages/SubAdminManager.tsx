@@ -7,7 +7,7 @@ import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { PasswordInput } from '../components/ui/password-input';
-import { Badge } from '../components/ui/Badge';
+import Badge from '../components/ui/Badge';
 import { 
   Users, 
   Edit, 
