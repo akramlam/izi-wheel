@@ -9,6 +9,7 @@ import { createObjectCsvStringifier } from 'csv-writer';
 import { subDays } from 'date-fns';
 import { generateQRCode } from '../utils/qrcode';
 import { generatePIN } from '../utils/pin';
+import { getRealClientIP } from '../utils/ip';
 
 // Validation schema for play request
 const playSchema = z.object({
@@ -173,7 +174,7 @@ const generatePin = (): string => {
 export const spinWheel = async (req: Request, res: Response) => {
   try {
     const { wheelId } = req.params;
-    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    const ip = getRealClientIP(req);
     
     // Validate request body
     const validatedData = playSchema.parse(req.body);

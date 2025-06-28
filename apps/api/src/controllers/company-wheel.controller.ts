@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
 import { ensureWheelHasSlots } from '../utils/db-init';
+import { getRealClientIP } from '../utils/ip';
 
 /**
  * Get wheel data for the /company/:wheelId route

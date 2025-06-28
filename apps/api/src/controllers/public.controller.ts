@@ -5,6 +5,7 @@ import { generatePIN } from '../utils/pin';
 import { ensureWheelHasSlots } from '../utils/db-init';
 import { sendPrizeEmail } from '../utils/mailer';
 import { logPlayActivity } from '../utils/activity-logger';
+import { getRealClientIP, logIPDebugInfo } from '../utils/ip';
 
 /**
  * Get public wheel data
@@ -331,7 +332,18 @@ export const spinWheel = async (req: Request, res: Response) => {
     }
 
     // Get IP address for play limit checking
-    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    const ip = getRealClientIP(req);
+    
+    // Debug: Log IP detection information
+    console.log('🔍 IP Detection Debug:', {
+      capturedIP: ip,
+      reqIP: req.ip,
+      remoteAddress: req.socket.remoteAddress,
+      xForwardedFor: req.get('X-Forwarded-For'),
+      xRealIP: req.get('X-Real-IP'),
+      cfConnectingIP: req.get('CF-Connecting-IP'),
+      userAgent: req.get('User-Agent')?.substring(0, 100) + '...'
+    });
 
     // Check if we're using the fallback route (no companyId provided)
     let wheel;
