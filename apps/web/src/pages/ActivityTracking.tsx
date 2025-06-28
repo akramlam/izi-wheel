@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import  Badge  from '../components/ui/Badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -25,9 +25,17 @@ import {
   User,
   Trophy,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Play,
+  QrCode,
+  Gift,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { Label } from '../components/ui/label';
+import { useToast } from '../hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface PlayRecord {
   id: string;
@@ -86,6 +94,8 @@ interface DashboardData {
 }
 
 const ActivityTracking: React.FC = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [plays, setPlays] = useState<PlayRecord[]>([]);
   const [statistics, setStatistics] = useState<PlayStatistics | null>(null);
@@ -107,6 +117,9 @@ const ActivityTracking: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('csv');
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
+
+  // QR code scanner
+  const [qrInput, setQrInput] = useState('');
 
   const fetchDashboardData = async () => {
     try {
@@ -258,121 +271,274 @@ const ActivityTracking: React.FC = () => {
     );
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Parties</p>
-                <p className="text-2xl font-bold">{dashboardData?.overview.totalPlays || 0}</p>
-                <p className="text-xs text-gray-500">Aujourd'hui: {dashboardData?.overview.todayPlays || 0}</p>
-              </div>
-              <Target className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+  const getPrizeStatusBadge = (status: string) => {
+    const statusConfig = {
+      PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
+      CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
+      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Échangé' }
+    };
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Prix Gagnés</p>
-                <p className="text-2xl font-bold">{dashboardData?.overview.totalWins || 0}</p>
-                <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.winRate || 0}%</p>
-              </div>
-              <Trophy className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
+    const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) return null;
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Prix Réclamés</p>
-                <p className="text-2xl font-bold">{dashboardData?.overview.totalClaimed || 0}</p>
-                <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.claimRate || 0}%</p>
-              </div>
-              <User className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
+    const Icon = config.icon;
+    return (
+      <Badge className={config.color}>
+        <Icon className="w-3 h-3 mr-1" />
+        {config.label}
+      </Badge>
+    );
+  };
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Prix Échangés</p>
-                <p className="text-2xl font-bold">{dashboardData?.overview.totalRedeemed || 0}</p>
-                <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.redeemRate || 0}%</p>
-              </div>
-              <Award className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  const extractPlayIdFromInput = (input: string): string | null => {
+    // If input is already a UUID (play ID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(input.trim())) {
+      return input.trim();
+    }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="w-5 h-5 mr-2" />
-              Parties Récentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {dashboardData?.recentPlays.slice(0, 5).map((play) => (
-                <div key={play.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      {getResultBadge(play.result)}
-                      {getStatusBadge(play.redemptionStatus)}
+    // Extract play ID from URL (e.g., https://roue.izikado.fr/redeem/abc-123-def)
+    const urlMatch = input.match(/\/redeem\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    if (urlMatch) {
+      return urlMatch[1];
+    }
+
+    return null;
+  };
+
+  const handleQRScan = async () => {
+    const playId = extractPlayIdFromInput(qrInput);
+    
+    if (!playId) {
+      toast({
+        title: "Format invalide",
+        description: "Veuillez saisir un ID de cadeau valide ou une URL QR complète",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Redirect to prize validation page with admin mode
+    navigate(`/redeem/${playId}?admin=true`);
+  };
+
+  const handleValidatePrize = (playId: string) => {
+    // Redirect to prize validation page with admin mode
+    navigate(`/redeem/${playId}?admin=true`);
+  };
+
+  const renderDashboard = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Parties</p>
+                  <p className="text-2xl font-bold">{dashboardData?.overview.totalPlays || 0}</p>
+                  <p className="text-xs text-gray-500">Aujourd'hui: {dashboardData?.overview.todayPlays || 0}</p>
+                </div>
+                <Play className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Prix Gagnés</p>
+                  <p className="text-2xl font-bold">{dashboardData?.overview.totalWins || 0}</p>
+                  <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.winRate || 0}%</p>
+                </div>
+                <Trophy className="h-8 w-8 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Prix Réclamés</p>
+                  <p className="text-2xl font-bold">{dashboardData?.overview.totalClaimed || 0}</p>
+                  <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.claimRate || 0}%</p>
+                </div>
+                <Gift className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Prix Échangés</p>
+                  <p className="text-2xl font-bold">{dashboardData?.overview.totalRedeemed || 0}</p>
+                  <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.redeemRate || 0}%</p>
+                </div>
+                <Award className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Prize Management Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* QR Code Scanner Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <QrCode className="w-5 h-5 mr-2" />
+                Scanner QR Code Cadeau
+              </CardTitle>
+              <CardDescription>
+                Scannez ou saisissez le code d'un cadeau pour le valider
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="qr-input">Code du cadeau ou URL QR</Label>
+                  <Input
+                    id="qr-input"
+                    placeholder="Saisissez l'ID du cadeau ou collez l'URL du QR code"
+                    value={qrInput}
+                    onChange={(e) => setQrInput(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleQRScan}
+                  className="w-full"
+                  disabled={!qrInput.trim()}
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Valider le cadeau
+                </Button>
+                <div className="text-xs text-gray-500 text-center">
+                  Vous pouvez aussi scanner directement le QR code avec votre appareil photo
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Prizes Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Gift className="w-5 h-5 mr-2" />
+                Cadeaux Récents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {dashboardData?.recentPlays
+                  .filter(play => play.result === 'WIN')
+                  .slice(0, 5)
+                  .map((play) => (
+                  <div key={play.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        {getResultBadge(play.result)}
+                        {getPrizeStatusBadge(play.redemptionStatus)}
+                      </div>
+                      <p className="text-sm font-medium">{play.slot.label}</p>
+                      {play.leadInfo?.name && (
+                        <p className="text-xs text-gray-600">{play.leadInfo.name}</p>
+                      )}
                     </div>
-                    <p className="text-sm font-medium">{play.wheel.name}</p>
-                    <p className="text-xs text-gray-500">{play.slot.label}</p>
-                    {play.leadInfo?.name && (
-                      <p className="text-xs text-gray-600">{play.leadInfo.name} • {play.leadInfo.email}</p>
-                    )}
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500">
+                        {formatDate(play.createdAt)}
+                      </div>
+                      {play.redemptionStatus === 'CLAIMED' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-1"
+                          onClick={() => handleValidatePrize(play.id)}
+                        >
+                          Valider
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right text-xs text-gray-500">
-                    {formatDate(play.createdAt)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Roues Populaires
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {dashboardData?.topWheels.map((wheel) => (
-                <div key={wheel.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{wheel.name}</p>
-                    <p className="text-xs text-gray-500">{wheel.totalPlays} parties • {wheel.wins} gains</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Activity className="w-5 h-5 mr-2" />
+                Parties Récentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {dashboardData?.recentPlays.slice(0, 5).map((play) => (
+                  <div key={play.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        {getResultBadge(play.result)}
+                        {getStatusBadge(play.redemptionStatus)}
+                      </div>
+                      <p className="text-sm font-medium">{play.wheel.name}</p>
+                      <p className="text-xs text-gray-500">{play.slot.label}</p>
+                      {play.leadInfo?.name && (
+                        <p className="text-xs text-gray-600">{play.leadInfo.name} • {play.leadInfo.email}</p>
+                      )}
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                      {formatDate(play.createdAt)}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-green-600">{wheel.winRate}%</p>
-                    <p className="text-xs text-gray-500">Taux de gain</p>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2" />
+                Roues Populaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {dashboardData?.topWheels.map((wheel) => (
+                  <div key={wheel.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{wheel.name}</p>
+                      <p className="text-xs text-gray-500">{wheel.totalPlays} parties • {wheel.wins} gains</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-green-600">{wheel.winRate}%</p>
+                      <p className="text-xs text-gray-500">Taux de gain</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPlays = () => (
     <div className="space-y-6">

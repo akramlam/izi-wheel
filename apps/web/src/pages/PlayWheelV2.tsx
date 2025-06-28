@@ -328,7 +328,7 @@ const PlayWheelV2 = () => {
       {/* Improved header with animation */}
       <div className="absolute top-8 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 drop-shadow-lg select-none">
         <Sparkles className="h-8 w-8 text-pink-400 animate-pulse" />
-        IZI Wheel
+        IZI Kado
       </div>
 
       {/* Main content container with improved spacing */}
@@ -465,7 +465,7 @@ const PlayWheelV2 = () => {
       {/* Enhanced footer with rules */}
       <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-4 px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-gray-600 z-30">
         <div className="flex items-center gap-2">
-          © {new Date().getFullYear()} IZI Wheel
+          © {new Date().getFullYear()} IZI Kado
         </div>
         <button
           className="underline text-indigo-600 hover:text-pink-500 transition-colors"

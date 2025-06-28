@@ -4,6 +4,8 @@ import { useAuth } from './hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 import Roues from './pages/Roues';
 import WheelEdit from './pages/WheelEdit';
@@ -20,6 +22,7 @@ import Register from './pages/Register';
 import Statistiques from './pages/Statistiques';
 import EmailTracking from './pages/EmailTracking';
 import ActivityTracking from './pages/ActivityTracking';
+import PrizeValidation from './pages/PrizeValidation';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -108,6 +111,8 @@ function App() {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/admin-login" element={<AdminLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
       
@@ -142,6 +147,7 @@ function App() {
         <Route path="statistiques" element={<Statistiques />} />
         <Route path="emails" element={<EmailTracking />} />
         <Route path="activity" element={<ActivityTracking />} />
+        <Route path="prizes" element={<PrizeValidation />} />
         <Route path="profile" element={<Profile />} />
         <Route path="account-settings" element={<AccountSettings />} />
         

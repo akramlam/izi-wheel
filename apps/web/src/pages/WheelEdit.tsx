@@ -1596,7 +1596,7 @@ const WheelEdit = () => {
                 <Label htmlFor="mainTitle">Titre principal (optionnel)</Label>
                 <Input
                   id="mainTitle"
-                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI Wheel')"
+                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI Kado')"
                   value={wheel.mainTitle || ''}
                   onChange={(e) => setWheel({ ...wheel, mainTitle: e.target.value })}
                 />
@@ -1638,7 +1638,7 @@ const WheelEdit = () => {
                 <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
                 <Input
                   id="footerText"
-                  placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Wheel')"
+                  placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Kado')"
                   value={wheel.footerText || ''}
                   onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
                 />

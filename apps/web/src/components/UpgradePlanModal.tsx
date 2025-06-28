@@ -52,7 +52,7 @@ const UpgradePlanModal = ({ isOpen, onClose, limitType, remainingPlays = 0 }: Up
           </div>
           
           <div className="text-sm text-gray-500">
-            Votre essai gratuit inclut 1 roue et 50 jeux. Passez à un plan payant pour continuer à utiliser IZI Wheel sans interruption.
+            Votre essai gratuit inclut 1 roue et 50 jeux. Passez à un plan payant pour continuer à utiliser IZI Kado sans interruption.
           </div>
         </div>
 

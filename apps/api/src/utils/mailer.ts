@@ -66,7 +66,7 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
     channel: 'contact_izitouch_fr', // Your actual channel name from dashboard
     originator: {
       from: {
-        name: process.env.EMAIL_FROM_NAME || 'IZI Wheel',
+        name: process.env.EMAIL_FROM_NAME || 'IZI Kado',
         address: mailOptions.from
       }
     },
@@ -288,7 +288,7 @@ export const sendInviteEmail = async (
     emailLogId = await logEmailAttempt({
       type: EmailType.INVITATION,
       recipient: email,
-      subject: `Bienvenue sur IZI Wheel - ${companyName}`,
+      subject: `Bienvenue sur IZI Kado - ${companyName}`,
       companyId,
       userId,
       metadata: {
@@ -306,16 +306,16 @@ export const sendInviteEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@izikado.fr',
       to: email,
-      subject: `Bienvenue sur IZI Wheel - ${companyName}`,
+      subject: `Bienvenue sur IZI Kado - ${companyName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #4f46e5;">🎯 Bienvenue sur IZI Wheel!</h1>
+            <h1 style="color: #4f46e5;">🎯 Bienvenue sur IZI Kado!</h1>
           </div>
           
           <p style="font-size: 16px;">${greeting}</p>
           
-          <p style="font-size: 16px;">Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Wheel.</p>
+          <p style="font-size: 16px;">Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Kado.</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
             <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🔑 Vos identifiants de connexion :</p>
@@ -342,7 +342,7 @@ export const sendInviteEmail = async (
               <li style="margin-bottom: 5px;">Cliquez sur le bouton ci-dessus</li>
               <li style="margin-bottom: 5px;">Saisissez votre email et mot de passe temporaire</li>
               <li style="margin-bottom: 5px;">Créez votre nouveau mot de passe sécurisé</li>
-              <li>Commencez à utiliser IZI Wheel ! 🎉</li>
+              <li>Commencez à utiliser IZI Kado ! 🎉</li>
             </ol>
           </div>
           
@@ -350,7 +350,7 @@ export const sendInviteEmail = async (
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
             Cordialement,<br>
-            <strong>L'équipe IZI Wheel</strong><br>
+            <strong>L'équipe IZI Kado</strong><br>
             <small>Plateforme de roues de la fortune digitales</small>
           </p>
         </div>
@@ -415,7 +415,7 @@ export const sendPrizeEmail = async (
     emailLogId = await logEmailAttempt({
       type: EmailType.PRIZE_NOTIFICATION,
       recipient: email,
-      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Wheel`,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Kado`,
       companyId,
       playId,
       metadata: {
@@ -428,14 +428,14 @@ export const sendPrizeEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
       to: email,
-      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Wheel`,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Kado`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <h1 style="color: #4f46e5;">🎉 Félicitations !</h1>
           </div>
           
-          <p>Vous avez gagné <strong>${prizeName}</strong> sur IZI Wheel !</p>
+          <p>Vous avez gagné <strong>${prizeName}</strong> sur IZI Kado !</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
             <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🎁 Vos codes de récupération :</p>
@@ -462,7 +462,7 @@ export const sendPrizeEmail = async (
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
             Merci d'avoir participé !<br>
-            L'équipe IZI Wheel
+            L'équipe IZI Kado
           </p>
         </div>
       `,
@@ -498,6 +498,134 @@ export const sendPrizeEmail = async (
       command: (error as any)?.command,
       response: (error as any)?.response
     });
+    
+    // Update email status to FAILED
+    if (emailLogId) {
+      await updateEmailStatus(
+        emailLogId, 
+        EmailStatus.FAILED, 
+        undefined, 
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+    
+    // Don't throw the error, just log it
+  }
+};
+
+/**
+ * Send a password reset email
+ * @param email User's email address
+ * @param resetToken Reset token
+ * @param companyName Company name
+ * @param userName User's name (optional)
+ */
+export const sendPasswordResetEmail = async (
+  email: string,
+  resetToken: string,
+  companyName: string,
+  userName?: string
+): Promise<void> => {
+  let emailLogId: string | null = null;
+  
+  try {
+    console.log(`[EMAIL] Attempting to send password reset email to: ${email}`);
+    
+    // Log the email attempt
+    emailLogId = await logEmailAttempt({
+      type: EmailType.PASSWORD_RESET,
+      recipient: email,
+      subject: `Réinitialisation de votre mot de passe - ${companyName}`,
+      metadata: {
+        companyName,
+        userName,
+        hasResetToken: !!resetToken
+      }
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://dashboard.izikado.fr';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
+      to: email,
+      subject: `Réinitialisation de votre mot de passe - ${companyName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #4f46e5;">🔑 Réinitialisation de mot de passe</h1>
+          </div>
+          
+          <p style="font-size: 16px;">${greeting}</p>
+          
+          <p style="font-size: 16px;">Vous avez demandé la réinitialisation de votre mot de passe pour votre compte <strong>${companyName}</strong> sur la plateforme IZI Kado.</p>
+          
+          <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
+            <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🔒 Réinitialisation sécurisée :</p>
+            <p style="margin: 10px 0 0 0; color: #01579b;">Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe sécurisé.</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              🔐 Réinitialiser mon mot de passe
+            </a>
+          </div>
+          
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+            <p style="margin: 0; font-weight: bold; color: #e65100; font-size: 16px;">⚠️ Important :</p>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #e65100;">
+              <li>Ce lien est valide pendant <strong>1 heure</strong></li>
+              <li>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email</li>
+              <li>Ne partagez jamais ce lien avec quelqu'un d'autre</li>
+            </ul>
+          </div>
+          
+          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: bold; color: #495057;">🛡️ Conseils de sécurité :</p>
+            <ul style="margin: 0; padding-left: 20px; color: #495057;">
+              <li style="margin-bottom: 5px;">Choisissez un mot de passe d'au moins 8 caractères</li>
+              <li style="margin-bottom: 5px;">Mélangez lettres, chiffres et symboles</li>
+              <li style="margin-bottom: 5px;">Évitez les mots du dictionnaire</li>
+              <li>Ne réutilisez pas d'anciens mots de passe</li>
+            </ul>
+          </div>
+          
+          <p style="font-size: 14px; color: #6b7280;">Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
+          <p style="font-size: 12px; color: #9ca3af; word-break: break-all; background-color: #f9fafb; padding: 10px; border-radius: 4px;">${resetUrl}</p>
+          
+          <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
+            Cordialement,<br>
+            <strong>L'équipe IZI Kado</strong><br>
+            <small>Plateforme de roues de la fortune digitales</small>
+          </p>
+        </div>
+      `,
+    };
+
+    console.log(`[EMAIL] Mail options prepared for password reset: ${email}`);
+    
+    if (!isSmtpConfigured) {
+      console.log(`[EMAIL] SMTP not configured - would send password reset email to ${email}`);
+      console.log(`[EMAIL] Reset URL: ${resetUrl}`);
+      
+      if (emailLogId) {
+        await updateEmailStatus(emailLogId, EmailStatus.SENT, 'test-mode');
+      }
+      return;
+    }
+
+    console.log(`[EMAIL] Sending password reset email via SMTP...`);
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] ✅ Password reset email sent successfully to ${email}`);
+    console.log(`[EMAIL] Message ID: ${result.messageId}`);
+    
+    // Update email status to SENT
+    if (emailLogId) {
+      await updateEmailStatus(emailLogId, EmailStatus.SENT, result.messageId);
+    }
+  } catch (error) {
+    console.error(`[EMAIL] ❌ Failed to send password reset email to ${email}:`, error);
     
     // Update email status to FAILED
     if (emailLogId) {

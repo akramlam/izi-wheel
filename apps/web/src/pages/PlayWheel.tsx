@@ -1262,7 +1262,7 @@ const PlayWheel = () => {
     console.log('[DEBUG] Showing loading screen - isLoadingWheel is true');
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
-        <h1 className="text-3xl font-bold text-indigo-700 mb-8">IZI Wheel</h1>
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">IZI Kado</h1>
         <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
         <p className="mt-4 text-lg text-gray-700">Loading the wheel...</p>
       </div>
@@ -1366,7 +1366,7 @@ const PlayWheel = () => {
           <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 max-w-full break-words px-2 drop-shadow-lg">
             {wheelData.mainTitle && wheelData.mainTitle.trim() !== ''
               ? wheelData.mainTitle
-              : 'IZI Wheel'}
+              : 'IZI Kado'}
           </h1>
         </div>
       )}
@@ -1828,7 +1828,7 @@ const PlayWheel = () => {
           {wheelData?.footerText ? (
             <span className="max-w-full">{wheelData.footerText}</span>
           ) : (
-            <span>© {new Date().getFullYear()} IZI Wheel</span>
+            <span>© {new Date().getFullYear()} IZI Kado</span>
           )}
         </div>
         <button

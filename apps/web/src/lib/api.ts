@@ -93,6 +93,14 @@ export const api = {
     return apiClient.post('/auth/register', userData);
   },
   
+  forgotPassword: async (email: string) => {
+    return apiClient.post('/auth/forgot-password', { email });
+  },
+  
+  resetPassword: async (token: string, newPassword: string) => {
+    return apiClient.post('/auth/reset-password', { token, newPassword });
+  },
+  
   changePassword: async (data: { currentPassword: string, newPassword: string }) => {
     return apiClient.post('/auth/change-password', data);
   },

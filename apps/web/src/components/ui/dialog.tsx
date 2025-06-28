@@ -5,7 +5,7 @@ interface DialogProps {
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }
-
+  
 interface DialogContentProps {
   children: React.ReactNode;
   className?: string;

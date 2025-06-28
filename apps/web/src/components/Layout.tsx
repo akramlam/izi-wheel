@@ -89,11 +89,11 @@ const Layout = () => {
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">support@izitouch.fr</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">support@izikado.fr</span>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">+33 (0)1 23 45 67 89</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">+33 6 51 52 70 16</span>
                     </div>
                     <div className="mt-2">
                       <button className="inline-flex items-center px-4 py-2 rounded-md bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-800/40 transition duration-150">
@@ -108,7 +108,7 @@ const Layout = () => {
               {/* Footer bottom with copyright and social icons */}
               <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  © {new Date().getFullYear()} izi TOUCH. Tous droits réservés.
+                  © {new Date().getFullYear()} Izi kado. Tous droits réservés.
                 </div>
                 <div className="flex space-x-4 mt-4 md:mt-0">
                   <a href="#" className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300" aria-label="Facebook">

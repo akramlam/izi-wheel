@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import prisma from '../utils/db';
-import { hashPassword, comparePassword } from '../utils/auth';
+import { hashPassword, comparePassword, generateRandomPassword } from '../utils/auth';
 import { generateToken } from '../utils/jwt';
 import { z } from 'zod';
+import { sendPasswordResetEmail } from '../utils/mailer';
+import * as crypto from 'crypto';
 
 // Validation schema for login
 const loginSchema = z.object({
@@ -22,6 +24,17 @@ const registerSchema = z.object({
 // Validation schema for password change
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
+});
+
+// Validation schema for forgot password
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+// Validation schema for reset password
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
   newPassword: z.string().min(6),
 });
 
@@ -337,5 +350,194 @@ export const getProfile = async (req: Request, res: Response) => {
       user: null,
       error: 'Failed to get user profile' 
     });
+  }
+};
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ *       404:
+ *         description: User not found
+ *       429:
+ *         description: Too many requests
+ */
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    // Validate input
+    const validation = forgotPasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: 'Invalid email format', 
+        details: validation.error.format() 
+      });
+    }
+
+    const { email } = req.body;
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        company: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address' });
+    }
+
+    // Check for recent reset requests (rate limiting)
+    const recentReset = await prisma.passwordReset.findFirst({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: new Date(Date.now() - 15 * 60 * 1000) // 15 minutes ago
+        }
+      }
+    });
+
+    if (recentReset) {
+      return res.status(429).json({ 
+        error: 'Please wait before requesting another password reset' 
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Store reset token in database
+    await prisma.passwordReset.create({
+      data: {
+        userId: user.id,
+        token: resetToken,
+        expiresAt: tokenExpiry
+      }
+    });
+
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail(
+        user.email, 
+        resetToken, 
+        user.company?.name || 'IZI Kado',
+        user.name
+      );
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    res.json({ 
+      message: 'Password reset email sent successfully',
+      email: user.email 
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Failed to process password reset request' });
+  }
+};
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    // Validate input
+    const validation = resetPasswordSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ 
+        error: 'Invalid input', 
+        details: validation.error.format() 
+      });
+    }
+
+    const { token, newPassword } = req.body;
+
+    // Find valid reset token
+    const passwordReset = await prisma.passwordReset.findFirst({
+      where: {
+        token,
+        expiresAt: {
+          gt: new Date() // Token not expired
+        },
+        used: false
+      },
+      include: {
+        user: true
+      }
+    });
+
+    if (!passwordReset) {
+      return res.status(400).json({ 
+        error: 'Invalid or expired reset token' 
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password and mark token as used
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: passwordReset.userId },
+        data: {
+          password: hashedPassword,
+          forcePasswordChange: false
+        }
+      }),
+      prisma.passwordReset.update({
+        where: { id: passwordReset.id },
+        data: { used: true }
+      })
+    ]);
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 }; 

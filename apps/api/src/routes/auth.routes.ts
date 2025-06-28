@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { login, register, getProfile, changePassword } from '../controllers/auth.controller';
+import { login, register, getProfile, changePassword, forgotPassword, resetPassword } from '../controllers/auth.controller';
 import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import prisma from '../utils/db';
@@ -68,5 +68,19 @@ router.get('/me/debug', authMiddleware, (req, res) => {
     message: 'This is your current user information from the JWT token'
   });
 });
+
+/**
+ * @route   POST /auth/forgot-password
+ * @desc    Request password reset
+ * @access  Public
+ */
+router.post('/forgot-password', forgotPassword);
+
+/**
+ * @route   POST /auth/reset-password
+ * @desc    Reset password with token
+ * @access  Public
+ */
+router.post('/reset-password', resetPassword);
 
 export default router; 
