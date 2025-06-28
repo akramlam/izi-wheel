@@ -435,7 +435,30 @@ const Roues: React.FC = () => {
   };
 
   const handleViewRoue = (id: string) => {
-    navigate(`/roues/${id}`)
+    // Find the wheel to check if it's active
+    const roue = roues.find(r => r.id === id);
+    
+    if (!roue) {
+      toast({
+        title: "Erreur",
+        description: "Roue introuvable",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (roue.statut !== "Actif") {
+      toast({
+        title: "Roue inactive",
+        description: "Cette roue doit être activée avant d'être accessible publiquement",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Open the public wheel link in a new tab
+    const wheelLink = `https://roue.izikado.fr/play/company/${id}`;
+    window.open(wheelLink, '_blank');
   }
 
   const handleViewQRCode = (id: string) => {
