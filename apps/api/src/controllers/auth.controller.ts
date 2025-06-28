@@ -332,7 +332,17 @@ export const getProfile = async (req: Request, res: Response) => {
         name: true,
         forcePasswordChange: true,
         isActive: true,
-        createdAt: true
+        createdAt: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+            plan: true,
+            maxWheels: true,
+            remainingPlays: true,
+            isActive: true
+          }
+        }
       }
     });
 
