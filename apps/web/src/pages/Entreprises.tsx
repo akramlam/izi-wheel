@@ -511,94 +511,98 @@ const Entreprises: React.FC = () => {
       </Card>
 
       {/* Companies Grid */}
-      {filteredCompanies.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCompanies.map((company) => (
-            <Card key={company.id} className="hover:shadow-xl transition-shadow duration-300 ease-in-out rounded-lg overflow-hidden flex flex-col">
-              <CardContent className="p-5 flex flex-col flex-grow">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${company.color || 'bg-purple-500'} text-white text-xl font-semibold`}>
-                    {company.name.charAt(0).toUpperCase()}
+          <Card key={company.id} className="group hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-purple-300 bg-white">
+            <CardContent className="p-6">
+              {/* Header with Logo and Status */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <span className="text-white font-bold text-lg">
+                      {company.name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${ 
-                      company.isActive
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}
-                  >
-                    {company.isActive ? 'Active' : 'Inactive'}
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-lg leading-tight" title={company.name}>
+                      {company.name.length > 20 ? `${company.name.substring(0, 20)}...` : company.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Créée le {new Date(company.createdAt).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  company.isActive
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : 'bg-red-100 text-red-700 border border-red-200'
+                }`}>
+                  {company.isActive ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+
+              {/* Company Details */}
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">Plan</span>
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                    company.plan === 'PREMIUM' ? 'bg-purple-100 text-purple-700' :
+                    company.plan === 'BASIC' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {company.plan || 'N/A'}
                   </span>
                 </div>
-                <h3 className="font-semibold text-gray-800 dark:text-white text-lg truncate mb-1" title={company.name}>{company.name}</h3>
-                
-                {/* Display plan and maxWheels if available */}
-                <p className="text-sm text-gray-500 dark:text-gray-400">Plan: {company.plan || 'N/A'}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Max Roues: {company.maxWheels !== undefined ? company.maxWheels : 'N/A'}</p>
-                
-                {/* Display metric and trend if available */}
-                {(company.metric !== undefined || company.trend !== undefined) && (
-                  <div className="flex items-center text-sm mb-3">
-                    {company.metric !== undefined && (
-                      <p className="text-gray-700 dark:text-gray-300 mr-3">Métrique: {company.metric.toLocaleString()}</p>
-                    )}
-                    {company.trend !== undefined && (
-                  <div className={`flex items-center ${company.trend >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {company.trend >= 0 ? (
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 mr-1" />
-                    )}
-                        <span>
-                      {company.trend >= 0 ? "+" : ""}
-                      {company.trend.toFixed(2)}%
-                    </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                <p className="text-xs text-gray-400 dark:text-gray-500">Créée le: {new Date(company.createdAt).toLocaleDateString()}</p>
-                
-                <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => handleManageCompany(company.id)} className="text-blue-600 border-blue-600 hover:bg-blue-50">
-                    <Users className="h-4 w-4 mr-1" /> Gérer
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">Roues Max</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {company.maxWheels !== undefined ? company.maxWheels : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">Administrateurs</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {company.adminCount !== undefined ? company.adminCount : '0'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col space-y-2">
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleManageCompany(company.id)} 
+                    className="flex-1 text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Gérer
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => startUpdating(company)} className="text-purple-600 border-purple-600 hover:bg-purple-50">
-                    <Pencil className="h-4 w-4 mr-1" /> Modifier
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteCompany(company.id)} className="text-red-600 border-red-600 hover:bg-red-50">
-                    <Trash2 className="h-4 w-4 mr-1" /> Supprimer
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => startUpdating(company)} 
+                    className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Modifier
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDeleteCompany(company.id)} 
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
-      ) : (
-        <div className="text-center py-10">
-          <p className="text-gray-500 dark:text-gray-400">Aucune entreprise trouvée.</p>
-          {searchTerm && <p className="text-gray-400 dark:text-gray-500 text-sm">Essayez d'ajuster votre recherche.</p>}
-        </div>
-      )}
-
-      {/* Pagination - Kept from original UI, functionality can be implemented later */} 
-      {filteredCompanies.length > 0 && (
-        <div className="flex items-center justify-center space-x-1 mt-8">
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
-            {[1, 2, 3].map((page) => ( // Simplified pagination for now
-          <button
-            key={page}
-                className={`w-10 h-10 flex items-center justify-center rounded ${ 
-              page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
-      </div>
-      )}
 
       {/* Delete confirmation dialog */}
       <EnhancedConfirmationDialog

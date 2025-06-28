@@ -117,12 +117,7 @@ function App() {
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
       
-      {/* Public wheel routes */}
-      <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
-      {/* Direct wheel access without company ID */}
-      <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
-      <Route path="/play/company/:wheelId" element={<PlayWheel />} />
-      <Route path="/redeem/:playId" element={<RedeemPrize />} />
+      {/* REMOVED: Public wheel routes - these should ONLY be on roue.izikado.fr */}
       
       <Route path="/change-password" element={
         <ProtectedRoute>

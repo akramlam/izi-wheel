@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
 import { toast } from '../hooks/use-toast';
 import { api } from '../lib/api';
 import { Plus, ArrowLeft, UserPlus, Trash2, Mail, User, Shield, Calendar } from 'lucide-react';
