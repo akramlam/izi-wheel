@@ -13,7 +13,7 @@ import { EnhancedConfirmationDialog } from '../components/ui/enhanced-confirmati
 
 import { api } from '../lib/api' // Fixed import path
 import { useToast } from '../hooks/use-toast' // Fixed import path
-import { Plus, Search, Filter, ArrowUpDown, TrendingUp, TrendingDown, Pencil, Trash2, Check, X, UserPlus } from "lucide-react"
+import { Plus, Search, Filter, ArrowUpDown, TrendingUp, TrendingDown, Pencil, Trash2, Check, X, UserPlus, Users } from "lucide-react"
 
 // More comprehensive company type based on SuperAdmin.tsx
 interface Company {
@@ -68,6 +68,8 @@ const Entreprises: React.FC = () => {
     adminsCount: 0,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const navigate = useNavigate();
 
   // Console logging for debugging
   useEffect(() => {
@@ -330,6 +332,10 @@ const Entreprises: React.FC = () => {
     company.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleManageCompany = (companyId: string) => {
+    navigate(`/entreprises/${companyId}/admins`);
+  };
+
   // Form UI to be rendered when isCreating or isUpdating
   const renderForm = () => (
     <Card className="mb-6 shadow-lg">
@@ -555,6 +561,9 @@ const Entreprises: React.FC = () => {
                 <p className="text-xs text-gray-400 dark:text-gray-500">Créée le: {new Date(company.createdAt).toLocaleDateString()}</p>
                 
                 <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => handleManageCompany(company.id)} className="text-blue-600 border-blue-600 hover:bg-blue-50">
+                    <Users className="h-4 w-4 mr-1" /> Gérer
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => startUpdating(company)} className="text-purple-600 border-purple-600 hover:bg-purple-50">
                     <Pencil className="h-4 w-4 mr-1" /> Modifier
                   </Button>

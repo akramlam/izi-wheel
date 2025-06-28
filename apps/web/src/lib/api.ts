@@ -196,7 +196,7 @@ export const api = {
   },
   
   updateCompany: async (companyId: string, data: any) => {
-    return apiClient.patch(`/companies/${companyId}/plan`, data);
+    return apiClient.put(`/companies/${companyId}`, data);
   },
   
   deleteCompany: async (companyId: string, force: boolean = false) => {

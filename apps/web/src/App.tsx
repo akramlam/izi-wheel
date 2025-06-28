@@ -11,6 +11,7 @@ import Roues from './pages/Roues';
 import WheelEdit from './pages/WheelEdit';
 import Layout from './components/Layout';
 import Entreprises from './pages/Entreprises';
+import CompanyAdminManager from './pages/CompanyAdminManager';
 import SousAdministrateurs from './pages/SousAdministrateurs';
 import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
@@ -155,6 +156,12 @@ function App() {
         <Route path="entreprises" element={
           <ProtectedRoute allowedRoles={['SUPER']}>
             <Entreprises />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="entreprises/:companyId/admins" element={
+          <ProtectedRoute allowedRoles={['SUPER']}>
+            <CompanyAdminManager />
           </ProtectedRoute>
         } />
         
