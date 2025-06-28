@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../hooks/use-toast';
 import { api } from '../lib/api';
 import { Plus, ArrowLeft, UserPlus, Trash2, Mail, User, Shield, Calendar } from 'lucide-react';
-import { Badge } from '../components/ui/Badge';
+import Badge from '../components/ui/Badge';
 
 interface CompanyUser {
   id: string;
@@ -142,11 +142,11 @@ const CompanyAdminManager: React.FC = () => {
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'default';
+        return 'info';
       case 'SUB':
-        return 'secondary';
+        return 'default';
       default:
-        return 'outline';
+        return 'default';
     }
   };
 
@@ -205,7 +205,7 @@ const CompanyAdminManager: React.FC = () => {
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-500">Statut</Label>
-                <Badge variant={company.isActive ? 'default' : 'destructive'}>
+                <Badge variant={company.isActive ? 'success' : 'error'}>
                   {company.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
@@ -320,7 +320,7 @@ const CompanyAdminManager: React.FC = () => {
                     <Badge variant={getRoleBadgeVariant(user.role)}>
                       {user.role === 'ADMIN' ? 'Administrateur' : 'Sous-administrateur'}
                     </Badge>
-                    <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                    <Badge variant={user.isActive ? 'success' : 'error'}>
                       {user.isActive ? 'Actif' : 'Inactif'}
                     </Badge>
                     <Button
