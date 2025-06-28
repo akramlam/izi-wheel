@@ -36,6 +36,7 @@ import { api } from '../lib/api';
 import { Label } from '../components/ui/label';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 interface PlayRecord {
   id: string;
@@ -96,6 +97,7 @@ interface DashboardData {
 const ActivityTracking: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [plays, setPlays] = useState<PlayRecord[]>([]);
   const [statistics, setStatistics] = useState<PlayStatistics | null>(null);

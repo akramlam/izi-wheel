@@ -461,23 +461,34 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           const segmentColor = segment.color || 
             (segment.isWinning ? '#28a745' : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'][index % 4]);
           
-          let textRotation = 0; // Keep text horizontal for better readability
+          // Restore vertical text rotation for proper wheel appearance
+          let textRotation = midAngle;
+          // Adjust rotation for readability - flip text if it would be upside down
+          if (textRotation > 90 && textRotation < 270) {
+            textRotation += 180;
+          }
 
           const labelText = segment.label || `Prix ${index + 1}`;
-          // Format text for better display
-          const textLines = formatTextForWheel(labelText, 12, 2);
+          // Format text for better display with shorter lines for vertical text
+          const textLines = formatTextForWheel(labelText, 8, 2);
           const lineCount = textLines.length;
           
-          // Responsive text width calculation
+          // Better text box sizing calculation for vertical text
           const longestLine = textLines.reduce((longest, line) => line.length > longest.length ? line : longest, '');
-          const estimatedTextRenderWidth = longestLine.length * responsiveFontSize * 0.55;
+          const estimatedTextWidth = longestLine.length * responsiveFontSize * 0.6;
+          const estimatedTextHeight = lineCount * responsiveFontSize * 1.4;
+          
+          // Calculate proper box dimensions with adequate padding
+          const textPadding = 16;
           const currentTextRectWidth = Math.min(
             TEXT_RECT_MAX_WIDTH,
-            Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextRenderWidth + 20)
+            Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextWidth + textPadding * 2)
           );
           
-          // Adjust height based on number of lines
-          const currentTextRectHeight = TEXT_RECT_HEIGHT + (lineCount - 1) * 18;
+          const currentTextRectHeight = Math.max(
+            TEXT_RECT_HEIGHT,
+            estimatedTextHeight + textPadding
+          );
           
           return (
             <g key={index}>
