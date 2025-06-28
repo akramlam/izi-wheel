@@ -495,27 +495,32 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
               />
               
               <g transform={`translate(${textPos.x}, ${textPos.y}) rotate(${textRotation})`}>
+                {/* Always render background rectangle for ALL segments */}
                 <rect 
                   x={-currentTextRectWidth / 2}
                   y={-currentTextRectHeight / 2}
                   width={currentTextRectWidth}
                   height={currentTextRectHeight}
-                  fill="rgba(0,0,0,0.7)" 
+                  fill="rgba(0,0,0,0.8)" 
                   rx="8"
                   ry="8"
-                  stroke="rgba(255,255,255,0.7)"
-                  strokeWidth="1"
+                  stroke="rgba(255,255,255,0.8)"
+                  strokeWidth="1.5"
                 />
+                {/* Always render text with background for ALL segments */}
                 <text
                   x="0"
                   y="0"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fill={colors.textColor}
+                  fill="#ffffff"
                   fontSize={responsiveFontSize}
                   fontWeight="900"
                   filter="url(#textShadow)"
                   className="select-none"
+                  style={{
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8), 0 -1px 2px rgba(0,0,0,0.8), 1px 0 2px rgba(0,0,0,0.8), -1px 0 2px rgba(0,0,0,0.8)'
+                  }}
                 >
                   {textLines.map((line, lineIndex) => (
                     <tspan key={`${index}-${lineIndex}`} x="0" y={lineIndex * 18} dy={lineIndex > 0 ? "0.7em" : "0"}>
