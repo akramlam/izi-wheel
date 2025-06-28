@@ -62,8 +62,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     /* Prevent horizontal scrolling */
     overflow-x: hidden;
-    /* Ensure consistent width regardless of scrollbar presence */
-    width: 100vw;
     /* Prevent body from shifting when content height changes */
     margin: 0;
     padding: 0;
@@ -191,4 +189,15 @@
     background-position: 0% 0%;
     }
   }
+}
+
+/* 🎯 MODAL BACKDROP FIX - Ensure full viewport coverage */
+.modal-backdrop-fix {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
 }

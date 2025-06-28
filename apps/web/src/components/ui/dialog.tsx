@@ -35,14 +35,38 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      {/* Backdrop - Ensure full viewport coverage with inline styles */}
       <div 
-        className="absolute inset-0 bg-black/50" 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1
+        }}
         onClick={() => onOpenChange(false)}
       />
       {/* Dialog content */}
-      <div className="relative z-10">
+      <div style={{ position: 'relative', zIndex: 10 }}>
         {children}
       </div>
     </div>
