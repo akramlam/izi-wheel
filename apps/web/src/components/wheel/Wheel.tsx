@@ -461,10 +461,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           const segmentColor = segment.color || 
             (segment.isWinning ? '#28a745' : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'][index % 4]);
           
-          let textRotation = midAngle + 90;
-          if (midAngle > 90 && midAngle < 270) { 
-            textRotation += 180;
-          }
+          let textRotation = 0; // Keep text horizontal for better readability
 
           const labelText = segment.label || `Prix ${index + 1}`;
           // Format text for better display

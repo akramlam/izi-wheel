@@ -544,12 +544,8 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
           const textX = CENTER + TEXT_RADIUS * Math.cos(midRad);
           const textY = CENTER + TEXT_RADIUS * Math.sin(midRad);
           
-          // Corrected text rotation - text should always be readable from outside the wheel
-          let textRotation = midAngle + 90;
-          // Fix the upside-down text by ensuring text is always readable from the outside
-          if (midAngle > 90 && midAngle < 270) {
-            textRotation += 180; // Flip text for better readability
-          }
+          // Keep text horizontal for better readability
+          let textRotation = 0;
           
           // Enhanced color handling for alternating segments with 3D effect
           const isAlternate = i % 2 === 0;

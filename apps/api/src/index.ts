@@ -64,6 +64,10 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 export const app: Express = express();
 const port = process.env.PORT || 3001;
 
+// Trust proxy to get real client IP addresses
+// This is essential for IP-based rate limiting and tracking
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors({
   origin: [
