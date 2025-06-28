@@ -925,7 +925,7 @@ const WheelEdit = () => {
         
         // Update slots
           try {
-            // Delete existing slots
+            // Get existing slots
             const slotsResponse = await api.getSlots(id!);
             let existingSlots = [];
             
@@ -938,78 +938,92 @@ const WheelEdit = () => {
               }
             }
             
-
-            
-            if (existingSlots.length > 0) {
-              // Delete all existing slots first before creating new ones
-              for (const slot of existingSlots) {
-                if (slot.id) {
-                  try {
-                    await api.deleteSlot(id!, slot.id);
-
-                  } catch (deleteError) {
-
-                  }
-                }
-              }
-            }
-            
-            // Verify weights total exactly 100% before creating slots
+            // Verify weights total exactly 100% before updating slots
             const totalSlotWeight = wheel.slots.reduce((sum, slot) => sum + slot.weight, 0);
+            let slotsToProcess = [...wheel.slots];
             
             if (totalSlotWeight !== 100) {
               // Normalize to ensure total is exactly 100%
-              const normalizedSlots = [...wheel.slots];
-              
-              // Simple proportional adjustment
               const factor = 100 / totalSlotWeight;
               let newTotal = 0;
               
-              for (let i = 0; i < normalizedSlots.length; i++) {
+              for (let i = 0; i < slotsToProcess.length; i++) {
                 // For all but the last slot, calculate and round
-                if (i < normalizedSlots.length - 1) {
-                  normalizedSlots[i].weight = Math.round(normalizedSlots[i].weight * factor);
-                  newTotal += normalizedSlots[i].weight;
+                if (i < slotsToProcess.length - 1) {
+                  slotsToProcess[i].weight = Math.round(slotsToProcess[i].weight * factor);
+                  newTotal += slotsToProcess[i].weight;
                 } else {
                   // Last slot gets whatever is needed to reach 100 exactly
-                  normalizedSlots[i].weight = 100 - newTotal;
+                  slotsToProcess[i].weight = 100 - newTotal;
                 }
               }
               
               // Update wheel state with normalized slots
               setWheel(prev => ({
                 ...prev,
-                slots: normalizedSlots
+                slots: slotsToProcess
               }));
+            }
+            
+            // Create a map of existing slots by their position for easier lookup
+            const existingSlotsByPosition = new Map();
+            existingSlots.forEach(slot => {
+              existingSlotsByPosition.set(slot.position, slot);
+            });
+            
+            // Process each slot - update existing ones or create new ones
+            for (const [index, slot] of slotsToProcess.entries()) {
+              const slotData = {
+                label: slot.label,
+                weight: slot.weight,
+                prizeCode: slot.prizeCode,
+                color: slot.color,
+                position: index,
+                isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0
+              };
               
-              // Use normalized slots for creation
-              for (const [index, slot] of normalizedSlots.entries()) {
-                await api.createSlot(id!, {
-                  label: slot.label,
-                  weight: slot.weight,
-                  prizeCode: slot.prizeCode,
-                  color: slot.color,
-                  position: index, // CRITICAL: Set position to maintain order
-                  isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
-                });
-
+              const existingSlot = existingSlotsByPosition.get(index);
+              
+              if (existingSlot) {
+                // Update existing slot to preserve plays
+                try {
+                  await api.updateSlot(id!, existingSlot.id, slotData);
+                  console.log(`Updated slot at position ${index}: ${slot.label}`);
+                } catch (updateError) {
+                  console.error(`Error updating slot ${existingSlot.id}:`, updateError);
+                  // If update fails, try to delete and recreate this specific slot
+                  try {
+                    await api.deleteSlot(id!, existingSlot.id);
+                    await api.createSlot(id!, slotData);
+                    console.log(`Recreated slot at position ${index}: ${slot.label}`);
+                  } catch (recreateError) {
+                    console.error(`Error recreating slot at position ${index}:`, recreateError);
+                  }
+                }
+              } else {
+                // Create new slot
+                try {
+                  await api.createSlot(id!, slotData);
+                  console.log(`Created new slot at position ${index}: ${slot.label}`);
+                } catch (createError) {
+                  console.error(`Error creating slot at position ${index}:`, createError);
+                }
               }
-            } else {
-              // Weights already total 100%, create slots as is
-              for (const [index, slot] of wheel.slots.entries()) {
-                await api.createSlot(id!, {
-                  label: slot.label,
-                  weight: slot.weight,
-                  prizeCode: slot.prizeCode,
-                  color: slot.color,
-                  position: index, // CRITICAL: Set position to maintain order
-                  isWinning: wheel.type === "ALL_WIN" ? true : slot.weight > 0 // Force all slots to be winning for ALL_WIN mode
-                });
-
+            }
+            
+            // Delete any extra existing slots that are no longer needed
+            for (const existingSlot of existingSlots) {
+              if (existingSlot.position >= slotsToProcess.length) {
+                try {
+                  await api.deleteSlot(id!, existingSlot.id);
+                  console.log(`Deleted extra slot at position ${existingSlot.position}`);
+                } catch (deleteError) {
+                  console.error(`Error deleting extra slot ${existingSlot.id}:`, deleteError);
+                }
               }
-        }
-        
-        toast({
+            }
+            
+            toast({
               title: "Succès",
               description: "Roue mise à jour avec succès!",
             });

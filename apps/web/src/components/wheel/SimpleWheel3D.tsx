@@ -15,6 +15,51 @@ interface WheelProps {
 // WebGL detection utility (not actually needed for this implementation but kept for interface compatibility)
 const isWebGLSupported = () => true;
 
+// Helper function to handle long text in wheel segments
+function formatTextForWheel(text: string, maxCharsPerLine: number = 10, maxLines: number = 2): string[] {
+  if (!text || text.length <= maxCharsPerLine) {
+    return [text || ''];
+  }
+  
+  // Split by words first
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    // If adding this word would exceed the line limit
+    if ((currentLine + ' ' + word).length > maxCharsPerLine && currentLine !== '') {
+      lines.push(currentLine.trim());
+      currentLine = word;
+      
+      // If we've reached max lines, truncate
+      if (lines.length >= maxLines) {
+        break;
+      }
+    } else {
+      currentLine = currentLine === '' ? word : currentLine + ' ' + word;
+    }
+  }
+  
+  // Add the last line if it exists and we haven't exceeded max lines
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine.trim());
+  }
+  
+  // If the last line is too long, truncate it
+  if (lines.length > 0 && lines[lines.length - 1].length > maxCharsPerLine) {
+    const lastLine = lines[lines.length - 1];
+    if (lines.length === maxLines) {
+      // Add ellipsis if we're at max lines
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine - 3) + '...';
+    } else {
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine);
+    }
+  }
+  
+  return lines.filter(line => line.length > 0);
+}
+
 // Premium Wheel component with high-quality SVG effects
 const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   const { config, isSpinning, prizeIndex, onSpin, showSpinButton = false } = props;
@@ -550,6 +595,9 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
             segmentColor = baseColor;
           }
           
+          // Format text for wheel
+          const formattedText = formatTextForWheel(segment.label);
+          
           return (
             <g key={i}>
               {/* Draw segment with 3D effect */}
@@ -575,9 +623,9 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
                 {/* Text background/shadow for better visibility */}
                 <rect
                   x="-60"
-                  y="-18"
+                  y={formattedText.length > 1 ? "-28" : "-18"}
                   width="120"
-                  height="36"
+                  height={formattedText.length > 1 ? "56" : "36"}
                   rx="6"
                   ry="6"
                   fill="rgba(0,0,0,0.7)"
@@ -588,7 +636,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
                 
                 <text
                   x="0"
-                  y="0"
+                  y={formattedText.length > 1 ? "-10" : "0"}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="#FFFFFF"
@@ -601,7 +649,9 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
                     textShadow: '0px 1px 2px black, 0px -1px 2px black, 1px 0px 2px black, -1px 0px 2px black'
                   }}
                 >
-                  {segment.label}
+                  {formattedText.map((line, index) => (
+                    <tspan key={index} x="0" y={index * 20}>{line}</tspan>
+                  ))}
                 </text>
               </g>
               

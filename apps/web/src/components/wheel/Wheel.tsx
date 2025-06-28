@@ -98,6 +98,51 @@ function getTextPosition(cx: number, cy: number, radius: number, angle: number) 
   };
 }
 
+// Helper function to handle long text in wheel segments
+function formatTextForWheel(text: string, maxCharsPerLine: number = 12, maxLines: number = 2): string[] {
+  if (!text || text.length <= maxCharsPerLine) {
+    return [text || ''];
+  }
+  
+  // Split by words first
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    // If adding this word would exceed the line limit
+    if ((currentLine + ' ' + word).length > maxCharsPerLine && currentLine !== '') {
+      lines.push(currentLine.trim());
+      currentLine = word;
+      
+      // If we've reached max lines, truncate
+      if (lines.length >= maxLines) {
+        break;
+      }
+    } else {
+      currentLine = currentLine === '' ? word : currentLine + ' ' + word;
+    }
+  }
+  
+  // Add the last line if it exists and we haven't exceeded max lines
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine.trim());
+  }
+  
+  // If the last line is too long, truncate it
+  if (lines.length > 0 && lines[lines.length - 1].length > maxCharsPerLine) {
+    const lastLine = lines[lines.length - 1];
+    if (lines.length === maxLines) {
+      // Add ellipsis if we're at max lines
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine - 3) + '...';
+    } else {
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine);
+    }
+  }
+  
+  return lines.filter(line => line.length > 0);
+}
+
 // Main Wheel component
 const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false }) => {
   // State for animation and interaction
@@ -422,12 +467,20 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           }
 
           const labelText = segment.label || `Prix ${index + 1}`;
+          // Format text for better display
+          const textLines = formatTextForWheel(labelText, 12, 2);
+          const lineCount = textLines.length;
+          
           // Responsive text width calculation
-          const estimatedTextRenderWidth = labelText.length * responsiveFontSize * 0.55;
+          const longestLine = textLines.reduce((longest, line) => line.length > longest.length ? line : longest, '');
+          const estimatedTextRenderWidth = longestLine.length * responsiveFontSize * 0.55;
           const currentTextRectWidth = Math.min(
             TEXT_RECT_MAX_WIDTH,
             Math.max(TEXT_RECT_MIN_WIDTH, estimatedTextRenderWidth + 20)
           );
+          
+          // Adjust height based on number of lines
+          const currentTextRectHeight = TEXT_RECT_HEIGHT + (lineCount - 1) * 18;
           
           return (
             <g key={index}>
@@ -444,9 +497,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
               <g transform={`translate(${textPos.x}, ${textPos.y}) rotate(${textRotation})`}>
                 <rect 
                   x={-currentTextRectWidth / 2}
-                  y={-TEXT_RECT_HEIGHT / 2}
+                  y={-currentTextRectHeight / 2}
                   width={currentTextRectWidth}
-                  height={TEXT_RECT_HEIGHT}
+                  height={currentTextRectHeight}
                   fill="rgba(0,0,0,0.7)" 
                   rx="8"
                   ry="8"
@@ -464,7 +517,11 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
                   filter="url(#textShadow)"
                   className="select-none"
                 >
-                  {labelText}
+                  {textLines.map((line, lineIndex) => (
+                    <tspan key={`${index}-${lineIndex}`} x="0" y={lineIndex * 18} dy={lineIndex > 0 ? "0.7em" : "0"}>
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
               </g>
             </g>

@@ -42,6 +42,51 @@ function getTextPathId(i: number) {
   return `wheel-arc-text-${i}`;
 }
 
+// Helper function to handle long text in wheel segments
+function formatTextForWheel(text: string, maxCharsPerLine: number = 10, maxLines: number = 2): string[] {
+  if (!text || text.length <= maxCharsPerLine) {
+    return [text || ''];
+  }
+  
+  // Split by words first
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    // If adding this word would exceed the line limit
+    if ((currentLine + ' ' + word).length > maxCharsPerLine && currentLine !== '') {
+      lines.push(currentLine.trim());
+      currentLine = word;
+      
+      // If we've reached max lines, truncate
+      if (lines.length >= maxLines) {
+        break;
+      }
+    } else {
+      currentLine = currentLine === '' ? word : currentLine + ' ' + word;
+    }
+  }
+  
+  // Add the last line if it exists and we haven't exceeded max lines
+  if (currentLine && lines.length < maxLines) {
+    lines.push(currentLine.trim());
+  }
+  
+  // If the last line is too long, truncate it
+  if (lines.length > 0 && lines[lines.length - 1].length > maxCharsPerLine) {
+    const lastLine = lines[lines.length - 1];
+    if (lines.length === maxLines) {
+      // Add ellipsis if we're at max lines
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine - 3) + '...';
+    } else {
+      lines[lines.length - 1] = lastLine.substring(0, maxCharsPerLine);
+    }
+  }
+  
+  return lines.filter(line => line.length > 0);
+}
+
 const CustomWheel: React.FC<CustomWheelProps> = ({ segments, mustSpin, prizeIndex, onStopSpinning, spinDuration = 2 }) => {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -121,6 +166,7 @@ const CustomWheel: React.FC<CustomWheelProps> = ({ segments, mustSpin, prizeInde
           const textRotation = midAngle > 90 && midAngle < 270 ? 180 : 0;
           const textAnchor = 'middle';
           const label = seg.label;
+          const formattedLabel = formatTextForWheel(label);
           const segEl = (
             <g key={i}>
               <path d={path} fill={seg.color} stroke="#fff" strokeWidth={2} filter="drop-shadow(0 2px 8px #0001)" />
@@ -134,21 +180,40 @@ const CustomWheel: React.FC<CustomWheelProps> = ({ segments, mustSpin, prizeInde
                 dominantBaseline="middle"
                 style={{ filter: 'drop-shadow(0 1px 2px #0006)' }}
               >
-                <textPath
-                  href={`#${textPathId}`}
-                  startOffset="50%"
-                  method="align"
-                  spacing="auto"
-                  alignmentBaseline="middle"
-                  dominantBaseline="middle"
-                  textAnchor="middle"
-                  style={{
-                    textShadow: '0 2px 8px #0008',
-                    transform: `rotate(${textRotation}deg)`,
-                  }}
-                >
-                  {label}
-                </textPath>
+                {formattedLabel.length === 1 ? (
+                  <textPath
+                    href={`#${textPathId}`}
+                    startOffset="50%"
+                    method="align"
+                    spacing="auto"
+                    alignmentBaseline="middle"
+                    dominantBaseline="middle"
+                    textAnchor="middle"
+                    style={{
+                      textShadow: '0 2px 8px #0008',
+                      transform: `rotate(${textRotation}deg)`,
+                    }}
+                  >
+                    {formattedLabel[0]}
+                  </textPath>
+                ) : (
+                  // For multi-line text, use a different approach
+                  <textPath
+                    href={`#${textPathId}`}
+                    startOffset="50%"
+                    method="align"
+                    spacing="auto"
+                    alignmentBaseline="middle"
+                    dominantBaseline="middle"
+                    textAnchor="middle"
+                    style={{
+                      textShadow: '0 2px 8px #0008',
+                      transform: `rotate(${textRotation}deg)`,
+                    }}
+                  >
+                    {formattedLabel.join(' ')}
+                  </textPath>
+                )}
               </text>
             </g>
           );

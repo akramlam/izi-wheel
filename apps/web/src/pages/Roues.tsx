@@ -379,8 +379,8 @@ const Roues: React.FC = () => {
   };
 
   const handleCreateWheel = () => {
-    // Check if wheel limit reached for free plan
-    if (isFreePlan && wheelsUsed >= wheelsLimit) {
+    // Check if wheel limit reached for any plan
+    if (wheelsUsed >= wheelsLimit) {
       setUpgradeModalType('wheel');
       setShowUpgradeModal(true);
     } else {
