@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
+import { useAuth } from "../hooks/useAuth"
 import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
@@ -27,6 +28,7 @@ interface CompanyDetail {
 
 const EntrepriseDetail: React.FC = () => {
   const { companyId } = useParams<{ companyId: string }>()
+  const { user } = useAuth()
   const [company, setCompany] = useState<CompanyDetail | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
@@ -99,10 +101,13 @@ const EntrepriseDetail: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Entreprises</h1>
           <p className="text-gray-600 dark:text-gray-400">Créez et gérez vos campagnes de roue.</p>
         </div>
-        <Button onClick={exportCSV} className="flex items-center space-x-2">
-          <Download className="h-4 w-4" />
-          <span>Export CSV</span>
-        </Button>
+        {/* Export CSV button only for SUPER admins */}
+        {user?.role === 'SUPER' && (
+          <Button onClick={exportCSV} className="flex items-center space-x-2">
+            <Download className="h-4 w-4" />
+            <span>Export CSV</span>
+          </Button>
+        )}
       </div>
 
       {/* Company Card */}

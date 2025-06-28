@@ -936,17 +936,20 @@ const ActivityTracking: React.FC = () => {
             <Users className="w-4 h-4 inline mr-2" />
             Historique des Parties
           </button>
-          <button
-            onClick={() => setActiveTab('export')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'export'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Download className="w-4 h-4 inline mr-2" />
-            Export de Données
-          </button>
+          {/* Export tab only for SUPER admins */}
+          {user?.role === 'SUPER' && (
+            <button
+              onClick={() => setActiveTab('export')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'export'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Download className="w-4 h-4 inline mr-2" />
+              Export de Données
+            </button>
+          )}
         </nav>
       </div>
 
