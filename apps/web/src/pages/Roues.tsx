@@ -87,8 +87,8 @@ const Roues: React.FC = () => {
     }
     
     // Try to get from user context if available
-    if (user?.company?.name) {
-      return user.company.name;
+    if (user?.companyId) {
+      return user.companyId;
     }
     
     // Final fallback
@@ -835,7 +835,7 @@ const Roues: React.FC = () => {
               <>
                 <div className="w-48 h-48 sm:w-64 sm:h-64 bg-white p-3 sm:p-4 rounded-md shadow-md flex items-center justify-center">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/play/company/${selectedWheelForQR}`)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://roue.izikado.fr/play/company/${selectedWheelForQR}`)}`} 
                     alt="QR Code"
                     className="w-full h-full"
                   />

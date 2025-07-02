@@ -586,7 +586,7 @@ export const spinWheel = async (req: Request, res: Response) => {
     // If this is a winning play, update the QR code with the actual playId
     if (isWin && qrLink) {
       try {
-        const baseUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+        const baseUrl = 'https://roue.izikado.fr';
         const updatedQrLink = await generateQRCode(`${baseUrl}/redeem/${play.id}`);
         
         // Update the play with the correct QR code

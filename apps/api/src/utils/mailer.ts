@@ -299,7 +299,7 @@ export const sendInviteEmail = async (
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://dashboard.izikado.fr';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://roue.izikado.fr';
     const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
     const invitedBy = adminName ? `par <strong>${adminName}</strong>` : '';
     
@@ -543,7 +543,7 @@ export const sendPasswordResetEmail = async (
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://dashboard.izikado.fr';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://roue.izikado.fr';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
     const greeting = userName ? `Bonjour ${userName},` : 'Bonjour,';
     
