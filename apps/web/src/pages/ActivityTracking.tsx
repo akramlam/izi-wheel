@@ -684,16 +684,25 @@ const ActivityTracking: React.FC = () => {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      {getStatusBadge(play.redemptionStatus)}
-                      {play.claimedAt && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Réclamé: {formatDate(play.claimedAt)}
-                        </div>
-                      )}
-                      {play.redeemedAt && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Échangé: {formatDate(play.redeemedAt)}
-                        </div>
+                      {play.result === 'WIN' ? (
+                        <>
+                          {getStatusBadge(play.redemptionStatus)}
+                          {play.claimedAt && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Réclamé: {formatDate(play.claimedAt)}
+                            </div>
+                          )}
+                          {play.redeemedAt && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Échangé: {formatDate(play.redeemedAt)}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-800 border-gray-200">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Perdu
+                        </Badge>
                       )}
                     </td>
                     <td className="py-3 px-4 text-sm font-mono">

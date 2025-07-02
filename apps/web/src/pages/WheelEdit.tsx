@@ -1289,6 +1289,42 @@ const WheelEdit = () => {
                   );
                 })}
                 
+                {/* Text labels */}
+                {wheel.slots.map((slot, index) => {
+                  const segmentCount = wheel.slots.length;
+                  const segmentAngle = 360 / segmentCount;
+                  const middleAngle = (segmentAngle * index) + (segmentAngle / 2) - 90; // -90 to start from top
+                  const middleRad = middleAngle * (Math.PI / 180);
+                  
+                  // Position text at 70% of radius from center
+                  const textRadius = 35;
+                  const textX = 50 + textRadius * Math.cos(middleRad);
+                  const textY = 50 + textRadius * Math.sin(middleRad);
+                  
+                  // Calculate rotation for text to be readable
+                  let textRotation = middleAngle + 90;
+                  if (textRotation > 90 && textRotation < 270) {
+                    textRotation += 180; // Flip text if it would be upside down
+                  }
+                  
+                  return (
+                    <text
+                      key={`text-${index}`}
+                      x={textX}
+                      y={textY}
+                      fill="#ffffff"
+                      fontSize="3"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      transform={`rotate(${textRotation} ${textX} ${textY})`}
+                      style={{ textShadow: '0 0 2px rgba(0,0,0,0.8)' }}
+                    >
+                      {slot.label || `Lot ${index + 1}`}
+                    </text>
+                  );
+                })}
+                
                 {/* Center circle */}
                 <circle cx="50" cy="50" r="4" fill="white" stroke="#cccccc" strokeWidth="1" />
               </svg>
