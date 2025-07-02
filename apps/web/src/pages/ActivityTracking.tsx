@@ -117,12 +117,15 @@ const ActivityTracking: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
       const response = await api.getActivityDashboard();
       if (response.data.success) {
         setDashboardData(response.data.data);
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -205,9 +208,12 @@ const ActivityTracking: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'dashboard') {
-      fetchDashboardData();
-    } else if (activeTab === 'plays') {
+    // Always fetch dashboard data on initial load
+    fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'plays') {
       fetchPlays(1);
     }
   }, [activeTab]);
@@ -350,8 +356,8 @@ const ActivityTracking: React.FC = () => {
           </Card>
         </div>
 
-        {/* Prize Management Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Main Content Grid - Three columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Recent Prizes Card */}
           <Card>
             <CardHeader>
@@ -387,9 +393,8 @@ const ActivityTracking: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Plays Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -404,7 +409,14 @@ const ActivityTracking: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
                         {getResultBadge(play.result)}
-                        {getStatusBadge(play.redemptionStatus)}
+                        {play.result === 'WIN' ? (
+                          <>{getPrizeStatusBadge(play.redemptionStatus)}</>
+                        ) : (
+                          <Badge className="bg-gray-100 text-gray-800 border-gray-200">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Perdu
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm font-medium">{play.wheel.name}</p>
                       <p className="text-xs text-gray-500">{play.slot.label}</p>
@@ -421,6 +433,7 @@ const ActivityTracking: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* Popular Wheels Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
