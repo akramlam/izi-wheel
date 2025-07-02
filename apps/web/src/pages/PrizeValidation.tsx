@@ -95,6 +95,11 @@ const PrizeValidation: React.FC = () => {
 
   // Validate prize by PIN code
   const validatePrizeByPin = async () => {
+    // Prevent multiple calls
+    if (validatingPrizeId) {
+      return;
+    }
+
     if (!pinInput.trim()) {
       toast({
         title: "Code PIN requis",
@@ -115,13 +120,22 @@ const PrizeValidation: React.FC = () => {
       return;
     }
 
-    // Find the prize with this PIN
-    const matchingPrize = filteredPrizes.find((play: any) => play.pin === pinInput.trim());
+    // Search in ALL winning plays, not just filtered ones
+    const allWinningPlays = prizesData?.recentPlays?.filter((play: any) => play.result === 'WIN') || [];
+    
+    // Debug logging
+    console.log('🔍 Recherche PIN:', pinInput.trim());
+    console.log('📊 Total cadeaux gagnants:', allWinningPlays.length);
+    console.log('🎯 Cadeaux disponibles:', allWinningPlays.map(p => ({ id: p.id, pin: p.pin, status: p.redemptionStatus, prize: p.slot?.label })));
+    
+    const matchingPrize = allWinningPlays.find((play: any) => play.pin === pinInput.trim());
     
     if (!matchingPrize) {
+      // More detailed error message
+      const availablePins = allWinningPlays.map(p => p.pin).filter(Boolean);
       toast({
         title: "Code PIN introuvable",
-        description: "Aucun cadeau trouvé avec ce code PIN",
+        description: `Aucun cadeau trouvé avec le code PIN ${pinInput.trim()}. ${availablePins.length > 0 ? `PINs disponibles: ${availablePins.slice(0, 3).join(', ')}${availablePins.length > 3 ? '...' : ''}` : 'Aucun PIN disponible.'}`,
         variant: "destructive"
       });
       return;
@@ -137,19 +151,17 @@ const PrizeValidation: React.FC = () => {
       return;
     }
 
-    // Check if not yet claimed
-    if (matchingPrize.redemptionStatus === 'PENDING') {
-      toast({
-        title: "Cadeau non réclamé",
-        description: "Ce cadeau n'a pas encore été réclamé par le gagnant",
-        variant: "destructive"
-      });
-      return;
-    }
-
+    // For admin validation, we can validate prizes in any status
     // Clear the input and validate the prize
     setPinInput('');
     setValidatingPrizeId(matchingPrize.id);
+    
+    // Show info about the prize being validated
+    toast({
+      title: "Validation en cours...",
+      description: `Validation du cadeau: ${matchingPrize.slot.label}`,
+    });
+
     validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
   };
 
@@ -243,17 +255,44 @@ const PrizeValidation: React.FC = () => {
             <div className="flex items-end">
               <Button 
                 onClick={validatePrizeByPin}
-                disabled={!pinInput.trim() || pinInput.length < 6}
+                disabled={!pinInput.trim() || pinInput.length < 6 || validatingPrizeId !== null}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                <Hash className="w-4 h-4 mr-2" />
-                Valider
+                {validatingPrizeId ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Validation...
+                  </>
+                ) : (
+                  <>
+                    <Hash className="w-4 h-4 mr-2" />
+                    Valider
+                  </>
+                )}
               </Button>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
             💡 Le gagnant a reçu ce code PIN par email après avoir réclamé son cadeau
           </p>
+          
+          {/* Debug Information */}
+          {prizesData && (
+            <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
+              <strong>Debug Info:</strong> 
+              {prizesData.recentPlays ? (
+                <>
+                  <br />Total parties: {prizesData.recentPlays.length}
+                  <br />Parties gagnantes: {prizesData.recentPlays.filter((p: any) => p.result === 'WIN').length}
+                  <br />PINs disponibles: {prizesData.recentPlays.filter((p: any) => p.result === 'WIN' && p.pin).map((p: any) => p.pin).join(', ') || 'Aucun'}
+                </>
+              ) : (
+                <>
+                  <br />Aucune donnée de parties disponible
+                </>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
