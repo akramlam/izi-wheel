@@ -27,16 +27,13 @@ import {
   CheckCircle2,
   XCircle,
   Play,
-  QrCode,
   Gift,
   AlertTriangle,
   Loader2
 } from 'lucide-react';
 import { api } from '../lib/api';
-import { Label } from '../components/ui/label';
-import { useToast } from '../hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Label } from '../components/ui/label';
 
 interface PlayRecord {
   id: string;
@@ -95,8 +92,6 @@ interface DashboardData {
 }
 
 const ActivityTracking: React.FC = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [plays, setPlays] = useState<PlayRecord[]>([]);
@@ -119,9 +114,6 @@ const ActivityTracking: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('csv');
   const [exportStartDate, setExportStartDate] = useState('');
   const [exportEndDate, setExportEndDate] = useState('');
-
-  // QR code scanner
-  const [qrInput, setQrInput] = useState('');
 
   const fetchDashboardData = async () => {
     try {
@@ -292,43 +284,6 @@ const ActivityTracking: React.FC = () => {
     );
   };
 
-  const extractPlayIdFromInput = (input: string): string | null => {
-    // If input is already a UUID (play ID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(input.trim())) {
-      return input.trim();
-    }
-
-    // Extract play ID from URL (e.g., https://roue.izikado.fr/redeem/abc-123-def)
-    const urlMatch = input.match(/\/redeem\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-    if (urlMatch) {
-      return urlMatch[1];
-    }
-
-    return null;
-  };
-
-  const handleQRScan = async () => {
-    const playId = extractPlayIdFromInput(qrInput);
-    
-    if (!playId) {
-      toast({
-        title: "Format invalide",
-        description: "Veuillez saisir un ID de cadeau valide ou une URL QR complète",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Redirect to prize validation page with admin mode
-    navigate(`/redeem/${playId}?admin=true`);
-  };
-
-  const handleValidatePrize = (playId: string) => {
-    // Redirect to prize validation page with admin mode
-    navigate(`/redeem/${playId}?admin=true`);
-  };
-
   const renderDashboard = () => {
     if (loading) {
       return (
@@ -397,43 +352,6 @@ const ActivityTracking: React.FC = () => {
 
         {/* Prize Management Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* QR Code Scanner Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <QrCode className="w-5 h-5 mr-2" />
-                Scanner QR Code Cadeau
-              </CardTitle>
-              <CardDescription>
-                Scannez ou saisissez le code d'un cadeau pour le valider
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="qr-input">Code du cadeau ou URL QR</Label>
-                  <Input
-                    id="qr-input"
-                    placeholder="Saisissez l'ID du cadeau ou collez l'URL du QR code"
-                    value={qrInput}
-                    onChange={(e) => setQrInput(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  onClick={handleQRScan}
-                  className="w-full"
-                  disabled={!qrInput.trim()}
-                >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Valider le cadeau
-                </Button>
-                <div className="text-xs text-gray-500 text-center">
-                  Vous pouvez aussi scanner directement le QR code avec votre appareil photo
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Recent Prizes Card */}
           <Card>
             <CardHeader>
@@ -463,16 +381,6 @@ const ActivityTracking: React.FC = () => {
                       <div className="text-xs text-gray-500">
                         {formatDate(play.createdAt)}
                       </div>
-                      {play.redemptionStatus === 'CLAIMED' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-1"
-                          onClick={() => handleValidatePrize(play.id)}
-                        >
-                          Valider
-                        </Button>
-                      )}
                     </div>
                   </div>
                 ))}

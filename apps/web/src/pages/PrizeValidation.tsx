@@ -8,7 +8,6 @@ import { useToast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  QrCode,
   Gift,
   CheckCircle2,
   Clock,
@@ -20,8 +19,8 @@ import {
   Store,
   Search,
   Loader2,
-  AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Hash
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -51,7 +50,7 @@ const PrizeValidation: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const [qrInput, setQrInput] = useState('');
+  const [pinInput, setPinInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [validatingPrizeId, setValidatingPrizeId] = useState<string | null>(null);
@@ -67,38 +66,6 @@ const PrizeValidation: React.FC = () => {
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
-
-  const extractPlayIdFromInput = (input: string): string | null => {
-    // If input is already a UUID (play ID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(input.trim())) {
-      return input.trim();
-    }
-
-    // Extract play ID from URL
-    const urlMatch = input.match(/\/redeem\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-    if (urlMatch) {
-      return urlMatch[1];
-    }
-
-    return null;
-  };
-
-  const handleQRScan = async () => {
-    const playId = extractPlayIdFromInput(qrInput);
-    
-    if (!playId) {
-      toast({
-        title: "Format invalide",
-        description: "Veuillez saisir un ID de cadeau valide ou une URL QR complète",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Redirect to prize validation page with admin mode
-    navigate(`/redeem/${playId}?admin=true`);
-  };
 
   // Validate prize mutation
   const validatePrizeMutation = useMutation({
@@ -126,18 +93,64 @@ const PrizeValidation: React.FC = () => {
     }
   });
 
-  const handleValidatePrize = async (prize: PrizeRecord) => {
-    if (!prize.pin) {
+  // Validate prize by PIN code
+  const validatePrizeByPin = async () => {
+    if (!pinInput.trim()) {
       toast({
-        title: "Erreur",
-        description: "Code PIN manquant pour ce cadeau",
+        title: "Code PIN requis",
+        description: "Veuillez saisir un code PIN valide",
         variant: "destructive"
       });
       return;
     }
 
-    setValidatingPrizeId(prize.id);
-    validatePrizeMutation.mutate({ playId: prize.id, pin: prize.pin });
+    // Validate PIN format (6-10 digits)
+    const pinRegex = /^\d{6,10}$/;
+    if (!pinRegex.test(pinInput.trim())) {
+      toast({
+        title: "Format invalide",
+        description: "Le code PIN doit contenir entre 6 et 10 chiffres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Find the prize with this PIN
+    const matchingPrize = filteredPrizes.find((play: any) => play.pin === pinInput.trim());
+    
+    if (!matchingPrize) {
+      toast({
+        title: "Code PIN introuvable",
+        description: "Aucun cadeau trouvé avec ce code PIN",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if already redeemed
+    if (matchingPrize.redemptionStatus === 'REDEEMED') {
+      toast({
+        title: "Cadeau déjà récupéré",
+        description: "Ce cadeau a déjà été validé et récupéré",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if not yet claimed
+    if (matchingPrize.redemptionStatus === 'PENDING') {
+      toast({
+        title: "Cadeau non réclamé",
+        description: "Ce cadeau n'a pas encore été réclamé par le gagnant",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Clear the input and validate the prize
+    setPinInput('');
+    setValidatingPrizeId(matchingPrize.id);
+    validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
   };
 
   const getPrizeStatusBadge = (status: string) => {
@@ -196,42 +209,50 @@ const PrizeValidation: React.FC = () => {
         </Button>
       </div>
 
-      {/* QR Code Scanner Section */}
+      {/* PIN Code Validation Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <QrCode className="w-5 h-5 mr-2" />
-            Scanner QR Code Cadeau
+            <Hash className="w-5 h-5 mr-2" />
+            Validation par Code PIN
           </CardTitle>
           <CardDescription>
-            Scannez ou saisissez le code d'un cadeau pour le valider rapidement
+            Saisissez le code PIN reçu par le gagnant pour valider rapidement son cadeau
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4">
             <div className="flex-1">
-              <Label htmlFor="qr-input">Code du cadeau ou URL QR</Label>
+              <Label htmlFor="pin-input">Code PIN (6-10 chiffres)</Label>
               <Input
-                id="qr-input"
-                placeholder="Saisissez l'ID du cadeau ou collez l'URL du QR code"
-                value={qrInput}
-                onChange={(e) => setQrInput(e.target.value)}
-                className="mt-1"
+                id="pin-input"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={10}
+                placeholder="Saisissez le code PIN du cadeau"
+                value={pinInput}
+                onChange={(e) => {
+                  // Only allow digits and limit to 10 characters
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setPinInput(value);
+                }}
+                className="mt-1 text-center text-lg font-mono tracking-wider"
               />
             </div>
             <div className="flex items-end">
               <Button 
-                onClick={handleQRScan}
-                disabled={!qrInput.trim()}
+                onClick={validatePrizeByPin}
+                disabled={!pinInput.trim() || pinInput.length < 6}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                <QrCode className="w-4 h-4 mr-2" />
+                <Hash className="w-4 h-4 mr-2" />
                 Valider
               </Button>
             </div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            💡 Astuce : Vous pouvez scanner directement le QR code avec votre appareil photo et copier l'URL ici
+            💡 Le gagnant a reçu ce code PIN par email après avoir réclamé son cadeau
           </p>
         </CardContent>
       </Card>
@@ -381,7 +402,7 @@ const PrizeValidation: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       {play.redemptionStatus === 'CLAIMED' && (
                         <Button
-                          onClick={() => handleValidatePrize(play)}
+                          onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}
                           className="bg-green-600 hover:bg-green-700"
                         >
