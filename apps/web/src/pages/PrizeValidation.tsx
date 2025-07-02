@@ -59,9 +59,16 @@ const PrizeValidation: React.FC = () => {
   const { data: prizesData, isLoading, refetch } = useQuery({
     queryKey: ['prizes', searchTerm, selectedStatus],
     queryFn: async () => {
-      // This would be a new API endpoint to fetch prizes
-      // For now, we'll use the activity tracking data
-      const response = await api.getActivityDashboard();
+      // Use the same API endpoint as Activity Tracking to get detailed play data
+      const params = new URLSearchParams({
+        limit: '1000', // Get a large number of recent plays
+        offset: '0'
+      });
+
+      if (searchTerm) params.append('search', searchTerm);
+      if (selectedStatus !== 'all') params.append('status', selectedStatus);
+
+      const response = await api.getActivityPlays(params.toString());
       return response.data;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -121,7 +128,9 @@ const PrizeValidation: React.FC = () => {
     }
 
     // Search in ALL winning plays, not just filtered ones
-    const allWinningPlays = prizesData?.recentPlays?.filter((play: any) => play.result === 'WIN') || [];
+    const allWinningPlays = (prizesData?.success && prizesData.data?.plays) 
+      ? prizesData.data.plays.filter((play: any) => play.result === 'WIN') 
+      : [];
     
     // Debug logging
     console.log('🔍 Recherche PIN:', pinInput.trim());
@@ -195,7 +204,7 @@ const PrizeValidation: React.FC = () => {
   };
 
   // Filter prizes based on search and status
-  const filteredPrizes = prizesData?.recentPlays?.filter((play: any) => {
+  const filteredPrizes = prizesData?.success ? (prizesData.data?.plays?.filter((play: any) => {
     if (play.result !== 'WIN') return false;
     
     const matchesSearch = !searchTerm || 
@@ -206,7 +215,7 @@ const PrizeValidation: React.FC = () => {
     const matchesStatus = selectedStatus === 'all' || play.redemptionStatus === selectedStatus;
     
     return matchesSearch && matchesStatus;
-  }) || [];
+  }) || []) : [];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -280,11 +289,11 @@ const PrizeValidation: React.FC = () => {
           {prizesData && (
             <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
               <strong>Debug Info:</strong> 
-              {prizesData.recentPlays ? (
+              {prizesData.success && prizesData.data?.plays ? (
                 <>
-                  <br />Total parties: {prizesData.recentPlays.length}
-                  <br />Parties gagnantes: {prizesData.recentPlays.filter((p: any) => p.result === 'WIN').length}
-                  <br />PINs disponibles: {prizesData.recentPlays.filter((p: any) => p.result === 'WIN' && p.pin).map((p: any) => p.pin).join(', ') || 'Aucun'}
+                  <br />Total parties: {prizesData.data.plays.length}
+                  <br />Parties gagnantes: {prizesData.data.plays.filter((p: any) => p.result === 'WIN').length}
+                  <br />PINs disponibles: {prizesData.data.plays.filter((p: any) => p.result === 'WIN' && p.pin).map((p: any) => p.pin).join(', ') || 'Aucun'}
                 </>
               ) : (
                 <>
