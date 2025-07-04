@@ -17,6 +17,13 @@ import Wheel from '../components/wheel/Wheel';
 import type { WheelConfig } from '../components/wheel/types';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 
+// TypeScript declaration for window property
+declare global {
+  interface Window {
+    fallbackTimeout?: NodeJS.Timeout | null;
+  }
+}
+
 // Define types
 type WheelData = {
   id: string;
@@ -895,19 +902,45 @@ const PlayWheel = () => {
     setSpinResult(data); // This determines the popup content and is based on direct backend data.
     setMustSpin(true); // Trigger the visual spin
 
-    // ✅ REMOVED: The hardcoded timeout that was causing the popup to appear before wheel finished
-    // The wheel component will now properly call handleWheelFinishedSpin when animation completes
+    // ✅ ADDED: Safety fallback timeout in case wheel callback fails
+    // This ensures the popup appears even if the wheel component doesn't call onSpin
+    const fallbackTimeout = setTimeout(() => {
+      console.log('⚠️ FALLBACK: Wheel callback didn\'t trigger in time, showing result manually');
+      if (mustSpin) { // Only trigger if wheel is still spinning
+        setMustSpin(false);
+        setShowResultModal(true);
+        
+        if (data?.play.result === 'WIN') {
+          setShowConfetti(true);
+          setUserFlowState('won');
+          setCurrentStep('showPrize');
+        } else {
+          setCurrentStep('spinWheel');
+        }
+      }
+    }, 12000); // 12 seconds fallback (longer than max wheel duration + callback delay)
+
+    // Store the timeout reference to clear it if wheel callback works properly
+    window.fallbackTimeout = fallbackTimeout;
   };
 
   // Handle wheel finishing spin - called by wheel component when animation completes
   const handleWheelFinishedSpin = () => {
-    console.log('CALLBACK TRIGGERED: Wheel finished spinning, showing result');
+    console.log('✅ CALLBACK TRIGGERED: Wheel finished spinning, showing result');
+
+    // Clear the fallback timeout since the proper callback was triggered
+    if (window.fallbackTimeout) {
+      clearTimeout(window.fallbackTimeout);
+      window.fallbackTimeout = null;
+      console.log('✅ Cleared fallback timeout - wheel callback worked properly');
+    }
 
     // Reset the spinning state
     setMustSpin(false);
 
     // Show result modal immediately since wheel has finished spinning
     setShowResultModal(true);
+    console.log('✅ Result modal should now be visible');
 
     if (spinResult?.play.result === 'WIN') {
       // Reset retry counter for QR code loading
@@ -927,9 +960,11 @@ const PlayWheel = () => {
 
       // Set next step to show prize
       setCurrentStep('showPrize');
+      console.log('✅ Set current step to showPrize for winning result');
     } else {
       // For losing results, just reset to initial
       setCurrentStep('spinWheel');
+      console.log('✅ Set current step to spinWheel for losing result');
     }
   };
 
