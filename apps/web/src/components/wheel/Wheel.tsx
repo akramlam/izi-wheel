@@ -303,7 +303,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           
           // ✅ FIXED: Call onSpin callback to notify parent that wheel has finished
           onSpin();
-        }, 1500); // Increased from 500ms to 1500ms to ensure wheel fully stops
+        }, 2500); // Increased from 1500ms to 2500ms to give users more time to see where wheel landed
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);

@@ -412,8 +412,8 @@ const PlayWheel = () => {
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [wheelConfig, setWheelConfig] = useState<WheelConfig>({
     segments: [],
-    spinDurationMin: 3,
-    spinDurationMax: 6,
+    spinDurationMin: 5, // Increased from 3 to 5 seconds
+    spinDurationMax: 8, // Increased from 6 to 8 seconds  
     sounds: {
       tick: true,
       win: true,
@@ -845,26 +845,23 @@ const PlayWheel = () => {
 
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
-    console.log('📡 handleSpinResultWithData called with:', data);
-    console.log('🎯 Frontend wheelConfig.segments:', wheelConfig.segments.map((s, i) => ({
-      index: i,
-      id: s.id, 
-      label: s.label
-    })));
-    console.log('🎯 Backend returned slot:', {
-      id: data.slot.id,
-      label: data.slot.label,
-      prizeIndex: data.prizeIndex
-    });
+    // Logs from previous step (can be kept for debugging if needed)
+    console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
+    console.log('🎯 PlayWheel: Frontend wheelConfig.segments:', wheelConfig.segments.map(s => ({id: s.id, label: s.label})));
 
-    // CRITICAL FIX: Use prizeIndex directly from backend response
-    if (data.prizeIndex !== undefined && data.prizeIndex >= 0) {
-      console.log('✅ WHEEL ALIGNMENT FIX: Using prizeIndex from backend:', data.prizeIndex);
-      setPrizeIndex(data.prizeIndex);
-    } else {
-      // Fallback: Find the index of the winning slot ID within the wheelConfig.segments array
-      let prizeIndexFound = wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
+    // Find the index of the winning slot ID within the wheelConfig.segments array
+    let prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
 
+    if (prizeIndexFound === -1) {
+      console.error('🚨 CRITICAL: Winning slot ID from backend NOT FOUND in frontend wheelConfig.segments!', {
+        backendSlotId: data.slot.id,
+        backendSlotLabel: data.slot.label,
+        frontendSegmentsForVisualWheel: wheelConfig.segments.map(s => ({id: s.id, label: s.label})),
+      });
+      
+      // Try fallback calculation based on label matching
+      prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.label === data.slot.label);
+      
       if (prizeIndexFound === -1) {
         console.log('⚠️ Prize index not found, using fallback index 0');
         console.log('🔍 Detailed mismatch analysis:', {
@@ -889,24 +886,17 @@ const PlayWheel = () => {
         console.log('✅ Prize index found via fallback calculation:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
         setPrizeIndex(prizeIndexFound);
       }
+    } else {
+      console.log('✅ Prize index found:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
+      setPrizeIndex(prizeIndexFound);
     }
 
     console.log('🎯 Setting spin result and triggering wheel animation');
     setSpinResult(data); // This determines the popup content and is based on direct backend data.
     setMustSpin(true); // Trigger the visual spin
 
-    // Simple timeout to show modal after wheel spins
-    setTimeout(() => {
-      setMustSpin(false);
-      setShowResultModal(true);
-      if (data?.play.result === 'WIN') {
-        setShowConfetti(true);
-        setUserFlowState('won');
-        setCurrentStep('showPrize');
-      } else {
-        setCurrentStep('spinWheel');
-      }
-    }, 6000);
+    // ✅ REMOVED: The hardcoded timeout that was causing the popup to appear before wheel finished
+    // The wheel component will now properly call handleWheelFinishedSpin when animation completes
   };
 
   // Handle wheel finishing spin - called by wheel component when animation completes
