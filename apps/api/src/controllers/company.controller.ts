@@ -180,6 +180,76 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       },
     }) || [];
 
+    // Prize distribution data for the doughnut chart
+    const prizeDistribution = await prisma.play.findMany({
+      where: {
+        wheel: { companyId },
+        result: 'WIN',
+        createdAt: { 
+          gte: fromDate,
+          lte: toDate
+        }
+      },
+      include: {
+        slot: {
+          select: {
+            label: true,
+            prizeCode: true
+          }
+        }
+      }
+    });
+
+    // Group prizes by type for the chart
+    const prizeGroups = prizeDistribution.reduce((acc, play) => {
+      const key = play.slot?.label || 'Unknown Prize';
+      const code = play.slot?.prizeCode || 'N/A';
+      if (!acc[key]) {
+        acc[key] = { label: key, prizeCode: code, count: 0 };
+      }
+      acc[key].count++;
+      return acc;
+    }, {} as Record<string, { label: string; prizeCode: string; count: number }>);
+
+    const prizeDistributionData = Object.values(prizeGroups);
+
+    // Wheel performance data for the bar chart
+    const wheelPerformanceData = await prisma.wheel.findMany({
+      where: { companyId },
+      include: {
+        _count: {
+          select: {
+            plays: {
+              where: {
+                createdAt: { 
+                  gte: fromDate,
+                  lte: toDate
+                }
+              }
+            }
+          }
+        },
+        plays: {
+          where: {
+            result: 'WIN',
+            createdAt: { 
+              gte: fromDate,
+              lte: toDate
+            }
+          },
+          select: { id: true }
+        }
+      }
+    });
+
+    const wheelPerformance = wheelPerformanceData.map(wheel => ({
+      wheelId: wheel.id,
+      wheelName: wheel.name,
+      plays: wheel._count.plays,
+      prizes: wheel.plays.length,
+      conversion: wheel._count.plays > 0 ? (wheel.plays.length / wheel._count.plays) * 100 : 0
+    }));
+
     res.json({
       totalWheels,
       activeWheels,
@@ -187,6 +257,8 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       totalPrizes,
       playsByDay,
       prizesByDay,
+      prizeDistribution: prizeDistributionData,
+      wheelPerformance,
       recentPlays,
       dateRange: {
         from: fromDate.toISOString(),

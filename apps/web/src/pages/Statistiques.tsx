@@ -106,7 +106,6 @@ const Statistiques: React.FC = () => {
       }
 
       const response = await api.getCompanyStatistics(companyId, { range: dateRange })
-      console.log('Statistics API response:', response.data)
       setStatsData(response.data)
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
@@ -147,11 +146,8 @@ const Statistiques: React.FC = () => {
 
   const getPrizeDistributionData = () => {
     if (!statsData?.prizeDistribution) {
-      console.log('No prize distribution data available:', statsData?.prizeDistribution)
       return null
     }
-    
-    console.log('Prize distribution data:', statsData.prizeDistribution)
     
     return {
       labels: statsData.prizeDistribution.map(prize => prize.label),
@@ -186,11 +182,8 @@ const Statistiques: React.FC = () => {
 
   const getWheelPerformanceData = () => {
     if (!statsData?.wheelPerformance) {
-      console.log('No wheel performance data available:', statsData?.wheelPerformance)
       return null
     }
-    
-    console.log('Wheel performance data:', statsData.wheelPerformance)
     
     return {
       labels: statsData.wheelPerformance.map(wheel => wheel.wheelName),
