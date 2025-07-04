@@ -106,6 +106,7 @@ const Statistiques: React.FC = () => {
       }
 
       const response = await api.getCompanyStatistics(companyId, { range: dateRange })
+      console.log('Statistics API response:', response.data)
       setStatsData(response.data)
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
