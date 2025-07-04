@@ -450,7 +450,7 @@ const PrizeValidation: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       {play.redemptionStatus === 'CLAIMED' && (
                         <Button
-                          onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
+                          onClick={() => navigate(`/plays/${play.id}/redeem?admin=true`)}
                           disabled={validatingPrizeId === play.id}
                           className="bg-green-600 hover:bg-green-700"
                         >
