@@ -674,9 +674,9 @@ const Roues: React.FC = () => {
       {/* Controls - Mobile responsive */}
       <Card className="mb-4 sm:mb-6">
         <CardContent className="p-3 sm:p-6">
-          <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
-            {/* Action buttons - stacked on mobile */}
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left side - Add button */}
+            <div className="flex">
               {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
                 <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateWheel}>
                   <Plus className="h-4 w-4" />
@@ -684,142 +684,165 @@ const Roues: React.FC = () => {
                   <span className="sm:hidden">Nouvelle</span>
                 </Button>
               )}
+            </div>
+            
+            {/* Right side - Search and Filter/Sort controls */}
+            <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+              {/* Search */}
+              <div className="sm:w-64">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
               
-              {/* Filter Button */}
-              <div className="relative">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => {
-                    setShowFilterDropdown(!showFilterDropdown)
-                    setShowSortDropdown(false)
-                  }}
-                >
-                  <Filter className="h-4 w-4" />
-                  <span>Filtrer</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
+              {/* Filter and Sort controls */}
+              <div className="flex items-center space-x-2">
+                {/* Remove all filters button - only show when filters are active */}
+                {(filterType !== "all" || filterStatus !== "all") && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      setFilterType("all")
+                      setFilterStatus("all")
+                      setShowFilterDropdown(false)
+                      setShowSortDropdown(false)
+                    }}
+                  >
+                    Effacer filtres
+                  </Button>
+                )}
                 
-                {showFilterDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                    <div className="p-3">
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-                        <select
-                          value={filterType}
-                          onChange={(e) => setFilterType(e.target.value)}
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="all">Tous les types</option>
-                          <option value="gagnant">Gagnant à tous les coups</option>
-                          <option value="aleatoire">Gain aléatoire</option>
-                        </select>
+                {/* Filter Button */}
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={`flex items-center space-x-2 ${(filterType !== "all" || filterStatus !== "all") ? 'bg-purple-50 border-purple-200' : ''}`}
+                    onClick={() => {
+                      setShowFilterDropdown(!showFilterDropdown)
+                      setShowSortDropdown(false)
+                    }}
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span>Filtrer</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                  
+                  {showFilterDropdown && (
+                    <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                      <div className="p-3">
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+                          <select
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          >
+                            <option value="all">Tous les types</option>
+                            <option value="gagnant">Gagnant à tous les coups</option>
+                            <option value="aleatoire">Gain aléatoire</option>
+                          </select>
+                        </div>
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Statut</label>
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          >
+                            <option value="all">Tous les statuts</option>
+                            <option value="actif">Actif</option>
+                            <option value="inactif">Inactif</option>
+                          </select>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-xs flex-1"
+                            onClick={() => {
+                              setFilterType("all")
+                              setFilterStatus("all")
+                            }}
+                          >
+                            Réinitialiser
+                          </Button>
+                          <Button 
+                            size="sm"
+                            className="text-xs flex-1"
+                            onClick={() => setShowFilterDropdown(false)}
+                          >
+                            Appliquer
+                          </Button>
+                        </div>
                       </div>
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Statut</label>
-                        <select
-                          value={filterStatus}
-                          onChange={(e) => setFilterStatus(e.target.value)}
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="all">Tous les statuts</option>
-                          <option value="actif">Actif</option>
-                          <option value="inactif">Inactif</option>
-                        </select>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="text-xs flex-1"
-                          onClick={() => {
-                            setFilterType("all")
-                            setFilterStatus("all")
-                          }}
-                        >
-                          Réinitialiser
-                        </Button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Sort Button */}
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center space-x-2"
+                    onClick={() => {
+                      setShowSortDropdown(!showSortDropdown)
+                      setShowFilterDropdown(false)
+                    }}
+                  >
+                    <SortAsc className="h-4 w-4" />
+                    <span>Trier</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                  
+                  {showSortDropdown && (
+                    <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                      <div className="p-3">
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Trier par</label>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          >
+                            <option value="nom">Nom</option>
+                            <option value="type">Type</option>
+                            <option value="parties">Parties</option>
+                            <option value="statut">Statut</option>
+                          </select>
+                        </div>
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Ordre</label>
+                          <select
+                            value={sortOrder}
+                            onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                          >
+                            <option value="asc">Croissant</option>
+                            <option value="desc">Décroissant</option>
+                          </select>
+                        </div>
                         <Button 
                           size="sm"
-                          className="text-xs flex-1"
-                          onClick={() => setShowFilterDropdown(false)}
+                          className="text-xs w-full"
+                          onClick={() => setShowSortDropdown(false)}
                         >
                           Appliquer
                         </Button>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Sort Button */}
-              <div className="relative">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center space-x-2"
-                  onClick={() => {
-                    setShowSortDropdown(!showSortDropdown)
-                    setShowFilterDropdown(false)
-                  }}
-                >
-                  <SortAsc className="h-4 w-4" />
-                  <span>Trier</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-                
-                {showSortDropdown && (
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                    <div className="p-3">
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Trier par</label>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value)}
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="nom">Nom</option>
-                          <option value="type">Type</option>
-                          <option value="parties">Parties</option>
-                          <option value="statut">Statut</option>
-                        </select>
-                      </div>
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Ordre</label>
-                        <select
-                          value={sortOrder}
-                          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="asc">Croissant</option>
-                          <option value="desc">Décroissant</option>
-                        </select>
-                      </div>
-                      <Button 
-                        size="sm"
-                        className="text-xs w-full"
-                        onClick={() => setShowSortDropdown(false)}
-                      >
-                        Appliquer
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Search - full width on mobile */}
-            <div className="flex-1 sm:max-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
+                  )}
+                </div>
               </div>
             </div>
           </div>
