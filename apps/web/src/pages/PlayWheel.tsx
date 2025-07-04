@@ -899,13 +899,19 @@ const PlayWheel = () => {
     }
 
     console.log('🎯 Setting spin result and triggering wheel animation');
+    console.log('🎯 About to set mustSpin to true - current state:', mustSpin);
     setSpinResult(data); // This determines the popup content and is based on direct backend data.
     setMustSpin(true); // Trigger the visual spin
+    console.log('🎯 Just set mustSpin to true');
 
     // ✅ ADDED: Safety fallback timeout in case wheel callback fails
     // This ensures the popup appears even if the wheel component doesn't call onSpin
     const fallbackTimeout = setTimeout(() => {
       console.log('⚠️ FALLBACK: Wheel callback didn\'t trigger in time, showing result manually');
+      console.log('⚠️ FALLBACK: Current mustSpin state:', mustSpin);
+      console.log('⚠️ FALLBACK: Current showResultModal state:', showResultModal);
+      console.log('⚠️ FALLBACK: Current spinResult:', spinResult);
+      
       if (mustSpin) { // Only trigger if wheel is still spinning
         setMustSpin(false);
         setShowResultModal(true);
@@ -917,12 +923,50 @@ const PlayWheel = () => {
         } else {
           setCurrentStep('spinWheel');
         }
+        
+        console.log('⚠️ FALLBACK: Triggered result modal via fallback');
+      } else {
+        console.log('⚠️ FALLBACK: Wheel already stopped, not triggering fallback');
       }
-    }, 12000); // 12 seconds fallback (longer than max wheel duration + callback delay)
+    }, 10000); // Reduced from 12 to 10 seconds
 
     // Store the timeout reference to clear it if wheel callback works properly
     window.fallbackTimeout = fallbackTimeout;
   };
+
+  // Debug effect to monitor mustSpin state changes
+  useEffect(() => {
+    console.log('🎯 mustSpin state changed to:', mustSpin);
+    if (mustSpin) {
+      console.log('🎯 Wheel should now be spinning...');
+    } else {
+      console.log('🎯 Wheel should now be stopped');
+    }
+  }, [mustSpin]);
+
+  // Debug effect to monitor showResultModal state changes
+  useEffect(() => {
+    console.log('🎯 showResultModal state changed to:', showResultModal);
+    if (showResultModal) {
+      console.log('🎯 Result modal should now be visible');
+    } else {
+      console.log('🎯 Result modal should now be hidden');
+    }
+  }, [showResultModal]);
+
+  // TEMPORARY DEBUG: Force show modal after 15 seconds for testing
+  useEffect(() => {
+    const debugTimeout = setTimeout(() => {
+      if (spinResult && !showResultModal) {
+        console.log('🔧 DEBUG: Forcing modal to show after 15 seconds');
+        console.log('🔧 DEBUG: spinResult at 15s:', spinResult);
+        console.log('🔧 DEBUG: Current showResultModal:', showResultModal);
+        setShowResultModal(true);
+      }
+    }, 15000);
+
+    return () => clearTimeout(debugTimeout);
+  }, [spinResult, showResultModal]);
 
   // Handle wheel finishing spin - called by wheel component when animation completes
   const handleWheelFinishedSpin = () => {
