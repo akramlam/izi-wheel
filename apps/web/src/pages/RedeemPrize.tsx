@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
-import { Loader2, CheckCircle, AlertCircle, Home, User, Mail, Phone, ShieldCheck, Store } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Home, User, Mail, Phone, ShieldCheck, Store, RefreshCw } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
 
@@ -33,6 +33,7 @@ const RedeemPrize = () => {
   const [redemptionStatus, setRedemptionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [effectivePlayId, setEffectivePlayId] = useState<string | undefined>(urlPlayId);
   const [isIdValid, setIsIdValid] = useState<boolean>(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
   
   // Check if this is admin validation mode
   const isAdminMode = searchParams.get('admin') === 'true' || (user && ['ADMIN', 'SUB', 'SUPER'].includes(user.role));
@@ -44,15 +45,26 @@ const RedeemPrize = () => {
     phone: ''
   });
   
-  // Validate UUID format
+  // Validate UUID format and add debugging
   useEffect(() => {
     let id = urlPlayId;
+    
+    // Add debug information
+    const debugLines = [
+      `URL Play ID: ${id || 'not provided'}`,
+      `Current URL: ${window.location.href}`,
+      `Admin mode: ${isAdminMode}`,
+      `User role: ${user?.role || 'not authenticated'}`
+    ];
     
     // If no URL playId, try to get from session storage
     if (!id) {
       id = sessionStorage.getItem('lastPlayId') || undefined;
       if (id) {
         setEffectivePlayId(id);
+        debugLines.push(`Using session storage Play ID: ${id}`);
+      } else {
+        debugLines.push('No Play ID in session storage');
       }
     }
     
@@ -61,6 +73,8 @@ const RedeemPrize = () => {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const isValid = uuidRegex.test(id);
       setIsIdValid(isValid);
+      
+      debugLines.push(`UUID format valid: ${isValid}`);
       
       if (!isValid) {
         toast({
@@ -71,8 +85,11 @@ const RedeemPrize = () => {
       }
     } else {
       setIsIdValid(false);
+      debugLines.push('No valid Play ID found');
     }
-  }, [urlPlayId, toast]);
+    
+    setDebugInfo(debugLines.join('\n'));
+  }, [urlPlayId, toast, isAdminMode, user]);
 
   // Fetch prize details only if we have a valid ID
   const { 
@@ -261,13 +278,49 @@ const RedeemPrize = () => {
             : errorMessage
           }
         </p>
-        <Button 
-          onClick={() => navigate('/')}
-          className="flex items-center gap-2"
-        >
-          <Home size={16} />
-          Retour à l'accueil
-        </Button>
+        
+        {/* Debug Information */}
+        <details className="mb-6 max-w-lg">
+          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+            Informations de débogage (cliquez pour afficher)
+          </summary>
+          <div className="mt-2 p-3 bg-gray-100 rounded text-xs text-left font-mono whitespace-pre-wrap">
+            {debugInfo}
+            {error && (
+              <>
+                {'\n\nErreur détaillée:'}
+                {'\n'}{error instanceof Error ? error.message : String(error)}
+                {error instanceof Error && error.stack && (
+                  <>
+                    {'\n\nStack trace:'}
+                    {'\n'}{error.stack}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </details>
+        
+        <div className="space-y-2">
+          <Button 
+            onClick={() => navigate(isAdminMode ? '/prizes' : '/')}
+            className="flex items-center gap-2"
+          >
+            <Home size={16} />
+            {isAdminMode ? 'Retour à la validation' : 'Retour à l\'accueil'}
+          </Button>
+          
+          {isAdminMode && (
+            <Button 
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2 ml-2"
+            >
+              <RefreshCw size={16} />
+              Recharger la page
+            </Button>
+          )}
+        </div>
       </div>
     );
   }

@@ -117,6 +117,9 @@ function App() {
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
       
+      {/* Prize redemption route for admin validation */}
+      <Route path="/redeem/:playId" element={<RedeemPrize />} />
+      
       {/* REMOVED: Public wheel routes - these should ONLY be on roue.izikado.fr */}
       
       <Route path="/change-password" element={

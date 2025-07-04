@@ -1235,6 +1235,8 @@ const PlayWheel = () => {
   // Retry loading QR code if it fails initially
   const handleQRLoadError = (attempt: number) => {
     // ... existing code ...
+    console.log('[DEBUG] handleQRLoadError triggered, attempt:', attempt);
+    
   };
 
   // Initialize user flow state on wheel load
