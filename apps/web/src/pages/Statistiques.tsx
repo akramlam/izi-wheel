@@ -64,7 +64,6 @@ const Statistiques: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [statsData, setStatsData] = useState<StatisticsData | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
   
   // Map date range to display text
   const dateRangeText = {
@@ -120,7 +119,14 @@ const Statistiques: React.FC = () => {
   const getPlaysChartData = () => {
     if (!statsData?.playsByDay) return null
     
-    const labels = statsData.playsByDay.map(day => day.date)
+    const labels = statsData.playsByDay.map(day => {
+      const date = new Date(day.date)
+      return date.toLocaleDateString('fr-FR', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      })
+    })
     const data = statsData.playsByDay.map(day => day.count)
 
     return {
@@ -287,9 +293,11 @@ const Statistiques: React.FC = () => {
                 <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Taux de conversion</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {statsData ? `${(statsData.conversionRate * 100).toFixed(1)}%` : '0%'}
+                  {statsData && statsData.totalPlays > 0 
+                    ? `${((statsData.totalPrizes / statsData.totalPlays) * 100).toFixed(1)}%` 
+                    : '0%'}
                 </p>
-                {statsData?.conversionRate !== undefined && (
+                {statsData?.totalPlays && statsData?.totalPrizes && (
                   formatTrend(2.8) // This would be calculated based on historical data
                 )}
                 </div>
@@ -300,20 +308,6 @@ const Statistiques: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
-      {/* Search for wheels/prizes */}
-      <div className="flex justify-end">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Rechercher"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
-          />
-        </div>
-      </div>
 
       {/* Plays Over Time Chart */}
       <Card>
@@ -391,10 +385,7 @@ const Statistiques: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {statsData?.prizeDistribution?.filter(prize => 
-                      prize.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      prize.prizeCode.toLowerCase().includes(searchTerm.toLowerCase())
-                    ).map((prize, index) => (
+                    {statsData?.prizeDistribution?.map((prize, index) => (
                       <tr key={index}>
                         <td className="whitespace-nowrap px-4 py-2 text-sm font-medium text-gray-900">
                           {prize.label}

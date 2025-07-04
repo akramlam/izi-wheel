@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Filter, ArrowUpDown, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight } from "lucide-react"
+import { Plus, Search, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
@@ -573,31 +573,6 @@ const Roues: React.FC = () => {
               <Plus className="h-4 w-4" />
               <span>Nouvelle roue</span>
             </Button>
-            {/* Temporary test buttons for upgrade modal */}
-            <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setUpgradeModalType('wheel');
-                  setShowUpgradeModal(true);
-                }}
-                className="text-xs"
-              >
-                Test Wheel Limit
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => {
-                  setUpgradeModalType('play');
-                  setShowUpgradeModal(true);
-                }}
-                className="text-xs"
-              >
-                Test Play Limit
-              </Button>
-            </div>
           </div>
         )}
       </div>
@@ -640,14 +615,6 @@ const Roues: React.FC = () => {
                   <span className="sm:hidden">Nouvelle</span>
                 </Button>
               )}
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Filtrer</span>
-              </Button>
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <ArrowUpDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Trier</span>
-              </Button>
             </div>
             
             {/* Search - full width on mobile */}
@@ -688,9 +655,6 @@ const Roues: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="hidden sm:table-cell">
-                      <input type="checkbox" className="rounded border-gray-300" />
-                    </TableHead>
                     <TableHead className="hidden lg:table-cell">Entreprise</TableHead>
                     <TableHead>Nom</TableHead>
                     <TableHead className="hidden sm:table-cell">Type</TableHead>
@@ -703,9 +667,6 @@ const Roues: React.FC = () => {
                 <TableBody>
                   {filteredRoues.map((roue) => (
                     <TableRow key={roue.id}>
-                      <TableCell className="hidden sm:table-cell">
-                        <input type="checkbox" className="rounded border-gray-300" />
-                      </TableCell>
                       <TableCell className="hidden lg:table-cell font-medium">{roue.entreprise}</TableCell>
                       <TableCell className="font-medium">
                         <div className="max-w-32 sm:max-w-none truncate">
