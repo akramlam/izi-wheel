@@ -564,7 +564,6 @@ const ActivityTracking: React.FC = () => {
                   <th className="text-left py-3 px-4 font-medium">Prix</th>
                   <th className="text-left py-3 px-4 font-medium">Statut</th>
                   <th className="text-left py-3 px-4 font-medium">PIN</th>
-                  <th className="text-left py-3 px-4 font-medium">IP</th>
                 </tr>
               </thead>
               <tbody>
@@ -628,9 +627,6 @@ const ActivityTracking: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-sm font-mono">
                       {play.pin || '-'}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {play.ip || '-'}
                     </td>
                   </tr>
                 ))}
@@ -812,7 +808,7 @@ const ActivityTracking: React.FC = () => {
               <li>• Détails du prix et code PIN</li>
               <li>• Statut de réclamation et d'échange</li>
               <li>• Informations du joueur (nom, email)</li>
-              <li>• Adresse IP et horodatage</li>
+              <li>• Horodatage</li>
             </ul>
           </div>
         </CardContent>

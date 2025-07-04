@@ -133,7 +133,7 @@ const Statistiques: React.FC = () => {
       labels,
       datasets: [
         {
-          label: 'Jours de parties',
+          label: 'Nombre de parties',
           data,
           borderColor: 'rgba(99, 102, 241, 1)',
           backgroundColor: 'rgba(99, 102, 241, 0.2)',
@@ -145,7 +145,12 @@ const Statistiques: React.FC = () => {
   }
 
   const getPrizeDistributionData = () => {
-    if (!statsData?.prizeDistribution) return null
+    if (!statsData?.prizeDistribution) {
+      console.log('No prize distribution data available:', statsData?.prizeDistribution)
+      return null
+    }
+    
+    console.log('Prize distribution data:', statsData.prizeDistribution)
     
     return {
       labels: statsData.prizeDistribution.map(prize => prize.label),
@@ -179,13 +184,18 @@ const Statistiques: React.FC = () => {
   }
 
   const getWheelPerformanceData = () => {
-    if (!statsData?.wheelPerformance) return null
+    if (!statsData?.wheelPerformance) {
+      console.log('No wheel performance data available:', statsData?.wheelPerformance)
+      return null
+    }
+    
+    console.log('Wheel performance data:', statsData.wheelPerformance)
     
     return {
       labels: statsData.wheelPerformance.map(wheel => wheel.wheelName),
       datasets: [
         {
-          label: 'Jours de parties',
+          label: 'Nombre de parties',
           data: statsData.wheelPerformance.map(wheel => wheel.plays),
           backgroundColor: 'rgba(99, 102, 241, 0.7)',
           borderColor: 'rgba(99, 102, 241, 1)',
