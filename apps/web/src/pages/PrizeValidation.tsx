@@ -135,13 +135,13 @@ const PrizeValidation: React.FC = () => {
     // Debug logging
     console.log('🔍 Recherche PIN:', pinInput.trim());
     console.log('📊 Total cadeaux gagnants:', allWinningPlays.length);
-    console.log('🎯 Cadeaux disponibles:', allWinningPlays.map(p => ({ id: p.id, pin: p.pin, status: p.redemptionStatus, prize: p.slot?.label })));
+    console.log('🎯 Cadeaux disponibles:', allWinningPlays.map((p: any) => ({ id: p.id, pin: p.pin, status: p.redemptionStatus, prize: p.slot?.label })));
     
     const matchingPrize = allWinningPlays.find((play: any) => play.pin === pinInput.trim());
     
     if (!matchingPrize) {
       // More detailed error message
-      const availablePins = allWinningPlays.map(p => p.pin).filter(Boolean);
+      const availablePins = allWinningPlays.map((p: any) => p.pin).filter(Boolean);
       toast({
         title: "Code PIN introuvable",
         description: `Aucun cadeau trouvé avec le code PIN ${pinInput.trim()}. ${availablePins.length > 0 ? `PINs disponibles: ${availablePins.slice(0, 3).join(', ')}${availablePins.length > 3 ? '...' : ''}` : 'Aucun PIN disponible.'}`,
@@ -471,7 +471,7 @@ const PrizeValidation: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
+                        onClick={() => navigate(`/plays/${play.id}/redeem?admin=true`)}
                       >
                         <Store className="w-4 h-4 mr-1" />
                         Détails
