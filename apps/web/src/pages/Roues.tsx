@@ -6,7 +6,8 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown } from "lucide-react"
+import { Plus, Search, Eye, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
@@ -916,6 +917,15 @@ const Roues: React.FC = () => {
                               title="QR Code"
                             >
                               <QrCode className="h-4 w-4" />
+                            </Button>
+                            <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`https://roue.izikado.fr/play/company/${roue.id}`, '_blank')}
+                            className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
+                            title="Voir la roue en direct"
+                            >
+                              <ExternalLink className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
