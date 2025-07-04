@@ -13,7 +13,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { SearchIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { SearchIcon, ArrowUpRight, ArrowDownRight, Gift, CheckCircle, TrendingUp } from 'lucide-react';
 
 // Register Chart.js components
 ChartJS.register(
@@ -220,6 +220,7 @@ const Dashboard = () => {
           display: false,
         },
         ticks: {
+          stepSize: 1,
           callback: (value: any) => {
             if (value >= 1000) {
               return value >= 10000 ? `${value / 1000}k` : `${value / 1000}k`;
@@ -305,16 +306,12 @@ const Dashboard = () => {
 
       {/* KPI Cards */}
       <div className="mb-6 sm:mb-8 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {/* Scans Card */}
+        {/* Parties Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm text-gray-500">Parties</span>
             <span className="text-2xl sm:text-3xl font-bold">
               {dashboardData?.overview.totalPlays || companyStats?.totalPlays || 0}
-            </span>
-            <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />
-              Aujourd'hui: {dashboardData?.overview.todayPlays || 0}
             </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
@@ -324,68 +321,45 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        {/* Prospects Card */}
+        {/* Prix Gagnés Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm text-gray-500">Prix Gagnés</span>
             <span className="text-2xl sm:text-3xl font-bold">
               {dashboardData?.overview.totalWins || companyStats?.totalPrizes || 0}
             </span>
-            <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />
-              Taux: {dashboardData?.overview.winRate || 0}%
-            </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none">
-              <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 21V19C3 17.9391 3.42143 16.9217 4.17157 16.1716C4.92172 15.4214 5.93913 15 7 15H11C12.0609 15 13.0783 15.4214 13.8284 16.1716C14.5786 16.9217 15 17.9391 15 19V21" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M21 21V19C20.9949 18.1172 20.6979 17.2608 20.1553 16.5644C19.6126 15.868 18.8548 15.3707 18 15.15" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
           </div>
         </Card>
 
-        {/* Clients Card */}
+        {/* Prix Réclamés Card (was Prix Échangés) */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
             <span className="text-xs sm:text-sm text-gray-500">Prix Réclamés</span>
             <span className="text-2xl sm:text-3xl font-bold">
-              {dashboardData?.overview.totalClaimed || 0}
-            </span>
-            <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />
-              Taux: {dashboardData?.overview.claimRate || 0}%
+              {dashboardData?.overview.totalRedeemed || 0}
             </span>
           </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none">
-              <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-        </div>
+            <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+          </div>
         </Card>
 
-        {/* Productivity Card */}
+        {/* Taux de gain Card */}
         <Card className="flex items-center justify-between bg-white p-3 sm:p-5 rounded-xl">
           <div className="flex flex-col">
-            <span className="text-xs sm:text-sm text-gray-500">Prix Échangés</span>
+            <span className="text-xs sm:text-sm text-gray-500">Taux de gain</span>
             <span className="text-2xl sm:text-3xl font-bold">
-              {dashboardData?.overview.totalRedeemed || 0}
+              {dashboardData?.overview.winRate || 
+               (companyStats?.totalPlays && companyStats.totalPrizes ? 
+                 Math.round((companyStats.totalPrizes / companyStats.totalPlays) * 100) : 0)}%
             </span>
-            <span className="mt-1 flex items-center text-xs font-medium text-green-600">
-              <ArrowUpRight className="mr-1 h-3 w-3" />
-              Taux: {dashboardData?.overview.redeemRate || 0}%
-            </span>
-        </div>
+          </div>
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-gray-100">
-            <svg className="h-5 w-5 sm:h-6 sm:w-6" viewBox="0 0 24 24" fill="none">
-              <path d="M12 4V20" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M18 14L12 20L6 14" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-        </div>
+            <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+          </div>
         </Card>
       </div>
 
@@ -424,13 +398,11 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        {/* Entreprises section */}
-        <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
-          <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-medium">
-              {user?.role === 'SUPER' ? 'Entreprises' : 'Statistiques'}
-            </h2>
-            {user?.role === 'SUPER' && (
+        {/* Entreprises section - Only for SUPER admins */}
+        {user?.role === 'SUPER' && (
+          <Card className="bg-[#e9ddfc] p-4 sm:p-5 rounded-xl">
+            <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg font-medium">Entreprises</h2>
               <div className="relative w-full sm:w-auto">
                 <input
                   type="text"
@@ -441,16 +413,14 @@ const Dashboard = () => {
                 />
                 <SearchIcon className="absolute left-2 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-gray-500" />
               </div>
-            )}
-          </div>
-          <div className="overflow-x-auto">
-            {user?.role === 'SUPER' ? (
+            </div>
+            <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="text-left text-xs sm:text-sm text-gray-500">
                   <tr>
                     <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Nom</th>
                     <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden sm:table-cell">Parties</th>
-                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden md:table-cell">Prix</th>
+                    <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal hidden md:table-cell">Prix Gagnés</th>
                     <th className="whitespace-nowrap pb-2 sm:pb-3 font-normal">Taux Gain</th>
                   </tr>
                 </thead>
@@ -478,37 +448,10 @@ const Dashboard = () => {
                   )}
                 </tbody>
               </table>
-            ) : (
-              // For regular admins, show their company stats
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Roues actives</span>
-                  <span className="font-semibold">{companyStats?.activeWheels || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total parties</span>
-                  <span className="font-semibold">{companyStats?.totalPlays || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Prix distribués</span>
-                  <span className="font-semibold">{companyStats?.totalPrizes || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Taux de gain</span>
-                  <span className={`font-semibold ${
-                    companyStats?.totalPlays && companyStats.totalPrizes ? 
-                    Math.round((companyStats.totalPrizes / companyStats.totalPlays) * 100) > 50 ? 'text-green-600' : 'text-orange-500'
-                    : 'text-gray-500'
-                  }`}>
-                    {companyStats?.totalPlays && companyStats.totalPrizes ? 
-                      Math.round((companyStats.totalPrizes / companyStats.totalPlays) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-                </div>
+            </div>
+          </Card>
+        )}
+      </div>
 
       {/* Monthly activity chart section - Mobile responsive */}
       <div className="mt-4 sm:mt-6">
