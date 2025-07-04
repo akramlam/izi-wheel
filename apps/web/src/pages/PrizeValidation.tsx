@@ -20,7 +20,8 @@ import {
   Search,
   Loader2,
   RefreshCw,
-  Hash
+  CheckCircle,
+  Shield
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -234,7 +235,7 @@ const PrizeValidation: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Hash className="w-5 h-5 mr-2" />
+            <Shield className="w-5 h-5 mr-2" />
             Validation par Code PIN
           </CardTitle>
           <CardDescription>
@@ -274,7 +275,7 @@ const PrizeValidation: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Hash className="w-4 h-4 mr-2" />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Valider
                   </>
                 )}
@@ -284,24 +285,6 @@ const PrizeValidation: React.FC = () => {
           <p className="text-xs text-gray-500 mt-2">
             💡 Le gagnant a reçu ce code PIN par email après avoir réclamé son cadeau
           </p>
-          
-          {/* Debug Information */}
-          {prizesData && (
-            <div className="mt-4 p-3 bg-gray-50 rounded text-xs">
-              <strong>Debug Info:</strong> 
-              {prizesData.success && prizesData.data?.plays ? (
-                <>
-                  <br />Total parties: {prizesData.data.plays.length}
-                  <br />Parties gagnantes: {prizesData.data.plays.filter((p: any) => p.result === 'WIN').length}
-                  <br />PINs disponibles: {prizesData.data.plays.filter((p: any) => p.result === 'WIN' && p.pin).map((p: any) => p.pin).join(', ') || 'Aucun'}
-                </>
-              ) : (
-                <>
-                  <br />Aucune donnée de parties disponible
-                </>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
 
