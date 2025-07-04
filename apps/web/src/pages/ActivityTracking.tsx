@@ -141,9 +141,16 @@ const ActivityTracking: React.FC = () => {
       if (resultFilter !== 'ALL') params.append('result', resultFilter);
       if (statusFilter !== 'ALL') params.append('status', statusFilter);
 
+      console.log('Fetching plays with params:', params.toString());
+      console.log('Search term:', searchTerm);
+
+      console.log('Fetching plays with params:', params.toString());
+      console.log('Search term:', searchTerm);
+      
       const response = await api.getActivityPlays(params.toString());
       if (response.data.success) {
         const newPlays = response.data.data.plays;
+        console.log('Received plays:', newPlays.length);
         setPlays(newPlays);
         setStatistics(response.data.data.statistics);
         
@@ -302,7 +309,7 @@ const ActivityTracking: React.FC = () => {
     return (
       <div className="space-y-6">
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -333,22 +340,13 @@ const ActivityTracking: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Prix Réclamés</p>
-                  <p className="text-2xl font-bold">{dashboardData?.overview.totalClaimed || 0}</p>
-                  <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.claimRate || 0}%</p>
-                </div>
-                <Gift className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Prix Échangés</p>
-                  <p className="text-2xl font-bold">{dashboardData?.overview.totalRedeemed || 0}</p>
-                  <p className="text-xs text-gray-500">Taux: {dashboardData?.overview.redeemRate || 0}%</p>
+                  <p className="text-sm font-medium text-gray-600">Taux de gain</p>
+                  <p className="text-2xl font-bold">
+                    {dashboardData?.overview.totalWins && dashboardData?.overview.totalRedeemed 
+                      ? `${((dashboardData.overview.totalRedeemed / dashboardData.overview.totalWins) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </p>
+                  <p className="text-xs text-gray-500">Échangés/Gagnés</p>
                 </div>
                 <Award className="h-8 w-8 text-purple-600" />
               </div>
@@ -506,7 +504,7 @@ const ActivityTracking: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Rechercher (nom, email, PIN)..."
+                placeholder="Rechercher (nom, email, téléphone, PIN)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -577,6 +575,9 @@ const ActivityTracking: React.FC = () => {
                         <div>
                           <div className="font-medium text-sm">{play.leadInfo.name}</div>
                           <div className="text-xs text-gray-600">{play.leadInfo.email}</div>
+                          {play.leadInfo.phone && (
+                            <div className="text-xs text-gray-600">{play.leadInfo.phone}</div>
+                          )}
                         </div>
                       ) : (
                         <span className="text-sm text-gray-500">Non renseigné</span>

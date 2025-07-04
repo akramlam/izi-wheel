@@ -157,6 +157,7 @@ function App() {
           </ProtectedRoute>
         } />
         
+        
         <Route path="entreprises/:companyId/admins" element={
           <ProtectedRoute allowedRoles={['SUPER']}>
             <CompanyAdminManager />
