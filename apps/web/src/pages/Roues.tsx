@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight } from "lucide-react"
+import { Plus, Search, Eye, LinkIcon, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
@@ -49,6 +49,14 @@ const Roues: React.FC = () => {
     wheelName: '',
   });
   
+  // Filter and sort state
+  const [filterType, setFilterType] = useState<string>("all")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [sortBy, setSortBy] = useState<string>("nom")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
+  
   // Add companies state for super admin
   const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("")
@@ -72,6 +80,22 @@ const Roues: React.FC = () => {
   
   // Check if user is super admin
   const isSuperAdmin = user?.role === "SUPER"
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.relative')) {
+        setShowFilterDropdown(false)
+        setShowSortDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   // Add direct mapping right in the render to override any issues with state timing
   const getCompanyNameForDisplay = () => {
@@ -532,11 +556,56 @@ const Roues: React.FC = () => {
   };
 
   const filteredRoues = Array.isArray(roues) 
-    ? roues.filter(
-    (roue) =>
+    ? roues
+      .filter((roue) => {
+        // Search filter
+        const matchesSearch = 
           (roue.entreprise?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false) ||
           (roue.nom?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false)
-  )
+        
+        // Type filter
+        const matchesType = filterType === "all" || 
+          (filterType === "gagnant" && roue.type === "Gagnant à tous les coups") ||
+          (filterType === "aleatoire" && roue.type === "Gain aléatoire")
+        
+        // Status filter
+        const matchesStatus = filterStatus === "all" ||
+          (filterStatus === "actif" && roue.statut === "Actif") ||
+          (filterStatus === "inactif" && roue.statut === "Inactif")
+        
+        return matchesSearch && matchesType && matchesStatus
+      })
+      .sort((a, b) => {
+        let aValue: any, bValue: any
+        
+        switch (sortBy) {
+          case "nom":
+            aValue = a.nom?.toLowerCase() || ""
+            bValue = b.nom?.toLowerCase() || ""
+            break
+          case "type":
+            aValue = a.type
+            bValue = b.type
+            break
+          case "parties":
+            aValue = a.parties
+            bValue = b.parties
+            break
+          case "statut":
+            aValue = a.statut
+            bValue = b.statut
+            break
+          default:
+            aValue = a.nom?.toLowerCase() || ""
+            bValue = b.nom?.toLowerCase() || ""
+        }
+        
+        if (sortOrder === "asc") {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+        } else {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+        }
+      })
     : [];
 
   const getTypeVariant = (type: string) => {
@@ -615,6 +684,129 @@ const Roues: React.FC = () => {
                   <span className="sm:hidden">Nouvelle</span>
                 </Button>
               )}
+              
+              {/* Filter Button */}
+              <div className="relative">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => {
+                    setShowFilterDropdown(!showFilterDropdown)
+                    setShowSortDropdown(false)
+                  }}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filtrer</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+                
+                {showFilterDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div className="p-3">
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+                        <select
+                          value={filterType}
+                          onChange={(e) => setFilterType(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="all">Tous les types</option>
+                          <option value="gagnant">Gagnant à tous les coups</option>
+                          <option value="aleatoire">Gain aléatoire</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Statut</label>
+                        <select
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="all">Tous les statuts</option>
+                          <option value="actif">Actif</option>
+                          <option value="inactif">Inactif</option>
+                        </select>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs flex-1"
+                          onClick={() => {
+                            setFilterType("all")
+                            setFilterStatus("all")
+                          }}
+                        >
+                          Réinitialiser
+                        </Button>
+                        <Button 
+                          size="sm"
+                          className="text-xs flex-1"
+                          onClick={() => setShowFilterDropdown(false)}
+                        >
+                          Appliquer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Sort Button */}
+              <div className="relative">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center space-x-2"
+                  onClick={() => {
+                    setShowSortDropdown(!showSortDropdown)
+                    setShowFilterDropdown(false)
+                  }}
+                >
+                  <SortAsc className="h-4 w-4" />
+                  <span>Trier</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+                
+                {showSortDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div className="p-3">
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Trier par</label>
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="nom">Nom</option>
+                          <option value="type">Type</option>
+                          <option value="parties">Parties</option>
+                          <option value="statut">Statut</option>
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Ordre</label>
+                        <select
+                          value={sortOrder}
+                          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="asc">Croissant</option>
+                          <option value="desc">Décroissant</option>
+                        </select>
+                      </div>
+                      <Button 
+                        size="sm"
+                        className="text-xs w-full"
+                        onClick={() => setShowSortDropdown(false)}
+                      >
+                        Appliquer
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Search - full width on mobile */}
