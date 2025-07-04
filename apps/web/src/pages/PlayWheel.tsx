@@ -21,6 +21,7 @@ import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm'
 declare global {
   interface Window {
     fallbackTimeout?: NodeJS.Timeout | null;
+    immediateFallback?: NodeJS.Timeout | null;
   }
 }
 
@@ -904,6 +905,22 @@ const PlayWheel = () => {
     setMustSpin(true); // Trigger the visual spin
     console.log('🎯 Just set mustSpin to true');
 
+    // ✅ IMMEDIATE FALLBACK: Trigger result after expected wheel duration
+    // This ensures popup appears even if wheel callback fails
+    const immediateFallback = setTimeout(() => {
+      console.log('⚡ IMMEDIATE FALLBACK: Triggering result after expected wheel duration');
+      setMustSpin(false);
+      setShowResultModal(true);
+      
+      if (data?.play.result === 'WIN') {
+        setShowConfetti(true);
+        setUserFlowState('won');
+        setCurrentStep('showPrize');
+      } else {
+        setCurrentStep('spinWheel');
+      }
+    }, 11000); // 8 seconds max spin + 2.5 seconds delay + 0.5 seconds buffer
+
     // ✅ ADDED: Safety fallback timeout in case wheel callback fails
     // This ensures the popup appears even if the wheel component doesn't call onSpin
     const fallbackTimeout = setTimeout(() => {
@@ -928,10 +945,11 @@ const PlayWheel = () => {
       } else {
         console.log('⚠️ FALLBACK: Wheel already stopped, not triggering fallback');
       }
-    }, 10000); // Reduced from 12 to 10 seconds
+    }, 15000); // Extended fallback for safety
 
-    // Store the timeout reference to clear it if wheel callback works properly
+    // Store the timeout references to clear them if wheel callback works properly
     window.fallbackTimeout = fallbackTimeout;
+    window.immediateFallback = immediateFallback;
   };
 
   // Debug effect to monitor mustSpin state changes
@@ -954,29 +972,21 @@ const PlayWheel = () => {
     }
   }, [showResultModal]);
 
-  // TEMPORARY DEBUG: Force show modal after 15 seconds for testing
-  useEffect(() => {
-    const debugTimeout = setTimeout(() => {
-      if (spinResult && !showResultModal) {
-        console.log('🔧 DEBUG: Forcing modal to show after 15 seconds');
-        console.log('🔧 DEBUG: spinResult at 15s:', spinResult);
-        console.log('🔧 DEBUG: Current showResultModal:', showResultModal);
-        setShowResultModal(true);
-      }
-    }, 15000);
-
-    return () => clearTimeout(debugTimeout);
-  }, [spinResult, showResultModal]);
-
   // Handle wheel finishing spin - called by wheel component when animation completes
   const handleWheelFinishedSpin = () => {
     console.log('✅ CALLBACK TRIGGERED: Wheel finished spinning, showing result');
 
-    // Clear the fallback timeout since the proper callback was triggered
+    // Clear both fallback timeouts since the proper callback was triggered
     if (window.fallbackTimeout) {
       clearTimeout(window.fallbackTimeout);
       window.fallbackTimeout = null;
-      console.log('✅ Cleared fallback timeout - wheel callback worked properly');
+      console.log('✅ Cleared main fallback timeout - wheel callback worked properly');
+    }
+    
+    if (window.immediateFallback) {
+      clearTimeout(window.immediateFallback);
+      window.immediateFallback = null;
+      console.log('✅ Cleared immediate fallback timeout - wheel callback worked properly');
     }
 
     // Reset the spinning state

@@ -299,11 +299,14 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         // Reset spinning state
         const resetTimeout = setTimeout(() => {
           console.log('🎬 Wheel animation completed, calling onSpin callback');
+          console.log('🎬 About to call onSpin - isSpinning:', isSpinning, 'spinning:', spinning);
           setSpinning(false);
           
-          // ✅ FIXED: Call onSpin callback to notify parent that wheel has finished
+          // ✅ Call onSpin callback to notify parent that wheel has finished
+          console.log('🎬 Calling onSpin callback now...');
           onSpin();
-        }, 2500); // Increased from 1500ms to 2500ms to give users more time to see where wheel landed
+          console.log('🎬 onSpin callback called successfully');
+        }, 2500);
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);
