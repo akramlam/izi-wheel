@@ -294,21 +294,28 @@ export const createSlot = async (req: Request, res: Response) => {
       throw createError('Wheel not found', 404);
     }
     
-    // Get existing slots to verify total probability
+    // Get existing ACTIVE slots to verify total probability
     const existingSlots = await prisma.slot.findMany({
-      where: { wheelId },
+      where: { 
+        wheelId,
+        isActive: true // Only count active slots
+      },
       select: { weight: true },
     });
     
     const currentTotal = existingSlots.reduce((sum, slot) => sum + slot.weight, 0);
     const newTotal = currentTotal + validatedData.weight;
     
-    if (newTotal > 100) {
+    // Be more permissive - allow up to 101% to handle rounding differences
+    if (newTotal > 101) {
       throw createError(
-        `Total probability would exceed 100 (current: ${currentTotal}, new: ${validatedData.weight})`,
+        `Total probability would exceed 100% (current active slots: ${currentTotal}%, new: ${validatedData.weight}%, total: ${newTotal}%)`,
         400
       );
     }
+    
+    // Log for debugging
+    console.log(`Creating slot: current active slots total ${currentTotal}%, new weight ${validatedData.weight}%, new total ${newTotal}%`);
     
     // Create the slot
     const slot = await prisma.slot.create({
@@ -449,13 +456,14 @@ export const updateSlot = async (req: Request, res: Response) => {
       throw createError('Slot not found', 404);
     }
     
-    // If probability is being updated, verify total probability
+    // If weight is being updated, verify total probability
     if (validatedData.weight !== undefined) {
-      // Get all other slots
+      // Get all OTHER active slots (excluding the one being updated)
       const otherSlots = await prisma.slot.findMany({
         where: {
           wheelId,
           id: { not: slotId },
+          isActive: true, // Only count active slots
         },
         select: { weight: true },
       });
@@ -463,12 +471,17 @@ export const updateSlot = async (req: Request, res: Response) => {
       const otherTotal = otherSlots.reduce((sum, slot) => sum + slot.weight, 0);
       const newTotal = otherTotal + validatedData.weight;
       
-      if (newTotal > 100) {
+      // Be more permissive - allow up to 101% to handle rounding differences
+      // but still prevent major overages
+      if (newTotal > 101) {
         throw createError(
-          `Total probability would exceed 100 (other slots: ${otherTotal}, new: ${validatedData.weight})`,
+          `Total probability would exceed 100% (other active slots: ${otherTotal}%, new: ${validatedData.weight}%, total: ${newTotal}%)`,
           400
         );
       }
+      
+      // Log for debugging
+      console.log(`Updating slot ${slotId}: other active slots total ${otherTotal}%, new weight ${validatedData.weight}%, new total ${newTotal}%`);
     }
     
     // Update the slot
@@ -482,13 +495,16 @@ export const updateSlot = async (req: Request, res: Response) => {
       },
     });
 
-    // Get the new total probability
-    const allSlots = await prisma.slot.findMany({
-      where: { wheelId },
+    // Get the new total probability from all active slots
+    const allActiveSlots = await prisma.slot.findMany({
+      where: { 
+        wheelId,
+        isActive: true 
+      },
       select: { weight: true },
     });
     
-    const totalProbability = allSlots.reduce((sum, slot) => sum + slot.weight, 0);
+    const totalProbability = allActiveSlots.reduce((sum, slot) => sum + slot.weight, 0);
 
     res.status(200).json({ 
       slot,

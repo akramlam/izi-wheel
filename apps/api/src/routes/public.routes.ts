@@ -62,8 +62,9 @@ router.post('/test-email', async (req: Request, res: Response) => {
     await sendPrizeEmail(
       email,
       'Test Prize - ' + (name || 'Test User'),
-      'https://example.com/test-qr',
-      '123456'
+      '123456',
+      'test-play-id-12345',
+      'test-company-id'
     );
     
     res.json({ 

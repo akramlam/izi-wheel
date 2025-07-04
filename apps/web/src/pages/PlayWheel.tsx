@@ -1686,7 +1686,7 @@ const PlayWheel = () => {
                   remise du lot.
                 </li>
                 <li>
-                  En cas de gain, un code PIN et un QR code seront fournis pour récupérer votre lot.
+                  En cas de gain, un code PIN et un lien direct seront fournis pour récupérer votre lot.
                 </li>
                 <li>Les lots ne sont ni échangeables, ni remboursables.</li>
                 <li>

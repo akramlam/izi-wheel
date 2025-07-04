@@ -70,8 +70,9 @@ describe('Integration Tests', () => {
       await sendPrizeEmail(
         'winner@example.com',
         'Free Coffee',
-        'https://example.com/qr-code',
-        '1234'
+        '1234',
+        'test-play-id',
+        'test-company-id'
       );
       
       // We're just checking that the function doesn't throw an error

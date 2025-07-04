@@ -9,7 +9,7 @@ import { Confetti } from '../components/magicui/confetti';
 import { Wheel3D, WheelConfig } from '../components/wheel';
 import soundUtils from '../lib/sound';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
-import { Toast } from '@/components/ui/toast';
+import { toast } from '../hooks/use-toast';
 
 // Brand accent color and confetti colors
 const ACCENT = '#6366f1'; // Indigo
@@ -170,7 +170,7 @@ const PlayWheelV2 = () => {
       if (!isValidUuid) {
         console.error('Invalid play ID received from API:', modifiedData.play?.id);
         // Don't proceed with spinning if we don't have a valid play ID
-        Toast({
+        toast({
           title: "Erreur : Impossible d'enregistrer votre participation. Veuillez réessayer.",
           variant: "destructive"
         });
@@ -229,7 +229,7 @@ const PlayWheelV2 = () => {
           limitMessage = backendMsg || "Limite de jeu atteinte. Veuillez réessayer plus tard.";
         }
         
-        Toast({
+        toast({
           title: "Limite de jeu atteinte",
           description: limitMessage,
           variant: "destructive",
@@ -242,7 +242,7 @@ const PlayWheelV2 = () => {
         } else {
           console.error('Spin error:', error);
         }
-        Toast({
+        toast({
           title: backendMsg || "Erreur : Impossible de faire tourner la roue. Veuillez réessayer.",
           variant: "destructive"
         });
@@ -261,7 +261,7 @@ const PlayWheelV2 = () => {
     if (data.phone) apiFormData.phone = data.phone;
     // Prevent empty lead submissions
     if (Object.keys(apiFormData).length === 0) {
-      Toast({
+      toast({
         title: "Erreur : Veuillez remplir au moins un champ pour participer.",
         variant: "destructive"
       });
@@ -447,7 +447,7 @@ const PlayWheelV2 = () => {
                   } else {
                     // Invalid UUID, show error
                     console.error('Invalid play ID for redemption:', spinResult.play.id);
-                    Toast({
+                    toast({
                       title: "Erreur : Identifiant de jeu invalide. Impossible de récupérer le lot.",
                       variant: "destructive"
                     });
@@ -486,7 +486,7 @@ const PlayWheelV2 = () => {
             <ul className="list-disc pl-6 space-y-2">
               <li>Une seule participation par personne est autorisée, sauf indication contraire de l'organisateur.</li>
               <li>Les informations saisies doivent être exactes pour valider la participation et la remise du lot.</li>
-              <li>En cas de gain, un code PIN et un QR code seront fournis pour récupérer votre lot.</li>
+              <li>En cas de gain, un code PIN et un lien direct seront fournis pour récupérer votre lot.</li>
               <li>Les lots ne sont ni échangeables, ni remboursables.</li>
               <li>L'organisateur se réserve le droit de modifier ou d'annuler le jeu à tout moment.</li>
               <li>La participation implique l'acceptation pleine et entière du règlement.</li>

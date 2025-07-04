@@ -563,80 +563,69 @@ const RedeemPrize = () => {
     );
   }
 
-  // Main content - claimed, waiting for PIN redemption (second step)
+  // Main content - claimed, waiting for redemption (user view)
   if (prizeDetails.status === 'CLAIMED') {
     return (
       <div className="container max-w-md mx-auto px-4 py-10">
         <Card className="border-2 border-green-100 shadow-lg">
           <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
-            <CardTitle className="text-2xl text-green-700">Récupérer votre lot</CardTitle>
+            <CardTitle className="text-2xl text-green-700">🎉 Prix réclamé !</CardTitle>
             <CardDescription>
-              Lot réclamé: <span className="font-bold text-emerald-600">{prizeDetails.prize.label}</span>
+              Votre lot: <span className="font-bold text-emerald-600">{prizeDetails.prize.label}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800 text-center">
-                ✅ Votre lot a été réclamé avec succès!<br/>
-                Vous devriez avoir reçu un email avec les détails.
+              <p className="text-sm text-green-800 text-center font-medium">
+                ✅ Votre lot a été réclamé avec succès!
+              </p>
+              <p className="text-sm text-green-700 text-center mt-2">
+                Vous avez reçu un email avec votre code PIN.
               </p>
             </div>
             
             {prizeDetails.prize.description && (
-              <p className="mb-6 text-gray-600 text-center italic">
-                {prizeDetails.prize.description}
-              </p>
-            )}
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pin">Entrez votre code PIN (6-10 chiffres)</Label>
-                  <Input
-                    id="pin"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={10}
-                    minLength={6}
-                    value={pinCode}
-                    onChange={(e) => {
-                      // Only allow digits and limit to 10 characters
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setPinCode(value);
-                    }}
-                    placeholder="Entrez votre code PIN"
-                    className="text-center text-lg font-mono tracking-wider"
-                  />
-                  <p className="text-xs text-gray-500 text-center">
-                    Le code PIN contient entre 6 et 10 chiffres
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90"
-                    disabled={isRedeeming || pinCode.length < 6 || pinCode.length > 10}
-                  >
-                    {isRedeeming ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Récupération en cours...
-                      </>
-                    ) : (
-                      "Récupérer le lot"
-                    )}
-                  </Button>
-                </div>
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 text-center italic">
+                  {prizeDetails.prize.description}
+                </p>
               </div>
-            </form>
+            )}
+
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h3 className="font-medium text-amber-800 mb-2 text-center">📍 Comment récupérer votre prix :</h3>
+                <ol className="text-sm text-amber-700 space-y-1">
+                  <li>1. Rendez-vous au point de vente</li>
+                  <li>2. Montrez cet écran ou votre email</li>
+                  <li>3. Donnez votre code PIN au commerçant</li>
+                  <li>4. Profitez de votre prix ! 🎉</li>
+                </ol>
+              </div>
+
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-xs text-gray-600 text-center">
+                  <strong>Code de référence:</strong> {prizeDetails.id}
+                </p>
+                <p className="text-xs text-gray-500 text-center mt-1">
+                  Statut: En attente de récupération
+                </p>
+              </div>
+
+              <Button 
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="w-full"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Actualiser le statut
+              </Button>
+            </div>
           </CardContent>
-          <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-            <p>Code de lot: {prizeDetails.id}</p>
-            <p className="mt-1">Entrez le code PIN reçu par email pour récupérer votre lot.</p>
+          <CardFooter className="text-xs text-gray-500 text-center">
+            <p>Gardez cette page ou votre email pour récupérer votre prix.</p>
           </CardFooter>
         </Card>
-        
-        {/* <PrizeDebugger playId={effectivePlayId || ''} /> */}
       </div>
     );
   }

@@ -393,13 +393,13 @@ export const sendInviteEmail = async (
  * Send a prize notification email
  * @param email Recipient email
  * @param prizeName Name of the prize
- * @param qrCode QR code for redemption
  * @param pin PIN code for redemption
+ * @param playId Play ID for direct redemption link
+ * @param companyId Company ID for tracking
  */
 export const sendPrizeEmail = async (
   email: string,
   prizeName: string,
-  qrCode: string,
   pin: string,
   playId?: string,
   companyId?: string
@@ -421,7 +421,7 @@ export const sendPrizeEmail = async (
       metadata: {
         prizeName,
         pin,
-        hasQrCode: !!qrCode
+        hasQrCode: !!playId
       }
     });
     
@@ -442,20 +442,25 @@ export const sendPrizeEmail = async (
             <div style="margin: 15px 0; padding: 10px; background-color: white; border-radius: 6px;">
               <p style="margin: 0; font-size: 18px;"><strong>Code PIN :</strong> <span style="font-family: monospace; font-size: 20px; color: #d32f2f; font-weight: bold;">${pin}</span></p>
             </div>
-            ${qrCode ? `<p style="margin: 10px 0 0 0; font-size: 14px; color: #01579b;"><strong>Ou scannez le QR code ci-dessous</strong></p>` : ''}
+            ${playId ? `
+            <div style="text-align: center; margin: 20px 0;">
+              <a href="https://roue.izikado.fr/redeem/${playId}" 
+                 style="display: inline-block; background-color: #4f46e5; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                📱 Voir mon prix
+              </a>
+              <p style="margin: 10px 0 0 0; font-size: 14px; color: #01579b;">
+                Cliquez pour voir le statut de votre prix
+              </p>
+            </div>
+            ` : ''}
           </div>
-          
-          ${qrCode ? `
-          <div style="text-align: center; margin: 20px 0;">
-            <img src="${qrCode}" alt="Code QR pour récupérer votre prix" style="max-width: 200px; height: auto;" />
-          </div>
-          ` : ''}
           
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0; font-weight: bold; color: #495057;">📍 Comment récupérer votre prix :</p>
             <ol style="margin: 0; padding-left: 20px; color: #495057;">
               <li style="margin-bottom: 5px;">Présentez-vous au point de vente</li>
-              <li style="margin-bottom: 5px;">Montrez votre <strong>code PIN : ${pin}</strong> ${qrCode ? 'ou scannez le QR code' : ''}</li>
+              <li style="margin-bottom: 5px;">Donnez votre <strong>code PIN : ${pin}</strong> au commerçant</li>
               <li>Profitez de votre prix ! 🎉</li>
             </ol>
           </div>

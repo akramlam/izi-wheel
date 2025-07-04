@@ -948,10 +948,6 @@ const Roues: React.FC = () => {
                                 <Edit className="mr-2 h-4 w-4" />
                                 Modifier
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewRoue(roue.id)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Voir
-                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleViewQRCode(roue.id)}>
                                 <QrCode className="mr-2 h-4 w-4" />
                                 QR Code

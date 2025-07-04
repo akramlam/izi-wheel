@@ -525,30 +525,17 @@ export const spinWheel = async (req: Request, res: Response) => {
     }
     // --- END NEW LOGIC ---
     
-    // Generate PIN and QR code for winning slots
-    let pin = null;
-    let qrLink = null;
-    
+    // Generate PIN for winning plays
+    let pin: string | undefined;
+    let qrLink: string | undefined;
+
     // For ALL_WIN, always treat as win; for others, check slot.isWinning
     const isWin = wheel.mode === 'ALL_WIN' ? true : slot.isWinning;
     if (isWin) {
       pin = generatePIN();
-      // Use the playId format instead of wheelId_pin for redemption
+      // Create a simple redemption URL (will be updated with actual playId after creation)
       const baseUrl = 'https://roue.izikado.fr';
-      
-      try {
-        // We'll create a temporary placeholder for the playId that will be replaced after creation
-        // Use a more unique temporary ID to avoid collisions
-        const tempPlayId = `TEMP_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-        qrLink = await generateQRCode(`${baseUrl}/redeem/${tempPlayId}`);
-        
-        // Log success
-        console.log(`Generated temporary QR code for future play with wheel ${wheelId}`);
-      } catch (qrError) {
-        console.error('Failed to generate QR code:', qrError);
-        // Fall back to a text-based QR (will be updated later)
-        qrLink = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQAQAAAABzZPLDAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAd2KE6QAAAAHdElNRQfkCxENNSdM1VJ/AAAAAXdJREFUaN7t2kGOwyAMBVDfiBP4/vfIFiRwMp1FRkhtQiXL7UxrPFL0lqDwYxnGWPZaOL4LJJBAAvm/SPAECeS3kPDmiHKjSfXH5JpazxwuM/UeGUhYDiLV2HFIImklmn6cOVJBkiQy8YlQUg1ydRNI7qMrr6kqEEjHI8S0NF3LtKCSJEmEg6h3Xo2kqqYeCSSQ+yqZbrSyRyCQQG4hPVNI2HLVu9tq7jqsm7Ga2VIlZ5JXyBPX5LMg8SXk+VRKUwYSyMuIJTCLXlzZmkuXHSQUvY5c2iBJ1a+OfAcJX0YqQZF0PWYyffCB3A2pvZtWXk1NRSBvIFSiqE6lUHYDCeT9xL7TZDkMBPI+Ul2r2TRO8mpbzbeQejbF6j5aeQuSkiRpBu5AIIHcDdmpYAYJJJC7IcFSPEpBQCDvJnUtSZpR1zxAvoakzTTrVIkq1QnkXcRaRrKx54tSSJJvIfmP30wgkEBuhdS1DL8FEkggP4z8AFbPZjysVrLUAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDIwLTExLTE3VDEzOjUzOjM5KzAxOjAwkTgpvQAAACV0RVh0ZGF0ZTptb2RpZnkAMjAyMC0xMS0xN1QxMzo1MzozOSswMTowMOBlkQEAAAAASUVORK5CYII=';
-      }
+      qrLink = `${baseUrl}/redeem/TEMP_ID`; // Temporary, will be updated below
     }
 
     // Record the play in the database
@@ -583,25 +570,25 @@ export const spinWheel = async (req: Request, res: Response) => {
       // Don't fail the request if logging fails
     }
 
-    // If this is a winning play, update the QR code with the actual playId
-    if (isWin && qrLink) {
+    // If this is a winning play, update the qrLink with the actual playId
+    if (isWin) {
       try {
         const baseUrl = 'https://roue.izikado.fr';
-        const updatedQrLink = await generateQRCode(`${baseUrl}/redeem/${play.id}`);
+        const updatedQrLink = `${baseUrl}/redeem/${play.id}`;
         
-        // Update the play with the correct QR code
+        // Update the play with the correct redemption URL
         await prisma.play.update({
           where: { id: play.id },
           data: { qrLink: updatedQrLink }
         });
         
-        // Use the updated QR code for the response
+        // Use the updated URL for the response
         qrLink = updatedQrLink;
         
-        console.log(`Updated QR code for play ${play.id}`);
-      } catch (qrUpdateError) {
-        console.error('Failed to update QR code with actual playId:', qrUpdateError);
-        // Keep the temporary QR code; it will be unusable but at least something displays
+        console.log(`Updated redemption URL for play ${play.id}: ${updatedQrLink}`);
+      } catch (updateError) {
+        console.error('Failed to update redemption URL with actual playId:', updateError);
+        // Keep the temporary URL
       }
     }
 
@@ -819,7 +806,6 @@ export const claimPrize = async (req: Request, res: Response) => {
       await sendPrizeEmail(
         email,
         play.slot.label || 'Your Prize',
-        play.qrLink || '',
         play.pin || '',
         playId,
         play.companyId
