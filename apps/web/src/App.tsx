@@ -67,8 +67,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, all
 
   // Not authenticated
   if (!isAuthenticated || !user) {
-    log('Not authenticated, redirecting to login');
-    return <Navigate to="/login" replace />;
+    log('Not authenticated, redirecting to superadmin login');
+    return <Navigate to="/superadmin-login" replace />;
   }
 
   // Check permissions
@@ -110,7 +110,7 @@ function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/superadmin-login" element={<Login />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

@@ -16,6 +16,12 @@ const Sidebar: React.FC = () => {
       allowed: ["SUPER", "ADMIN", "SUB"],
     },
     {
+      name: "Entreprises",
+      href: "/entreprises",
+      icon: Building2,
+      allowed: ["SUPER"],
+    },
+    {
       name: "Roues",
       href: "/Roues",
       icon: Target,
@@ -44,12 +50,6 @@ const Sidebar: React.FC = () => {
       href: "/prizes",
       icon: Gift,
       allowed: ["SUPER", "ADMIN"],
-    },
-    {
-      name: "Entreprises",
-      href: "/entreprises",
-      icon: Building2,
-      allowed: ["SUPER"],
     },
     {
       name: "Sous-administrateurs",

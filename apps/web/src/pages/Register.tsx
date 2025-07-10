@@ -76,7 +76,7 @@ const Register: React.FC = () => {
     setErrors({})
     try {
       await register(formData.email, formData.password)
-      navigate("/login", { state: { registered: true } })
+      navigate("/superadmin-login", { state: { registered: true } })
     } catch (error: any) {
       setErrors({ general: error.message || "Erreur lors de l'inscription" })
     } finally {
@@ -95,7 +95,7 @@ const Register: React.FC = () => {
         <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
           <span className="rounded-lg bg-black text-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm border border-black">S'inscrire</span>
           <Link
-            to="/login"
+            to="/superadmin-login"
             className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
           >
             Se connecter
@@ -186,7 +186,7 @@ const Register: React.FC = () => {
             <div className="text-center">
               <span className="text-xs text-gray-500">
                 Vous avez déjà un compte ?{" "}
-                <Link to="/login" className="text-purple-500 hover:underline">
+                <Link to="/superadmin-login" className="text-purple-500 hover:underline">
                   Se connecter
                 </Link>
               </span>

@@ -31,7 +31,7 @@ const AdminLogin: React.FC = () => {
   if (user) {
     // If user is a SUPER admin, redirect to super admin login
     if (user.role === 'SUPER') {
-      return <Navigate to="/login" replace />
+      return <Navigate to="/superadmin-login" replace />
     }
     // If user has forcePasswordChange, redirect to change password
     if (user.forcePasswordChange) {
@@ -86,12 +86,6 @@ const AdminLogin: React.FC = () => {
           <span className="text-lg sm:text-xl font-bold text-black">IZI Kado</span>
         </div>
         <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
-          <Link
-            to="/login"
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-100 hover:border-gray-400 transition-colors duration-150"
-          >
-            Super Admin
-          </Link>
           <span
             className="rounded-lg bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm hover:bg-blue-700 transition-colors duration-150 border border-blue-600"
           >

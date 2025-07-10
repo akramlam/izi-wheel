@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     delete apiClient.defaults.headers.common['Authorization'];
-    navigate('/login');
+    navigate('/superadmin-login');
   };
 
   // Check if token is valid on startup
