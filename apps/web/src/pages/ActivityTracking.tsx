@@ -258,13 +258,17 @@ const ActivityTracking: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, claimedAt?: string) => {
     const statusConfig = {
       PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
+      CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
       REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Récupéré' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig];
+    // For the new 2-step system: use claimedAt to determine if it's claimed
+    const effectiveStatus = status === 'PENDING' && claimedAt ? 'CLAIMED' : status;
+
+    const config = statusConfig[effectiveStatus as keyof typeof statusConfig];
     if (!config) return null;
 
     const Icon = config.icon;
@@ -597,7 +601,7 @@ const ActivityTracking: React.FC = () => {
                     <td className="py-3 px-4">
                       {play.result === 'WIN' ? (
                         <>
-                          {getStatusBadge(play.redemptionStatus)}
+                                                      {getStatusBadge(play.redemptionStatus, play.claimedAt)}
                           {play.redeemedAt && (
                             <div className="text-xs text-gray-500 mt-1">
                               Récupéré: {formatDate(play.redeemedAt)}

@@ -92,7 +92,17 @@ export const getPlayHistory = async (req: Request, res: Response) => {
     }
     
     if (status) {
-      whereClause.redemptionStatus = status;
+      if (status === 'CLAIMED') {
+        // For the new 2-step system: CLAIMED means PENDING + claimedAt
+        whereClause.redemptionStatus = 'PENDING';
+        whereClause.claimedAt = { not: null };
+      } else if (status === 'PENDING') {
+        // PENDING now means PENDING + no claimedAt (not yet claimed)
+        whereClause.redemptionStatus = 'PENDING';
+        whereClause.claimedAt = null;
+      } else {
+        whereClause.redemptionStatus = status;
+      }
     }
     
     if (search) {
@@ -285,11 +295,13 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
     const [
       totalPlays,
       totalWins,
+      totalClaimed,
       totalRedeemed,
       todayPlays
     ] = await Promise.all([
       prisma.play.count({ where: whereClause }),
       prisma.play.count({ where: { ...whereClause, result: 'WIN' } }),
+      prisma.play.count({ where: { ...whereClause, redemptionStatus: 'PENDING', claimedAt: { not: null } } }),
       prisma.play.count({ where: { ...whereClause, redemptionStatus: 'REDEEMED' } }),
       prisma.play.count({ 
         where: { 
@@ -326,9 +338,11 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
         overview: {
           totalPlays,
           totalWins,
+          totalClaimed,
           totalRedeemed,
           todayPlays,
           winRate: totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0,
+          claimRate: totalWins > 0 ? Math.round((totalClaimed / totalWins) * 100) : 0,
           redeemRate: totalWins > 0 ? Math.round((totalRedeemed / totalWins) * 100) : 0
         },
         activityStats,
