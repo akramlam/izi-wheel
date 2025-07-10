@@ -15,12 +15,13 @@ import { useAuth } from '../hooks/useAuth';
 type PrizeDetails = {
   id: string;
   pin: string;
-  status: 'PENDING' | 'CLAIMED' | 'REDEEMED';
+  status: 'PENDING' | 'REDEEMED';
   prize: {
     label: string;
     description?: string;
   };
   lead: Record<string, string>;
+  claimedAt?: string;
 };
 
 const RedeemPrize = () => {
@@ -356,8 +357,8 @@ const RedeemPrize = () => {
       );
     }
 
-    // Prize ready for validation - admin view
-    if (prizeDetails.status === 'CLAIMED') {
+    // Prize ready for validation - admin view (PENDING + claimedAt means claimed but not redeemed)
+    if (prizeDetails.status === 'PENDING' && prizeDetails.claimedAt) {
       return (
         <div className="container max-w-md mx-auto px-4 py-10">
           <Card className="border-2 border-blue-100 shadow-lg">
@@ -462,8 +463,8 @@ const RedeemPrize = () => {
       );
     }
 
-    // Prize not yet claimed - admin view
-    if (prizeDetails.status === 'PENDING') {
+    // Prize not yet claimed - admin view (PENDING + no claimedAt means not claimed yet)
+    if (prizeDetails.status === 'PENDING' && !prizeDetails.claimedAt) {
       return (
         <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
           <AlertCircle className="mb-4 h-16 w-16 text-orange-500" />
@@ -486,8 +487,8 @@ const RedeemPrize = () => {
     }
   }
 
-  // Main content - pending claim (first step)
-  if (prizeDetails.status === 'PENDING') {
+  // Main content - pending claim (first step - no claimedAt means not claimed yet)
+  if (prizeDetails.status === 'PENDING' && !prizeDetails.claimedAt) {
     return (
       <div className="container max-w-md mx-auto px-4 py-10">
         <Card className="border-2 border-indigo-100 shadow-lg">
@@ -589,8 +590,8 @@ const RedeemPrize = () => {
     );
   }
 
-  // Main content - claimed, waiting for redemption (user view)
-  if (prizeDetails.status === 'CLAIMED') {
+  // Main content - claimed, waiting for redemption (user view - PENDING + claimedAt means claimed but not redeemed)
+  if (prizeDetails.status === 'PENDING' && prizeDetails.claimedAt) {
     return (
       <div className="container max-w-md mx-auto px-4 py-10">
         <Card className="border-2 border-green-100 shadow-lg">

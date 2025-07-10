@@ -28,7 +28,7 @@ import { api } from '../lib/api';
 interface PrizeRecord {
   id: string;
   pin: string;
-  status: 'PENDING' | 'CLAIMED' | 'REDEEMED';
+  status: 'PENDING' | 'REDEEMED';
   prize: {
     label: string;
     description?: string;
@@ -195,14 +195,17 @@ const PrizeValidation: React.FC = () => {
     validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
   };
 
-  const getPrizeStatusBadge = (status: string) => {
+  const getPrizeStatusBadge = (status: string, claimedAt?: string) => {
     const statusConfig = {
       PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
       CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
       REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Échangé' }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig];
+    // For the new 2-step system: use claimedAt to determine if it's claimed
+    const effectiveStatus = status === 'PENDING' && claimedAt ? 'CLAIMED' : status;
+
+    const config = statusConfig[effectiveStatus as keyof typeof statusConfig];
     if (!config) return null;
 
     const Icon = config.icon;
@@ -227,7 +230,18 @@ const PrizeValidation: React.FC = () => {
   // Filter prizes based on search and status
   const filteredPrizes = prizesData?.success ? (prizesData.data?.plays?.filter((play: any) => {
     // Backend already filters by WIN result and search terms, so we only need to apply additional client-side filtering
-    const matchesStatus = selectedStatus === 'all' || play.redemptionStatus === selectedStatus;
+    
+    // Handle the new 2-step system: CLAIMED means PENDING + claimedAt
+    let matchesStatus = false;
+    if (selectedStatus === 'all') {
+      matchesStatus = true;
+    } else if (selectedStatus === 'CLAIMED') {
+      matchesStatus = play.redemptionStatus === 'PENDING' && play.claimedAt;
+    } else if (selectedStatus === 'PENDING') {
+      matchesStatus = play.redemptionStatus === 'PENDING' && !play.claimedAt;
+    } else {
+      matchesStatus = play.redemptionStatus === selectedStatus;
+    }
     
     // If there's a search term, the backend already filtered the results
     // But we can add additional client-side filtering for immediate feedback
@@ -370,7 +384,7 @@ const PrizeValidation: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Cadeaux Réclamés</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {filteredPrizes.filter((p: any) => p.redemptionStatus === 'CLAIMED').length}
+                  {filteredPrizes.filter((p: any) => p.redemptionStatus === 'PENDING' && p.claimedAt).length}
                 </p>
               </div>
               <Gift className="h-8 w-8 text-blue-600" />
@@ -398,7 +412,7 @@ const PrizeValidation: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">En Attente</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {filteredPrizes.filter((p: any) => p.redemptionStatus === 'PENDING').length}
+                  {filteredPrizes.filter((p: any) => p.redemptionStatus === 'PENDING' && !p.claimedAt).length}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -451,7 +465,7 @@ const PrizeValidation: React.FC = () => {
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        {getPrizeStatusBadge(play.redemptionStatus)}
+                        {getPrizeStatusBadge(play.redemptionStatus, play.claimedAt)}
                         <span className="text-xs text-gray-500">
                           {formatDate(play.createdAt)}
                         </span>
@@ -489,7 +503,7 @@ const PrizeValidation: React.FC = () => {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-2 lg:ml-4">
-                      {play.redemptionStatus === 'CLAIMED' && (
+                      {play.redemptionStatus === 'PENDING' && play.claimedAt && (
                         <Button
                           onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}

@@ -779,12 +779,12 @@ export const claimPrize = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'This play did not result in a prize' });
     }
 
-    // Check if already claimed
-    if (play.redemptionStatus === 'CLAIMED') {
-      return res.status(400).json({ error: 'Prize already claimed' });
+    // Check if already redeemed
+    if (play.redemptionStatus === 'REDEEMED') {
+      return res.status(400).json({ error: 'Prize already redeemed' });
     }
 
-    // Update the play with lead information and mark as claimed
+    // Update the play with lead information and keep as PENDING (ready for redemption)
     const claimData = {
       name,
       email,
@@ -796,7 +796,7 @@ export const claimPrize = async (req: Request, res: Response) => {
       where: { id: playId },
       data: { 
         leadInfo: claimData,
-        redemptionStatus: 'CLAIMED',
+        redemptionStatus: 'PENDING', // Keep as PENDING until actually redeemed
         claimedAt: new Date()
       }
     });
@@ -820,7 +820,7 @@ export const claimPrize = async (req: Request, res: Response) => {
       id: updatedPlay.id,
       status: updatedPlay.redemptionStatus,
       claimedAt: updatedPlay.claimedAt,
-      message: 'Prize claimed successfully! You will receive an email with redemption details.'
+      message: 'Prize claimed successfully! You will receive an email with your PIN code for redemption.'
     });
   } catch (error) {
     console.error('Error claiming prize:', error);
