@@ -390,7 +390,7 @@ const PrizeValidation: React.FC = () => {
             <div className="space-y-3">
               {filteredPrizes.map((play: any) => (
                 <div key={play.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         {getPrizeStatusBadge(play.redemptionStatus)}
@@ -430,12 +430,12 @@ const PrizeValidation: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-2 lg:ml-4">
                       {play.redemptionStatus === 'CLAIMED' && (
                         <Button
                           onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                         >
                           {validatingPrizeId === play.id ? (
                             <>
@@ -455,6 +455,7 @@ const PrizeValidation: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
+                        className="w-full sm:w-auto"
                       >
                         <Store className="w-4 h-4 mr-1" />
                         Détails
