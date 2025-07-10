@@ -110,15 +110,19 @@ export const getPlayHistory = async (req: Request, res: Response) => {
         { 
           leadInfo: {
             path: ['name'],
-            string_contains: search,
-            mode: 'insensitive'
+            string_contains: search
           }
         },
         { 
           leadInfo: {
             path: ['email'],
-            string_contains: search,
-            mode: 'insensitive'
+            string_contains: search
+          }
+        },
+        { 
+          leadInfo: {
+            path: ['phone'],
+            string_contains: search
           }
         },
         { pin: { contains: search, mode: 'insensitive' } }

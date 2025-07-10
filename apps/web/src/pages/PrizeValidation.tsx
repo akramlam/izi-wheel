@@ -16,7 +16,6 @@ import {
   Mail,
   Phone,
   ShieldCheck,
-  Store,
   Search,
   Loader2,
   RefreshCw,
@@ -502,36 +501,28 @@ const PrizeValidation: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-2 lg:ml-4">
+                    <div className="flex justify-end lg:ml-4">
                       {play.redemptionStatus === 'PENDING' && play.claimedAt && (
                         <Button
                           onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}
-                          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                          className="bg-green-600 hover:bg-green-700 text-sm px-3 py-2 min-w-0 flex-shrink-0"
+                          size="sm"
                         >
                           {validatingPrizeId === play.id ? (
                             <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Validation...
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              <span className="hidden sm:inline">Validation...</span>
+                              <span className="sm:hidden">...</span>
                             </>
                           ) : (
                             <>
-                              <ShieldCheck className="w-4 h-4 mr-2" />
-                              Valider
+                              <ShieldCheck className="w-4 h-4 mr-1" />
+                              <span>Valider</span>
                             </>
                           )}
                         </Button>
                       )}
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
-                        className="w-full sm:w-auto"
-                      >
-                        <Store className="w-4 h-4 mr-1" />
-                        Détails
-                      </Button>
                     </div>
                   </div>
                 </div>

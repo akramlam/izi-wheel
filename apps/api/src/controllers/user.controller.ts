@@ -231,29 +231,48 @@ export const inviteUser = async (req: Request, res: Response) => {
     // Get admin name from user object if available
     const adminName = adminUser?.name || adminUser?.email?.split('@')[0] || 'L\'administrateur';
     
+    let emailSent = false;
+    let emailError = null;
+    
     try {
       // Send invite email with temporary password
       await sendInviteEmail(email, tempPassword, company.name, adminName, name, companyId, user.id);
-      console.log('Invitation email sent or logged (test mode)');
-    } catch (emailError) {
-      // Just log the error but don't fail the request - user is already created
-      console.error('Failed to send invitation email:', emailError);
+      console.log('Invitation email sent successfully');
+      emailSent = true;
+    } catch (error) {
+      // Log the error but don't fail the request - user is already created
+      console.error('Failed to send invitation email:', error);
+      emailError = error instanceof Error ? error.message : 'Unknown email error';
+      emailSent = false;
     }
     
     // Return user without password
     try {
       const { password, ...userWithoutPassword } = user;
       console.log('Returning successful response');
-      return res.status(201).json({ 
+      
+      const response: any = { 
         user: userWithoutPassword,
-        emailSent: true,
-        message: 'User created successfully.'
-      });
+        emailSent,
+        message: emailSent 
+          ? 'Utilisateur créé avec succès. Email d\'invitation envoyé.'
+          : 'Utilisateur créé avec succès, mais l\'email d\'invitation a échoué.'
+      };
+      
+      // Include email error details if there was an issue
+      if (emailError) {
+        response.emailError = emailError;
+        response.tempPassword = tempPassword; // Include temp password in response if email failed
+      }
+      
+      return res.status(201).json(response);
     } catch (responseError) {
       console.error('Error creating response:', responseError);
       // User is created but we have a problem with the response
       return res.status(201).json({ 
-        message: 'User created successfully, but response error occurred.'
+        message: 'Utilisateur créé avec succès, mais erreur de réponse.',
+        emailSent: false,
+        tempPassword: tempPassword // Include temp password as fallback
       });
     }
   } catch (error) {

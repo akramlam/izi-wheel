@@ -269,6 +269,7 @@ const SubAdminManager = () => {
         return;
       }
 
+      console.log(`Attempting to reset password for user: ${subAdminId}`);
       await api.resetUserPassword(subAdminId, {
         password: newPassword,
       });
@@ -280,12 +281,26 @@ const SubAdminManager = () => {
       
       setResetPassword(null);
       setNewPassword('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resetting password:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Échec de la réinitialisation du mot de passe';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'Utilisateur non trouvé';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Accès refusé - permissions insuffisantes';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || 'Données invalides';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: 'Échec de la réinitialisation du mot de passe',
+        description: errorMessage,
       });
     }
   };

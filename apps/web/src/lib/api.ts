@@ -266,8 +266,25 @@ export const api = {
   
   resetUserPassword: async (userId: string, data: { password: string }) => {
     const companyId = await getValidCompanyId();
-    if (!companyId) return { data: null };
-    return apiClient.put(`/companies/${companyId}/users/${userId}/reset-password`, data);
+    if (!companyId) {
+      throw new Error('Company ID not found');
+    }
+    
+    try {
+      console.log(`Resetting password for user ${userId} in company ${companyId}`);
+      const response = await apiClient.put(`/companies/${companyId}/users/${userId}/reset-password`, data);
+      console.log('Password reset successful:', response.data);
+      return response;
+    } catch (error: any) {
+      console.error('Password reset API error:', error);
+      
+      // Enhance error message
+      if (error.response?.data?.error) {
+        error.message = error.response.data.error;
+      }
+      
+      throw error;
+    }
   },
   
   // Statistics & Analytics

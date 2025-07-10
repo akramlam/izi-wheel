@@ -296,10 +296,25 @@ const SousAdministrateurs: React.FC = () => {
       
       console.log('Create sub-admin response:', response);
       
-      toast({
-        title: 'Succès',
-        description: 'Sous-administrateur créé. Un email avec les identifiants a été envoyé.',
-      });
+      // Handle email status from response
+      const { emailSent, emailError, tempPassword } = response.data || {};
+      
+      if (emailSent) {
+        toast({
+          title: 'Succès',
+          description: 'Sous-administrateur créé avec succès. Email d\'invitation envoyé.',
+        });
+      } else {
+        // Email failed - show warning with temp password
+        toast({
+          variant: 'destructive',
+          title: 'Attention',
+          description: `Sous-administrateur créé mais l'email d'invitation a échoué. ${tempPassword ? `Mot de passe temporaire : ${tempPassword}` : 'Contactez l\'administrateur pour obtenir le mot de passe.'}`,
+          duration: 15000, // Show longer for important info
+        });
+        
+        console.warn('Email invitation failed:', emailError);
+      }
       
       setIsCreating(false);
       setFormData({ name: '', email: '', isActive: true, role: 'SUB' });
@@ -395,17 +410,33 @@ const SousAdministrateurs: React.FC = () => {
     }
     setIsFormProcessing(true);
     try {
+      console.log(`Attempting to reset password for user: ${subAdminId}`);
       await api.resetUserPassword(subAdminId, { password: newPassword });
       toast({ title: 'Succès', description: 'Mot de passe réinitialisé avec succès.' });
       setResetPasswordPrompt(null);
       setNewPassword('');
     } catch (error: any) {
       console.error('Error resetting password:', error);
-      const errorMsg = error.response?.data?.message || 'Échec de la réinitialisation.';
+      
+      // Provide more specific error messages
+      let errorMessage = 'Échec de la réinitialisation du mot de passe';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'Utilisateur non trouvé';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Accès refusé - permissions insuffisantes';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || 'Données invalides';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Erreur',
-        description: errorMsg,
+        description: errorMessage,
       });
     } finally {
       setIsFormProcessing(false);

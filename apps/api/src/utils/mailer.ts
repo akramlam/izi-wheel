@@ -22,6 +22,17 @@ const USE_SMTP_COM_API = process.env.USE_SMTP_COM_API === 'true' && SMTP_COM_API
 const isSmtpConfigured = SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS;
 const isSmtpComApiConfigured = USE_SMTP_COM_API && SMTP_COM_API_KEY;
 
+// Log configuration status at startup
+console.log('[SMTP] Configuration Status:');
+console.log(`  - SMTP Host: ${SMTP_HOST || 'NOT SET'}`);
+console.log(`  - SMTP Port: ${SMTP_PORT || 'NOT SET'}`);
+console.log(`  - SMTP User: ${SMTP_USER ? 'SET' : 'NOT SET'}`);
+console.log(`  - SMTP Pass: ${SMTP_PASS ? 'SET' : 'NOT SET'}`);
+console.log(`  - SMTP Configured: ${isSmtpConfigured ? 'YES' : 'NO'}`);
+console.log(`  - SMTP.com API Key: ${SMTP_COM_API_KEY ? 'SET' : 'NOT SET'}`);
+console.log(`  - SMTP.com API Configured: ${isSmtpComApiConfigured ? 'YES' : 'NO'}`);
+console.log(`  - Environment: ${process.env.NODE_ENV || 'development'}`);
+
 // Enhanced SMTP transporter with connection testing and fallback ports
 const createSmtpTransporter = async (port = SMTP_PORT) => {
   const config = {
