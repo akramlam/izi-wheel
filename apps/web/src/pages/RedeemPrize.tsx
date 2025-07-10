@@ -377,6 +377,21 @@ const RedeemPrize = () => {
                 </p>
               )}
               
+              {/* Client PIN Code Display */}
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <h3 className="font-medium text-emerald-800 mb-2 text-center">🔐 Code PIN du client</h3>
+                <div className="text-center">
+                  <div className="inline-block bg-white border-2 border-emerald-300 rounded-lg px-4 py-2">
+                    <p className="text-2xl font-mono font-bold text-emerald-700 tracking-widest">
+                      {prizeDetails.pin}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-emerald-600 text-center mt-2">
+                  Le client doit présenter ce code PIN
+                </p>
+              </div>
+              
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="font-medium text-blue-800 mb-2">Informations client :</h3>
                 {prizeDetails.lead?.name && (
