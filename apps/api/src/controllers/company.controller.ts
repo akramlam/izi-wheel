@@ -107,15 +107,75 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       totalPrizes = 0;
     }
 
-    // Generate dates for the last 7 days
-    const dates = Array.from({ length: 7 }).map((_, i) => {
-      const date = subDays(new Date(), 6 - i);
-      return format(date, 'yyyy-MM-dd');
-    });
+    // Generate dates for the selected period
+    const generateDatesForPeriod = (from: Date, to: Date) => {
+      const dates = [];
+      const current = new Date(from);
+      const end = new Date(to);
+      
+      // Calculate the number of days
+      const diffTime = Math.abs(end.getTime() - from.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      // For periods longer than 90 days, group by weeks
+      if (diffDays > 90) {
+        // Group by weeks for very long periods
+        const startOfWeek = new Date(from);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        
+        const currentWeek = new Date(startOfWeek);
+        while (currentWeek <= end) {
+          dates.push(format(currentWeek, 'yyyy-MM-dd'));
+          currentWeek.setDate(currentWeek.getDate() + 7);
+        }
+      } else {
+        // Daily granularity for shorter periods
+        while (current <= end) {
+          dates.push(format(current, 'yyyy-MM-dd'));
+          current.setDate(current.getDate() + 1);
+        }
+      }
+      
+      return dates;
+    };
 
-    // Prepare playsByDay with 0 counts
-    const playsByDay = dates.map(date => ({ date, count: 0 }));
-    
+    const dates = generateDatesForPeriod(fromDate, toDate);
+
+    // Helper function to group data by date range
+    const groupDataByDateRange = (data: any[], dates: string[], isWeeklyGrouping: boolean) => {
+      const grouped = dates.map(date => ({ date, count: 0 }));
+      
+      data.forEach(item => {
+        const itemDate = new Date(item.createdAt);
+        
+        if (isWeeklyGrouping) {
+          // For weekly grouping, find the week that contains this date
+          const itemWeekStart = new Date(itemDate);
+          itemWeekStart.setDate(itemWeekStart.getDate() - itemWeekStart.getDay());
+          const weekStr = format(itemWeekStart, 'yyyy-MM-dd');
+          
+          const weekIndex = grouped.findIndex(g => g.date === weekStr);
+          if (weekIndex >= 0) {
+            grouped[weekIndex].count++;
+          }
+        } else {
+          // For daily grouping, match exact date
+          const dateStr = format(itemDate, 'yyyy-MM-dd');
+          const dayIndex = grouped.findIndex(g => g.date === dateStr);
+          if (dayIndex >= 0) {
+            grouped[dayIndex].count++;
+          }
+        }
+      });
+      
+      return grouped;
+    };
+
+    // Determine if we're using weekly grouping
+    const diffTime = Math.abs(toDate.getTime() - fromDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const isWeeklyGrouping = diffDays > 90;
+
     // Get plays grouped by day
     const plays = await prisma.play.findMany({
       where: {
@@ -126,18 +186,6 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
         }
       }
     }) || [];
-    
-    // Populate playsByDay with actual counts
-    plays.forEach(play => {
-      const dateStr = format(play.createdAt, 'yyyy-MM-dd');
-      const dayIndex = playsByDay.findIndex(day => day.date === dateStr);
-      if (dayIndex >= 0) {
-        playsByDay[dayIndex].count++;
-      }
-    });
-
-    // Prepare prizesByDay with 0 counts
-    const prizesByDay = dates.map(date => ({ date, count: 0 }));
     
     // Get winning plays (prizes) grouped by day
     const winningPlays = await prisma.play.findMany({
@@ -154,14 +202,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       }
     }) || [];
     
-    // Populate prizesByDay with actual counts
-    winningPlays.forEach(play => {
-      const dateStr = format(play.createdAt, 'yyyy-MM-dd');
-      const dayIndex = prizesByDay.findIndex(day => day.date === dateStr);
-      if (dayIndex >= 0) {
-        prizesByDay[dayIndex].count++;
-      }
-    });
+    // Group the data correctly
+    const playsByDay = groupDataByDateRange(plays, dates, isWeeklyGrouping);
+    const prizesByDay = groupDataByDateRange(winningPlays, dates, isWeeklyGrouping);
 
     // Recent plays (last 10)
     const recentPlays = await prisma.play.findMany({
