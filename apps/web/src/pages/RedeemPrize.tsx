@@ -377,6 +377,21 @@ const RedeemPrize = () => {
                 </p>
               )}
               
+              {/* Client PIN Code Display */}
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <h3 className="font-medium text-emerald-800 mb-2 text-center">🔐 Code PIN du client</h3>
+                <div className="text-center">
+                  <div className="inline-block bg-white border-2 border-emerald-300 rounded-lg px-4 py-2">
+                    <p className="text-2xl font-mono font-bold text-emerald-700 tracking-widest">
+                      {prizeDetails.pin}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-emerald-600 text-center mt-2">
+                  Le client doit présenter ce code PIN
+                </p>
+              </div>
+              
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="font-medium text-blue-800 mb-2">Informations client :</h3>
                 {prizeDetails.lead?.name && (
@@ -399,10 +414,23 @@ const RedeemPrize = () => {
                 )}
               </div>
 
+              {/* Customer PIN Code Section */}
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="font-medium text-green-800 mb-2">Code du client :</h3>
+                <div className="flex items-center justify-center p-3 bg-white border border-green-300 rounded-md">
+                  <span className="text-2xl font-mono font-bold text-green-700 tracking-wider">
+                    {prizeDetails.pin}
+                  </span>
+                </div>
+                <p className="text-xs text-green-600 text-center mt-2">
+                  Le client doit présenter ce code PIN
+                </p>
+              </div>
+
               <div className="space-y-4">
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800 text-center">
-                    ⚠️ Vérifiez que le client présente bien ce QR code avant de valider
+                    ⚠️ Vérifiez que le client présente bien le code PIN affiché ci-dessus avant de valider
                   </p>
                 </div>
                 
@@ -427,7 +455,6 @@ const RedeemPrize = () => {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-              <p>Code de lot: {prizeDetails.id}</p>
               <p className="mt-1">Interface de validation pour les restaurateurs</p>
             </CardFooter>
           </Card>
@@ -553,7 +580,6 @@ const RedeemPrize = () => {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-            <p>Code de lot: {prizeDetails.id}</p>
             <p className="mt-1">Remplissez vos informations pour réclamer votre lot.</p>
           </CardFooter>
         </Card>
@@ -690,7 +716,6 @@ const RedeemPrize = () => {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-          <p>Code de lot: {prizeDetails.id}</p>
           <p className="mt-1">Entrez le code PIN qui vous a été fourni pour récupérer votre lot.</p>
         </CardFooter>
       </Card>

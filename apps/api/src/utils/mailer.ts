@@ -435,10 +435,10 @@ export const sendPrizeEmail = async (
             <h1 style="color: #4f46e5;">🎉 Félicitations !</h1>
           </div>
           
-          <p>Vous avez gagné <strong>${prizeName}</strong> sur IZI Kado !</p>
+          <p>Vous avez gagné le lot suivant : <strong>${prizeName}</strong>!</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
-            <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🎁 Vos codes de récupération :</p>
+            <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🎁 Votre code de récupération :</p>
             <div style="margin: 15px 0; padding: 10px; background-color: white; border-radius: 6px;">
               <p style="margin: 0; font-size: 18px;"><strong>Code PIN :</strong> <span style="font-family: monospace; font-size: 20px; color: #d32f2f; font-weight: bold;">${pin}</span></p>
             </div>

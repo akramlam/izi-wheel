@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -52,9 +52,19 @@ const PrizeValidation: React.FC = () => {
   const queryClient = useQueryClient();
   
   const [pinInput, setPinInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Input value for immediate UI feedback
+  const [searchTerm, setSearchTerm] = useState(''); // Debounced search term for API calls
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [validatingPrizeId, setValidatingPrizeId] = useState<string | null>(null);
+
+  // Debounce search input to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Fetch prizes data
   const { data: prizesData, isLoading, refetch } = useQuery({
@@ -63,11 +73,19 @@ const PrizeValidation: React.FC = () => {
       // Use the same API endpoint as Activity Tracking to get detailed play data
       const params = new URLSearchParams({
         limit: '1000', // Get a large number of recent plays
-        offset: '0'
+        offset: '0',
+        result: 'WIN' // Only get winning plays for prize validation
       });
 
-      if (searchTerm) params.append('search', searchTerm);
-      if (selectedStatus !== 'all') params.append('status', selectedStatus);
+      // Only send search parameter if there's a search term
+      if (searchTerm && searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+      }
+      
+      // Only send status parameter if it's not 'all'
+      if (selectedStatus !== 'all') {
+        params.append('status', selectedStatus);
+      }
 
       const response = await api.getActivityPlays(params.toString());
       return response.data;
@@ -128,24 +146,26 @@ const PrizeValidation: React.FC = () => {
       return;
     }
 
-    // Search in ALL winning plays, not just filtered ones
+    // Search in ALL winning plays (backend already filters by WIN result)
     const allWinningPlays = (prizesData?.success && prizesData.data?.plays) 
-      ? prizesData.data.plays.filter((play: any) => play.result === 'WIN') 
+      ? prizesData.data.plays
       : [];
     
     // Debug logging
     console.log('🔍 Recherche PIN:', pinInput.trim());
-    console.log('📊 Total cadeaux gagnants:', allWinningPlays.length);
-    console.log('🎯 Cadeaux disponibles:', allWinningPlays.map((p: any) => ({ id: p.id, pin: p.pin, status: p.redemptionStatus, prize: p.slot?.label })));
+    console.log('📊 Total cadeaux disponibles:', allWinningPlays.length);
+    console.log('🎯 Cadeaux avec PIN:', allWinningPlays.filter((p: any) => p.pin).length);
     
     const matchingPrize = allWinningPlays.find((play: any) => play.pin === pinInput.trim());
     
     if (!matchingPrize) {
       // More detailed error message
       const availablePins = allWinningPlays.map((p: any) => p.pin).filter(Boolean);
+      console.log('❌ PINs disponibles:', availablePins);
+      
       toast({
         title: "Code PIN introuvable",
-        description: `Aucun cadeau trouvé avec le code PIN ${pinInput.trim()}. ${availablePins.length > 0 ? `PINs disponibles: ${availablePins.slice(0, 3).join(', ')}${availablePins.length > 3 ? '...' : ''}` : 'Aucun PIN disponible.'}`,
+        description: `Le code PIN "${pinInput.trim()}" n'a pas été trouvé dans les cadeaux récents.`,
         variant: "destructive"
       });
       return;
@@ -169,7 +189,7 @@ const PrizeValidation: React.FC = () => {
     // Show info about the prize being validated
     toast({
       title: "Validation en cours...",
-      description: `Validation du cadeau: ${matchingPrize.slot.label}`,
+      description: `Validation du cadeau: ${matchingPrize.slot?.label || 'Cadeau inconnu'}`,
     });
 
     validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
@@ -206,16 +226,23 @@ const PrizeValidation: React.FC = () => {
 
   // Filter prizes based on search and status
   const filteredPrizes = prizesData?.success ? (prizesData.data?.plays?.filter((play: any) => {
-    if (play.result !== 'WIN') return false;
-    
-    const matchesSearch = !searchTerm || 
-      play.slot.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      play.leadInfo?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      play.leadInfo?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    // Backend already filters by WIN result and search terms, so we only need to apply additional client-side filtering
     const matchesStatus = selectedStatus === 'all' || play.redemptionStatus === selectedStatus;
     
-    return matchesSearch && matchesStatus;
+    // If there's a search term, the backend already filtered the results
+    // But we can add additional client-side filtering for immediate feedback
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        play.slot?.label?.toLowerCase().includes(searchLower) ||
+        play.leadInfo?.name?.toLowerCase().includes(searchLower) ||
+        play.leadInfo?.email?.toLowerCase().includes(searchLower) ||
+        play.pin?.toLowerCase().includes(searchLower);
+      
+      return matchesSearch && matchesStatus;
+    }
+    
+    return matchesStatus;
   }) || []) : [];
 
   return (
@@ -298,11 +325,17 @@ const PrizeValidation: React.FC = () => {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="search"
-                  placeholder="Rechercher par nom, email ou cadeau..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Rechercher par nom, email, cadeau ou code PIN..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-10"
                 />
+                {/* Loading indicator for search */}
+                {searchInput !== searchTerm && (
+                  <div className="absolute right-3 top-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  </div>
+                )}
               </div>
             </div>
             <div>
@@ -320,6 +353,12 @@ const PrizeValidation: React.FC = () => {
               </select>
             </div>
           </div>
+          {/* Search info */}
+          {searchTerm && (
+            <div className="mt-2 text-sm text-gray-600">
+              🔍 Recherche: "{searchTerm}" • {filteredPrizes.length} résultat(s) trouvé(s)
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -384,13 +423,32 @@ const PrizeValidation: React.FC = () => {
           ) : filteredPrizes.length === 0 ? (
             <div className="text-center py-8">
               <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucun cadeau trouvé</p>
+              {searchTerm ? (
+                <div>
+                  <p className="text-gray-500 mb-2">Aucun cadeau trouvé pour "{searchTerm}"</p>
+                  <p className="text-sm text-gray-400">Essayez de modifier votre recherche ou de changer le filtre de statut</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => {
+                      setSearchInput('');
+                      setSearchTerm('');
+                      setSelectedStatus('all');
+                    }}
+                  >
+                    Effacer les filtres
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-gray-500">Aucun cadeau trouvé</p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
               {filteredPrizes.map((play: any) => (
                 <div key={play.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         {getPrizeStatusBadge(play.redemptionStatus)}
@@ -430,12 +488,12 @@ const PrizeValidation: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-2 lg:ml-4">
                       {play.redemptionStatus === 'CLAIMED' && (
                         <Button
                           onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                         >
                           {validatingPrizeId === play.id ? (
                             <>
@@ -455,6 +513,7 @@ const PrizeValidation: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
+                        className="w-full sm:w-auto"
                       >
                         <Store className="w-4 h-4 mr-1" />
                         Détails

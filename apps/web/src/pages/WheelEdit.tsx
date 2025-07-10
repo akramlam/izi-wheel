@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useToast } from '../hooks/use-toast';
@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ImageUpload } from '../components/ui/ImageUpload';
+import { AuthContext } from '../contexts/AuthContext';
 
 // Predefined colors for slots
 const PRESET_COLORS = [
@@ -107,7 +108,7 @@ const WheelEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useContext(AuthContext);
   const isNew = !id || id === 'create';
   const isSuperAdmin = user?.role === 'SUPER';
 
@@ -1616,26 +1617,33 @@ const WheelEdit = () => {
                 recommendedSize="1920x1080px"
               />
               
-              <div className="space-y-2">
-                <Label htmlFor="gameRules">Règles du jeu (optionnel)</Label>
-                <Textarea
-                  id="gameRules"
-                  placeholder="Règles et instructions personnalisées... (laissez vide pour utiliser les règles par défaut)"
-                  value={wheel.gameRules || ''}
-                  onChange={(e) => setWheel({ ...wheel, gameRules: e.target.value })}
-                  rows={5}
-                />
-                <p className="text-xs text-gray-500">Personnalisez les règles affichées aux joueurs (optionnel - des règles par défaut seront utilisées si vide).</p>
-              </div>
+              {/* Only show game rules for super admins */}
+              {user?.role === 'SUPER' && (
+                <div className="space-y-2">
+                  <Label htmlFor="gameRules">Règles du jeu (optionnel)</Label>
+                  <Textarea
+                    id="gameRules"
+                    placeholder="Règles et instructions personnalisées... (laissez vide pour utiliser les règles par défaut)"
+                    value={wheel.gameRules || ''}
+                    onChange={(e) => setWheel({ ...wheel, gameRules: e.target.value })}
+                    rows={5}
+                  />
+                  <p className="text-xs text-gray-500">Personnalisez les règles affichées aux joueurs (optionnel - des règles par défaut seront utilisées si vide).</p>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
                 <Input
                   id="footerText"
-                  placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Kado')"
+                  placeholder="Ex: © 2024 Votre Entreprise - Contactez-nous au 01.23.45.67.89"
                   value={wheel.footerText || ''}
                   onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page (optionnel).</p>
+                <p className="text-xs text-gray-500">
+                  Personnalisez le texte affiché en bas de la page (optionnel). 
+                  <span className="text-blue-600 ml-1">Les numéros de téléphone seront automatiquement cliquables</span>.
+                </p>
               </div>
             </TabsContent>
           </Tabs>

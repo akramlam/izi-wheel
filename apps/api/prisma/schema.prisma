@@ -157,7 +157,6 @@ enum PlayResult {
 
 enum RedemptionStatus {
   PENDING
-  CLAIMED
   REDEEMED
 }
 

@@ -89,18 +89,18 @@ const Layout = () => {
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">support@izikado.fr</span>
+                      <a href="mailto:support@izikado.fr" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">support@izikado.fr</a>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-gray-400" />
                       <span className="text-sm text-gray-600 dark:text-gray-300">+33 6 51 52 70 16</span>
                     </div>
-                    <div className="mt-2">
+                    {/* <div className="mt-2">
                       <button className="inline-flex items-center px-4 py-2 rounded-md bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-800/40 transition duration-150">
                         <MessageCircle className="h-4 w-4 mr-2" />
-                        <span className="text-sm font-medium">Nous contacter</span>
+                        <span className="text-sm font-medium"></span>
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>

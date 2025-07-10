@@ -11,11 +11,13 @@ import {
 } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
-import { Loader2, Mail, Phone, Calendar, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, RefreshCw, Users, Mail, Phone, Calendar, User } from 'lucide-react';
 import { TimedConfetti } from '../components/magicui/timedConfetti';
 import Wheel from '../components/wheel/Wheel';
 import type { WheelConfig } from '../components/wheel/types';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
+import { Input } from '../components/ui/input';
+import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
 
 // TypeScript declaration for window property
 declare global {
@@ -299,7 +301,7 @@ const SocialRedirectDialog = ({
       <DialogContent 
         className="sm:max-w-md"
         onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e: any) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold">{getTitle()}</DialogTitle>
@@ -1907,7 +1909,7 @@ const PlayWheel = () => {
       <footer className="w-full bg-white/80 border-t border-indigo-100/60 py-2 sm:py-3 px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 text-xs text-gray-600 z-30 mt-auto">
         <div className="flex items-center justify-center text-center break-words">
           {wheelData?.footerText ? (
-            <span className="max-w-full">{wheelData.footerText}</span>
+            <span className="max-w-full">{detectAndLinkPhoneNumbers(wheelData.footerText)}</span>
           ) : (
             <span>© {new Date().getFullYear()} IZI Kado</span>
           )}

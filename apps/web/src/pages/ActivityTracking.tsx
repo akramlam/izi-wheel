@@ -38,7 +38,7 @@ import { Label } from '../components/ui/label';
 interface PlayRecord {
   id: string;
   result: 'WIN' | 'LOSE';
-  redemptionStatus: 'PENDING' | 'CLAIMED' | 'REDEEMED';
+  redemptionStatus: 'PENDING' | 'REDEEMED';
   createdAt: string;
   claimedAt?: string;
   redeemedAt?: string;
@@ -65,7 +65,6 @@ interface PlayStatistics {
   total: number;
   wins: number;
   losses: number;
-  claimed: number;
   redeemed: number;
   winRate: number;
 }
@@ -262,8 +261,7 @@ const ActivityTracking: React.FC = () => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
-      CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
-      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Échangé' }
+      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Récupéré' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -281,8 +279,7 @@ const ActivityTracking: React.FC = () => {
   const getPrizeStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
-      CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
-      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Échangé' }
+      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Récupéré' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -464,7 +461,7 @@ const ActivityTracking: React.FC = () => {
   const renderPlays = () => (
     <div className="space-y-6">
       {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-blue-600">{statistics.total}</p>
@@ -485,14 +482,8 @@ const ActivityTracking: React.FC = () => {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-blue-600">{statistics.claimed}</p>
-              <p className="text-sm text-gray-600">Réclamés</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-purple-600">{statistics.redeemed}</p>
-              <p className="text-sm text-gray-600">Échangés</p>
+              <p className="text-sm text-gray-600">Récupérés</p>
             </CardContent>
           </Card>
         </div>
@@ -528,8 +519,7 @@ const ActivityTracking: React.FC = () => {
             >
               <option value="ALL">Tous les statuts</option>
               <option value="PENDING">En attente</option>
-              <option value="CLAIMED">Réclamés</option>
-              <option value="REDEEMED">Échangés</option>
+              <option value="REDEEMED">Récupérés</option>
             </select>
 
             <Button onClick={refreshData} variant="outline">
@@ -608,14 +598,9 @@ const ActivityTracking: React.FC = () => {
                       {play.result === 'WIN' ? (
                         <>
                           {getStatusBadge(play.redemptionStatus)}
-                          {play.claimedAt && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Réclamé: {formatDate(play.claimedAt)}
-                            </div>
-                          )}
                           {play.redeemedAt && (
                             <div className="text-xs text-gray-500 mt-1">
-                              Échangé: {formatDate(play.redeemedAt)}
+                              Récupéré: {formatDate(play.redeemedAt)}
                             </div>
                           )}
                         </>

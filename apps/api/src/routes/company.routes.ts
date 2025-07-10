@@ -3,7 +3,7 @@ import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import wheelRoutes from './wheel.routes';
 import { getCompanies, createCompany, deleteCompany, updateCompany, getCompanyStatistics, validateSuperAdminAccess, getCompany } from '../controllers/company.controller';
-import { getCompanyUsers, inviteUser, updateUser, deleteUser } from '../controllers/user.controller';
+import { getCompanyUsers, inviteUser, updateUser, deleteUser, resetUserPassword } from '../controllers/user.controller';
 
 // Add type annotation for router
 const router: Router = Router();
@@ -29,6 +29,7 @@ router.get('/:companyId/statistics', authMiddleware, roleGuard([Role.SUPER, Role
 router.get('/:companyId/users', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), getCompanyUsers);
 router.post('/:companyId/users', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), inviteUser);
 router.put('/:companyId/users/:uid', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), updateUser);
+router.put('/:companyId/users/:uid/reset-password', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), resetUserPassword);
 router.delete('/:companyId/users/:uid', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), deleteUser);
 
 // Company CRUD operations
