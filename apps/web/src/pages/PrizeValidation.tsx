@@ -16,7 +16,6 @@ import {
   Mail,
   Phone,
   ShieldCheck,
-  Store,
   Search,
   Loader2,
   RefreshCw,
@@ -450,15 +449,6 @@ const PrizeValidation: React.FC = () => {
                           )}
                         </Button>
                       )}
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
-                      >
-                        <Store className="w-4 h-4 mr-1" />
-                        Détails
-                      </Button>
                     </div>
                   </div>
                 </div>
