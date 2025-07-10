@@ -427,7 +427,6 @@ const RedeemPrize = () => {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-              <p>Code de lot: {prizeDetails.id}</p>
               <p className="mt-1">Interface de validation pour les restaurateurs</p>
             </CardFooter>
           </Card>
@@ -553,7 +552,6 @@ const RedeemPrize = () => {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-            <p>Code de lot: {prizeDetails.id}</p>
             <p className="mt-1">Remplissez vos informations pour réclamer votre lot.</p>
           </CardFooter>
         </Card>
@@ -690,7 +688,6 @@ const RedeemPrize = () => {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col text-xs text-gray-500 text-center">
-          <p>Code de lot: {prizeDetails.id}</p>
           <p className="mt-1">Entrez le code PIN qui vous a été fourni pour récupérer votre lot.</p>
         </CardFooter>
       </Card>
