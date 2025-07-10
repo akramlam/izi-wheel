@@ -1627,16 +1627,19 @@ const WheelEdit = () => {
                 />
                 <p className="text-xs text-gray-500">Personnalisez les règles affichées aux joueurs (optionnel - des règles par défaut seront utilisées si vide).</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
-                <Input
-                  id="footerText"
-                  placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Kado')"
-                  value={wheel.footerText || ''}
-                  onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page (optionnel).</p>
-              </div>
+              {/* Footer text field only visible for super admins */}
+              {isSuperAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
+                  <Input
+                    id="footerText"
+                    placeholder="Ex: © 2024 Votre Entreprise (laissez vide pour utiliser '© 2024 IZI Kado')"
+                    value={wheel.footerText || ''}
+                    onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500">Personnalisez le texte affiché en bas de la page (optionnel).</p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
