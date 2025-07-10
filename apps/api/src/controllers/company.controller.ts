@@ -18,7 +18,13 @@ enum Plan {
 export const getCompanyStatistics = async (req: Request, res: Response) => {
   try {
     const { companyId } = req.params;
-    const { range, from, to } = req.query;
+    const { range, from, to, wheelIds } = req.query;
+    
+    // Parse wheelIds if provided
+    let wheelIdFilter: string[] | undefined;
+    if (wheelIds && typeof wheelIds === 'string') {
+      wheelIdFilter = wheelIds.split(',').filter(id => id.trim().length > 0);
+    }
     
     // Special handling for demo-company-id (SUPER admin with no companies)
     if (companyId === 'demo-company-id' && req.user?.role === 'SUPER') {
@@ -30,6 +36,8 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
         totalPrizes: 0,
         playsByDay: [],
         prizesByDay: [],
+        prizeDistribution: [],
+        wheelPerformance: [],
         recentPlays: [],
         dateRange: {
           from: new Date().toISOString(),
@@ -62,25 +70,34 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       toDate = new Date(to as string);
     }
     
-    // Total wheels and active wheels
+    // Build wheel filter condition
+    const wheelFilter: any = { companyId };
+    if (wheelIdFilter && wheelIdFilter.length > 0) {
+      wheelFilter.id = { in: wheelIdFilter };
+    }
+    
+    // Total wheels and active wheels (with filtering)
     const wheels = await prisma.wheel.findMany({
-      where: { companyId },
+      where: wheelFilter,
       select: { id: true, isActive: true },
     }) || [];
     const totalWheels = wheels.length;
     const activeWheels = wheels.filter(w => w.isActive).length;
 
-    // Total plays and prizes with date filter
+    // Build play filter condition
+    const playFilter: any = {
+      wheel: wheelFilter,
+      createdAt: { 
+        gte: fromDate,
+        lte: toDate
+      }
+    };
+
+    // Total plays and prizes with date filter and wheel filtering
     let totalPlays = 0;
     try {
       const playsResult = await prisma.play.count({
-        where: { 
-          wheel: { companyId },
-          createdAt: { 
-            gte: fromDate,
-            lte: toDate
-          }
-        },
+        where: playFilter,
       });
       totalPlays = playsResult || 0;
     } catch (error) {
@@ -92,13 +109,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     let totalPrizes = 0;
     try {
       const prizesResult = await prisma.play.count({
-        where: { 
-          wheel: { companyId },
+        where: {
+          ...playFilter,
           result: 'WIN',
-          createdAt: { 
-            gte: fromDate,
-            lte: toDate
-          }
         },
       });
       totalPrizes = prizesResult || 0;
@@ -107,24 +120,23 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       totalPrizes = 0;
     }
 
-    // Generate dates for the last 7 days
-    const dates = Array.from({ length: 7 }).map((_, i) => {
-      const date = subDays(new Date(), 6 - i);
+    // Generate dates for the chart based on range
+    let chartDays = 7;
+    if (range === '30d') chartDays = 30;
+    else if (range === '90d') chartDays = 90;
+    else if (range === 'all') chartDays = Math.min(90, Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+    const dates = Array.from({ length: chartDays }).map((_, i) => {
+      const date = subDays(toDate, chartDays - 1 - i);
       return format(date, 'yyyy-MM-dd');
     });
 
     // Prepare playsByDay with 0 counts
     const playsByDay = dates.map(date => ({ date, count: 0 }));
     
-    // Get plays grouped by day
+    // Get plays grouped by day (with wheel filtering)
     const plays = await prisma.play.findMany({
-      where: {
-        wheel: { companyId },
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
-      }
+      where: playFilter
     }) || [];
     
     // Populate playsByDay with actual counts
@@ -139,15 +151,11 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
     // Prepare prizesByDay with 0 counts
     const prizesByDay = dates.map(date => ({ date, count: 0 }));
     
-    // Get winning plays (prizes) grouped by day
+    // Get winning plays (prizes) grouped by day (with wheel filtering)
     const winningPlays = await prisma.play.findMany({
       where: {
-        wheel: { companyId },
+        ...playFilter,
         result: 'WIN',
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
       },
       include: {
         slot: true
@@ -163,15 +171,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       }
     });
 
-    // Recent plays (last 10)
+    // Recent plays (last 10) with wheel filtering
     const recentPlays = await prisma.play.findMany({
-      where: { 
-        wheel: { companyId },
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
-      },
+      where: playFilter,
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
@@ -180,15 +182,11 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       },
     }) || [];
 
-    // Prize distribution data for the doughnut chart
+    // Prize distribution data for the doughnut chart (with wheel filtering)
     const prizeDistribution = await prisma.play.findMany({
       where: {
-        wheel: { companyId },
+        ...playFilter,
         result: 'WIN',
-        createdAt: { 
-          gte: fromDate,
-          lte: toDate
-        }
       },
       include: {
         slot: {
@@ -213,9 +211,9 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
 
     const prizeDistributionData = Object.values(prizeGroups);
 
-    // Wheel performance data for the bar chart
+    // Wheel performance data for the bar chart (with wheel filtering)
     const wheelPerformanceData = await prisma.wheel.findMany({
-      where: { companyId },
+      where: wheelFilter,
       include: {
         _count: {
           select: {
@@ -263,6 +261,13 @@ export const getCompanyStatistics = async (req: Request, res: Response) => {
       dateRange: {
         from: fromDate.toISOString(),
         to: toDate.toISOString()
+      },
+      // Add filter info for debugging
+      appliedFilters: {
+        wheelIds: wheelIdFilter,
+        range: range || 'default',
+        fromDate: fromDate.toISOString(),
+        toDate: toDate.toISOString()
       }
     });
   } catch (error) {

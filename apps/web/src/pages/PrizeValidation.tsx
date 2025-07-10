@@ -20,7 +20,9 @@ import {
   Loader2,
   RefreshCw,
   CheckCircle,
-  Shield
+  Shield,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -55,6 +57,12 @@ const PrizeValidation: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState(''); // Debounced search term for API calls
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [validatingPrizeId, setValidatingPrizeId] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 20; // Show 20 prizes per page
 
   // Debounce search input to avoid too many API calls
   useEffect(() => {
@@ -65,14 +73,19 @@ const PrizeValidation: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus]);
+
   // Fetch prizes data
   const { data: prizesData, isLoading, refetch } = useQuery({
-    queryKey: ['prizes', searchTerm, selectedStatus],
+    queryKey: ['prizes', searchTerm, selectedStatus, currentPage],
     queryFn: async () => {
       // Use the same API endpoint as Activity Tracking to get detailed play data
       const params = new URLSearchParams({
-        limit: '1000', // Get a large number of recent plays
-        offset: '0',
+        limit: itemsPerPage.toString(),
+        offset: ((currentPage - 1) * itemsPerPage).toString(),
         result: 'WIN' // Only get winning plays for prize validation
       });
 
@@ -87,6 +100,15 @@ const PrizeValidation: React.FC = () => {
       }
 
       const response = await api.getActivityPlays(params.toString());
+      
+      // Update pagination state from API response
+      if (response.data.success && response.data.data.pagination) {
+        const pagination = response.data.data.pagination;
+        setTotalItems(pagination.total);
+        setTotalPages(pagination.totalPages);
+        setCurrentPage(pagination.currentPage);
+      }
+      
       return response.data;
     },
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -145,53 +167,70 @@ const PrizeValidation: React.FC = () => {
       return;
     }
 
-    // Search in ALL winning plays (backend already filters by WIN result)
-    const allWinningPlays = (prizesData?.success && prizesData.data?.plays) 
-      ? prizesData.data.plays
-      : [];
-    
-    // Debug logging
-    console.log('🔍 Recherche PIN:', pinInput.trim());
-    console.log('📊 Total cadeaux disponibles:', allWinningPlays.length);
-    console.log('🎯 Cadeaux avec PIN:', allWinningPlays.filter((p: any) => p.pin).length);
-    
-    const matchingPrize = allWinningPlays.find((play: any) => play.pin === pinInput.trim());
-    
-    if (!matchingPrize) {
-      // More detailed error message
-      const availablePins = allWinningPlays.map((p: any) => p.pin).filter(Boolean);
-      console.log('❌ PINs disponibles:', availablePins);
+    try {
+      // Search for the specific PIN across ALL data (not just current page)
+      const searchParams = new URLSearchParams({
+        limit: '1000', // Large limit to search all recent data
+        offset: '0',
+        result: 'WIN',
+        search: pinInput.trim() // Search for the specific PIN
+      });
+
+      const response = await api.getActivityPlays(searchParams.toString());
+      const allWinningPlays = response.data?.success && response.data.data?.plays 
+        ? response.data.data.plays
+        : [];
       
+      // Debug logging
+      console.log('🔍 Recherche PIN:', pinInput.trim());
+      console.log('📊 Total cadeaux disponibles:', allWinningPlays.length);
+      console.log('🎯 Cadeaux avec PIN:', allWinningPlays.filter((p: any) => p.pin).length);
+      
+      const matchingPrize = allWinningPlays.find((play: any) => play.pin === pinInput.trim());
+      
+      if (!matchingPrize) {
+        // More detailed error message
+        const availablePins = allWinningPlays.map((p: any) => p.pin).filter(Boolean);
+        console.log('❌ PINs disponibles:', availablePins);
+        
+        toast({
+          title: "Code PIN introuvable",
+          description: `Le code PIN "${pinInput.trim()}" n'a pas été trouvé dans les cadeaux récents.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check if already redeemed
+      if (matchingPrize.redemptionStatus === 'REDEEMED') {
+        toast({
+          title: "Cadeau déjà récupéré",
+          description: "Ce cadeau a déjà été validé et récupéré",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // For admin validation, we can validate prizes in any status
+      // Clear the input and validate the prize
+      setPinInput('');
+      setValidatingPrizeId(matchingPrize.id);
+      
+      // Show info about the prize being validated
       toast({
-        title: "Code PIN introuvable",
-        description: `Le code PIN "${pinInput.trim()}" n'a pas été trouvé dans les cadeaux récents.`,
+        title: "Validation en cours...",
+        description: `Validation du cadeau: ${matchingPrize.slot?.label || 'Cadeau inconnu'}`,
+      });
+
+      validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
+    } catch (error) {
+      console.error('Error searching for PIN:', error);
+      toast({
+        title: "Erreur de recherche",
+        description: "Erreur lors de la recherche du code PIN",
         variant: "destructive"
       });
-      return;
     }
-
-    // Check if already redeemed
-    if (matchingPrize.redemptionStatus === 'REDEEMED') {
-      toast({
-        title: "Cadeau déjà récupéré",
-        description: "Ce cadeau a déjà été validé et récupéré",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // For admin validation, we can validate prizes in any status
-    // Clear the input and validate the prize
-    setPinInput('');
-    setValidatingPrizeId(matchingPrize.id);
-    
-    // Show info about the prize being validated
-    toast({
-      title: "Validation en cours...",
-      description: `Validation du cadeau: ${matchingPrize.slot?.label || 'Cadeau inconnu'}`,
-    });
-
-    validatePrizeMutation.mutate({ playId: matchingPrize.id, pin: pinInput.trim() });
   };
 
   const getPrizeStatusBadge = (status: string, claimedAt?: string) => {
@@ -226,37 +265,8 @@ const PrizeValidation: React.FC = () => {
     });
   };
 
-  // Filter prizes based on search and status
-  const filteredPrizes = prizesData?.success ? (prizesData.data?.plays?.filter((play: any) => {
-    // Backend already filters by WIN result and search terms, so we only need to apply additional client-side filtering
-    
-    // Handle the new 2-step system: CLAIMED means PENDING + claimedAt
-    let matchesStatus = false;
-    if (selectedStatus === 'all') {
-      matchesStatus = true;
-    } else if (selectedStatus === 'CLAIMED') {
-      matchesStatus = play.redemptionStatus === 'PENDING' && play.claimedAt;
-    } else if (selectedStatus === 'PENDING') {
-      matchesStatus = play.redemptionStatus === 'PENDING' && !play.claimedAt;
-    } else {
-      matchesStatus = play.redemptionStatus === selectedStatus;
-    }
-    
-    // If there's a search term, the backend already filtered the results
-    // But we can add additional client-side filtering for immediate feedback
-    if (searchTerm && searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
-        play.slot?.label?.toLowerCase().includes(searchLower) ||
-        play.leadInfo?.name?.toLowerCase().includes(searchLower) ||
-        play.leadInfo?.email?.toLowerCase().includes(searchLower) ||
-        play.pin?.toLowerCase().includes(searchLower);
-      
-      return matchesSearch && matchesStatus;
-    }
-    
-    return matchesStatus;
-  }) || []) : [];
+  // Get prizes from API response (already filtered by backend)
+  const filteredPrizes = prizesData?.success ? (prizesData.data?.plays || []) : [];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -385,6 +395,7 @@ const PrizeValidation: React.FC = () => {
                 <p className="text-2xl font-bold text-blue-600">
                   {filteredPrizes.filter((p: any) => p.redemptionStatus === 'PENDING' && p.claimedAt).length}
                 </p>
+                <p className="text-xs text-gray-500">Sur cette page</p>
               </div>
               <Gift className="h-8 w-8 text-blue-600" />
             </div>
@@ -395,10 +406,11 @@ const PrizeValidation: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Cadeaux Échangés</p>
+                <p className="text-sm font-medium text-gray-600">Cadeaux Récupérés</p>
                 <p className="text-2xl font-bold text-green-600">
                   {filteredPrizes.filter((p: any) => p.redemptionStatus === 'REDEEMED').length}
                 </p>
+                <p className="text-xs text-gray-500">Sur cette page</p>
               </div>
               <Award className="h-8 w-8 text-green-600" />
             </div>
@@ -413,6 +425,7 @@ const PrizeValidation: React.FC = () => {
                 <p className="text-2xl font-bold text-yellow-600">
                   {filteredPrizes.filter((p: any) => p.redemptionStatus === 'PENDING' && !p.claimedAt).length}
                 </p>
+                <p className="text-xs text-gray-500">Sur cette page</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
             </div>
@@ -425,7 +438,7 @@ const PrizeValidation: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Gift className="w-5 h-5 mr-2" />
-            Liste des Cadeaux ({filteredPrizes.length})
+            Liste des Cadeaux {totalItems > 0 && `(${totalItems} au total)`}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -530,6 +543,68 @@ const PrizeValidation: React.FC = () => {
             </div>
           )}
         </CardContent>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="border-t px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700">
+                Affichage de {((currentPage - 1) * itemsPerPage) + 1} à {Math.min(currentPage * itemsPerPage, totalItems)} sur {totalItems} cadeaux
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || isLoading}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Précédent
+                </Button>
+                
+                <div className="flex space-x-1">
+                  {/* Show page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        disabled={isLoading}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || isLoading}
+                >
+                  Suivant
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "../components/ui/card"
-import { Search, Folder, DollarSign, Users, TrendingUp, TrendingDown } from "lucide-react"
+import { Search, Folder, DollarSign, Users, TrendingUp, TrendingDown, ChevronDown } from "lucide-react"
 import { api } from '../lib/api'
 import { useToast } from '../hooks/use-toast'
 import { useAuth } from '../hooks/useAuth'
@@ -58,12 +58,32 @@ interface StatisticsData {
   }>
 }
 
+interface Company {
+  id: string
+  name: string
+  isActive: boolean
+}
+
+interface Wheel {
+  id: string
+  name: string
+  isActive: boolean
+  companyId: string
+}
+
 const Statistiques: React.FC = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [statsData, setStatsData] = useState<StatisticsData | null>(null)
+  
+  // New state for company and wheel selection
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [wheels, setWheels] = useState<Wheel[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('')
+  const [selectedWheelIds, setSelectedWheelIds] = useState<string[]>([])
+  const [showWheelDropdown, setShowWheelDropdown] = useState(false)
   
   // Map date range to display text
   const dateRangeText = {
@@ -74,13 +94,64 @@ const Statistiques: React.FC = () => {
   }
 
   useEffect(() => {
-    fetchStatistics()
-  }, [dateRange])
+    if (user?.role === 'SUPER') {
+      fetchCompanies()
+    } else {
+      // For regular admins, set their company directly
+      setSelectedCompanyId(user?.companyId || '')
+      fetchStatistics()
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (selectedCompanyId) {
+      fetchWheels()
+      fetchStatistics()
+    }
+  }, [selectedCompanyId, dateRange])
+
+  useEffect(() => {
+    if (selectedWheelIds.length > 0 || (selectedCompanyId && selectedWheelIds.length === 0)) {
+      fetchStatistics()
+    }
+  }, [selectedWheelIds])
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.getAllCompanies()
+      if (response.data.companies) {
+        setCompanies(response.data.companies.filter((c: Company) => c.isActive))
+        // Auto-select first company if none selected
+        if (!selectedCompanyId && response.data.companies.length > 0) {
+          setSelectedCompanyId(response.data.companies[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+      showErrorToast(toast, error, 'Erreur', 'Impossible de charger les entreprises.')
+    }
+  }
+
+  const fetchWheels = async () => {
+    try {
+      if (!selectedCompanyId) return
+      
+      const response = await api.getCompanyWheels(selectedCompanyId)
+      if (response.data.wheels) {
+        setWheels(response.data.wheels.filter((w: Wheel) => w.isActive))
+        // Reset wheel selection when company changes
+        setSelectedWheelIds([])
+      }
+    } catch (error) {
+      console.error('Error fetching wheels:', error)
+      showErrorToast(toast, error, 'Erreur', 'Impossible de charger les roues.')
+    }
+  }
 
   const fetchStatistics = async () => {
     try {
       setIsLoading(true)
-      let companyId = user?.companyId || ''
+      let companyId = selectedCompanyId || user?.companyId || ''
       
       // For SUPER admin, we need to get a valid company ID if one isn't already set
       if ((!companyId || companyId === '') && user?.role === 'SUPER') {
@@ -88,7 +159,7 @@ const Statistiques: React.FC = () => {
           const validationResponse = await api.getValidCompanyId()
           if (validationResponse.data.companyId) {
             companyId = validationResponse.data.companyId
-            // Store it for future use
+            setSelectedCompanyId(companyId)
             localStorage.setItem('companyId', companyId)
           }
         } catch (validationError) {
@@ -100,12 +171,18 @@ const Statistiques: React.FC = () => {
         toast({
           variant: 'destructive',
           title: 'Erreur',
-          description: 'Aucun ID d\'entreprise trouvé. Veuillez vous reconnecter.',
+          description: 'Aucun ID d\'entreprise trouvé. Veuillez sélectionner une entreprise.',
         })
         return
       }
 
-      const response = await api.getCompanyStatistics(companyId, { range: dateRange })
+      // Build query parameters
+      const params: any = { range: dateRange }
+      if (selectedWheelIds.length > 0) {
+        params.wheelIds = selectedWheelIds.join(',')
+      }
+
+      const response = await api.getCompanyStatistics(companyId, params)
       setStatsData(response.data)
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
@@ -114,6 +191,40 @@ const Statistiques: React.FC = () => {
       setIsLoading(false)
     }
   }
+
+  const handleWheelToggle = (wheelId: string) => {
+    setSelectedWheelIds(prev => 
+      prev.includes(wheelId) 
+        ? prev.filter(id => id !== wheelId)
+        : [...prev, wheelId]
+    )
+  }
+
+  const getSelectedWheelsText = () => {
+    if (selectedWheelIds.length === 0) {
+      return 'Toutes les roues'
+    } else if (selectedWheelIds.length === 1) {
+      const wheel = wheels.find(w => w.id === selectedWheelIds[0])
+      return wheel?.name || 'Roue sélectionnée'
+    } else {
+      return `${selectedWheelIds.length} roues sélectionnées`
+    }
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.wheel-dropdown-container')) {
+        setShowWheelDropdown(false)
+      }
+    }
+
+    if (showWheelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showWheelDropdown])
 
   // Format data for charts
   const getPlaysChartData = () => {
@@ -231,24 +342,120 @@ const Statistiques: React.FC = () => {
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Statistiques</h1>
-          <p className="text-gray-600 dark:text-gray-400">Suivez les statistiques de vos clients.</p>
+      <div className="flex flex-col space-y-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Statistiques</h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {user?.role === 'SUPER' 
+                ? 'Analysez les performances par entreprise et roue.' 
+                : 'Suivez les statistiques de vos clients.'}
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            {Object.entries(dateRangeText).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setDateRange(value as DateRange)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  dateRange === value ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex space-x-2">
-          {Object.entries(dateRangeText).map(([value, label]) => (
-            <button
-              key={value}
-              onClick={() => setDateRange(value as DateRange)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                dateRange === value ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+
+        {/* Filters for Super Admin */}
+        {user?.role === 'SUPER' && (
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+            {/* Company Selector */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Entreprise
+              </label>
+              <select
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              >
+                <option value="">Sélectionner une entreprise</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Wheel Selector */}
+            <div className="flex-1 relative wheel-dropdown-container">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Roues
+              </label>
+              <button
+                onClick={() => setShowWheelDropdown(!showWheelDropdown)}
+                disabled={!selectedCompanyId || wheels.length === 0}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 bg-white text-left flex items-center justify-between disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <span className="truncate">
+                  {!selectedCompanyId 
+                    ? 'Sélectionnez d\'abord une entreprise' 
+                    : wheels.length === 0 
+                    ? 'Aucune roue disponible'
+                    : getSelectedWheelsText()}
+                </span>
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              </button>
+
+              {/* Wheel Dropdown */}
+              {showWheelDropdown && wheels.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2">
+                    <label className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedWheelIds.length === 0}
+                        onChange={() => setSelectedWheelIds([])}
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-sm font-medium">Toutes les roues</span>
+                    </label>
+                    {wheels.map((wheel) => (
+                      <label key={wheel.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedWheelIds.includes(wheel.id)}
+                          onChange={() => handleWheelToggle(wheel.id)}
+                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-sm">{wheel.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Selected filters display */}
+        {user?.role === 'SUPER' && selectedCompanyId && (
+          <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">
+              📊 {companies.find(c => c.id === selectedCompanyId)?.name || 'Entreprise sélectionnée'}
+            </span>
+            {selectedWheelIds.length > 0 && (
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                🎯 {getSelectedWheelsText()}
+              </span>
+            )}
+            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
+              📅 {dateRangeText[dateRange]}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}

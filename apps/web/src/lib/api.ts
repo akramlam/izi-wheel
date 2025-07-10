@@ -288,9 +288,13 @@ export const api = {
   },
   
   // Statistics & Analytics
-  getCompanyStatistics: async (companyId: string, params: { range: string }) => {
-    if (!companyId) return { data: null };
-    return apiClient.get(`/companies/${companyId}/statistics`, { params });
+  getCompanyStatistics: async (companyId: string, params?: any) => {
+    const queryParams = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiClient.get(`/companies/${companyId}/statistics${queryParams}`);
+  },
+
+  getCompanyWheels: async (companyId: string) => {
+    return apiClient.get(`/companies/${companyId}/wheels`);
   },
   
   getWheelStatistics: async (wheelId: string, params: { range: string }) => {
@@ -597,8 +601,9 @@ export const api = {
   },
 
   // Activity tracking
-  getActivityDashboard: async () => {
-    return apiClient.get('/activity/dashboard');
+  getActivityDashboard: async (params?: string) => {
+    const url = params ? `/activity/dashboard?${params}` : '/activity/dashboard';
+    return apiClient.get(url);
   },
 
   getActivityPlays: async (params: string) => {

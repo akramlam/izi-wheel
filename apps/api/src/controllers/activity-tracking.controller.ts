@@ -105,62 +105,133 @@ export const getPlayHistory = async (req: Request, res: Response) => {
       }
     }
     
-    if (search) {
-      whereClause.OR = [
-        { 
-          leadInfo: {
-            path: ['name'],
-            string_contains: search
-          }
-        },
-        { 
-          leadInfo: {
-            path: ['email'],
-            string_contains: search
-          }
-        },
-        { 
-          leadInfo: {
-            path: ['phone'],
-            string_contains: search
-          }
-        },
-        { pin: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
     // Get plays with detailed information
-    const plays = await prisma.play.findMany({
-      where: whereClause,
-      include: {
+    let plays: any[];
+    if (search) {
+      // Use raw SQL for JSON search since Prisma's JSON operators are limited
+      const searchQuery = `
+        SELECT p.*, 
+               w.name as wheel_name, 
+               c.name as company_name,
+               s.label as slot_label,
+               s."prizeCode" as slot_prize_code,
+               s.color as slot_color,
+               s."isWinning" as slot_is_winning
+        FROM "Play" p
+        JOIN "Wheel" w ON p."wheelId" = w.id
+        JOIN "Company" c ON w."companyId" = c.id
+        JOIN "Slot" s ON p."slotId" = s.id
+        WHERE 1=1
+        ${companyId ? `AND p."companyId" = '${companyId}'` : ''}
+        ${wheelId ? `AND p."wheelId" = '${wheelId}'` : ''}
+        ${result ? `AND p.result = '${result}'` : ''}
+        ${status ? (
+          status === 'CLAIMED' ? `AND p."redemptionStatus" = 'PENDING' AND p."claimedAt" IS NOT NULL` :
+          status === 'PENDING' ? `AND p."redemptionStatus" = 'PENDING' AND p."claimedAt" IS NULL` :
+          `AND p."redemptionStatus" = '${status}'`
+        ) : ''}
+        AND (
+          LOWER(p."leadInfo"->>'name') LIKE LOWER('%${search}%') OR
+          LOWER(p."leadInfo"->>'email') LIKE LOWER('%${search}%') OR
+          LOWER(p."leadInfo"->>'phone') LIKE LOWER('%${search}%') OR
+          LOWER(p.pin) LIKE LOWER('%${search}%') OR
+          LOWER(c.name) LIKE LOWER('%${search}%')
+        )
+        ORDER BY p."createdAt" DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `;
+      
+      const rawPlays = await prisma.$queryRawUnsafe(searchQuery);
+      
+      // Transform raw results to match the expected format
+      plays = (rawPlays as any[]).map(play => ({
+        id: play.id,
+        result: play.result,
+        redemptionStatus: play.redemptionStatus,
+        createdAt: play.createdAt,
+        claimedAt: play.claimedAt,
+        redeemedAt: play.redeemedAt,
+        pin: play.pin,
+        ip: play.ip,
+        leadInfo: play.leadInfo,
         wheel: {
-          select: {
-            name: true,
-            company: {
-              select: {
-                name: true
-              }
-            }
+          name: play.wheel_name,
+          company: {
+            name: play.company_name
           }
         },
         slot: {
-          select: {
-            label: true,
-            prizeCode: true,
-            color: true,
-            isWinning: true
-          }
+          label: play.slot_label,
+          prizeCode: play.slot_prize_code,
+          color: play.slot_color,
+          isWinning: play.slot_is_winning
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      skip: offset,
-      take: limit
-    });
+      }));
+    } else {
+      // Use regular Prisma query when no search
+      plays = await prisma.play.findMany({
+        where: whereClause,
+        include: {
+          wheel: {
+            select: {
+              name: true,
+              company: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          slot: {
+            select: {
+              label: true,
+              prizeCode: true,
+              color: true,
+              isWinning: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip: offset,
+        take: limit
+      });
+    }
 
     // Get total count for pagination
-    const totalPlays = await prisma.play.count({ where: whereClause });
+    let totalPlays;
+    if (search) {
+      // Use raw SQL for count when search is used
+      const countQuery = `
+        SELECT COUNT(*) as count
+        FROM "Play" p
+        JOIN "Wheel" w ON p."wheelId" = w.id
+        JOIN "Company" c ON w."companyId" = c.id
+        JOIN "Slot" s ON p."slotId" = s.id
+        WHERE 1=1
+        ${companyId ? `AND p."companyId" = '${companyId}'` : ''}
+        ${wheelId ? `AND p."wheelId" = '${wheelId}'` : ''}
+        ${result ? `AND p.result = '${result}'` : ''}
+        ${status ? (
+          status === 'CLAIMED' ? `AND p."redemptionStatus" = 'PENDING' AND p."claimedAt" IS NOT NULL` :
+          status === 'PENDING' ? `AND p."redemptionStatus" = 'PENDING' AND p."claimedAt" IS NULL` :
+          `AND p."redemptionStatus" = '${status}'`
+        ) : ''}
+        AND (
+          LOWER(p."leadInfo"->>'name') LIKE LOWER('%${search}%') OR
+          LOWER(p."leadInfo"->>'email') LIKE LOWER('%${search}%') OR
+          LOWER(p."leadInfo"->>'phone') LIKE LOWER('%${search}%') OR
+          LOWER(p.pin) LIKE LOWER('%${search}%') OR
+          LOWER(c.name) LIKE LOWER('%${search}%')
+        )
+      `;
+      
+      const countResult = await prisma.$queryRawUnsafe(countQuery) as any[];
+      totalPlays = parseInt(countResult[0].count);
+    } else {
+      totalPlays = await prisma.play.count({ where: whereClause });
+    }
 
     // Calculate statistics
     const winCount = plays.filter(p => p.result === 'WIN').length;
@@ -282,6 +353,15 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
       companyId = user.companyId || undefined;
     }
 
+    // Get date range from query params (default to 30 days)
+    const range = req.query.range as string || '30d';
+    const days = parseInt(range.replace('d', '')) || 30;
+    
+    // Calculate start date based on range
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
     // Get all data in parallel
     const [
       activityStats,
@@ -295,6 +375,10 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
 
     // Get additional play statistics from database
     const whereClause = companyId ? { companyId } : {};
+    const whereClauseWithDate = { 
+      ...whereClause, 
+      createdAt: { gte: startDate } 
+    };
     
     const [
       totalPlays,
@@ -303,10 +387,10 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
       totalRedeemed,
       todayPlays
     ] = await Promise.all([
-      prisma.play.count({ where: whereClause }),
-      prisma.play.count({ where: { ...whereClause, result: 'WIN' } }),
-      prisma.play.count({ where: { ...whereClause, redemptionStatus: 'PENDING', claimedAt: { not: null } } }),
-      prisma.play.count({ where: { ...whereClause, redemptionStatus: 'REDEEMED' } }),
+      prisma.play.count({ where: whereClauseWithDate }),
+      prisma.play.count({ where: { ...whereClauseWithDate, result: 'WIN' } }),
+      prisma.play.count({ where: { ...whereClauseWithDate, redemptionStatus: 'PENDING', claimedAt: { not: null } } }),
+      prisma.play.count({ where: { ...whereClauseWithDate, redemptionStatus: 'REDEEMED' } }),
       prisma.play.count({ 
         where: { 
           ...whereClause,
@@ -317,15 +401,55 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
       })
     ]);
 
+    // Get plays by day for the chart
+    const playsByDayQuery = await prisma.play.findMany({
+      where: whereClauseWithDate,
+      select: {
+        createdAt: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    // Group plays by day
+    const playsByDayMap = new Map<string, number>();
+    
+    // Initialize all days in range with 0
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+      playsByDayMap.set(dateKey, 0);
+    }
+    
+    // Count actual plays per day
+    playsByDayQuery.forEach(play => {
+      const dateKey = play.createdAt.toISOString().split('T')[0];
+      const currentCount = playsByDayMap.get(dateKey) || 0;
+      playsByDayMap.set(dateKey, currentCount + 1);
+    });
+
+    // Convert to array format
+    const playsByDay = Array.from(playsByDayMap.entries()).map(([date, count]) => ({
+      date,
+      count
+    }));
+
     // Get top performing wheels
     const topWheels = await prisma.wheel.findMany({
       where: companyId ? { companyId } : {},
       include: {
         plays: {
-          select: { result: true }
+          select: { result: true },
+          where: { createdAt: { gte: startDate } }
         },
         _count: {
-          select: { plays: true }
+          select: { 
+            plays: {
+              where: { createdAt: { gte: startDate } }
+            }
+          }
         }
       },
       orderBy: {
@@ -349,6 +473,7 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
           claimRate: totalWins > 0 ? Math.round((totalClaimed / totalWins) * 100) : 0,
           redeemRate: totalWins > 0 ? Math.round((totalRedeemed / totalWins) * 100) : 0
         },
+        playsByDay,
         activityStats,
         recentPlays: recentPlays.map(play => ({
           id: play.id,
@@ -368,7 +493,8 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
           winRate: wheel._count.plays > 0 ? 
             Math.round((wheel.plays.filter(p => p.result === 'WIN').length / wheel._count.plays) * 100) : 0
         })),
-        companyId: companyId || 'all'
+        companyId: companyId || 'all',
+        dateRange: range
       }
     });
   } catch (error) {
