@@ -444,24 +444,6 @@ const Statistiques: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
-      {/* Pagination - Display if we have wheels data */}
-      {statsData?.wheelPerformance && statsData.wheelPerformance.length > 0 && (
-      <div className="flex items-center justify-center space-x-2">
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
-        {[1, 2, 3, 4, 5].map((page) => (
-          <button
-            key={page}
-            className={`px-3 py-2 text-sm rounded ${
-              page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
-      </div>
-      )}
     </div>
   )
 }
