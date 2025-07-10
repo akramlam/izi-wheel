@@ -1632,19 +1632,22 @@ const WheelEdit = () => {
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
-                <Input
-                  id="footerText"
-                  placeholder="Ex: © 2024 Votre Entreprise - Contactez-nous au 01.23.45.67.89"
-                  value={wheel.footerText || ''}
-                  onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">
-                  Personnalisez le texte affiché en bas de la page (optionnel). 
-                  <span className="text-blue-600 ml-1">Les numéros de téléphone seront automatiquement cliquables</span>.
-                </p>
-              </div>
+              {/* Only show footer text for super admins */}
+              {user?.role === 'SUPER' && (
+                <div className="space-y-2">
+                  <Label htmlFor="footerText">Texte du pied de page (optionnel)</Label>
+                  <Input
+                    id="footerText"
+                    placeholder="Ex: © 2024 Votre Entreprise - Contactez-nous au 01.23.45.67.89"
+                    value={wheel.footerText || ''}
+                    onChange={(e) => setWheel({ ...wheel, footerText: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Personnalisez le texte affiché en bas de la page (optionnel). 
+                    <span className="text-blue-600 ml-1">Les numéros de téléphone seront automatiquement cliquables</span>.
+                  </p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

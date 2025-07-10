@@ -7,7 +7,7 @@ import { PasswordInput } from "../components/ui/password-input"
 import { Zap, AlertCircle, CheckCircle2 } from "lucide-react"
 
 const Login: React.FC = () => {
-  const { user, login } = useAuth()
+  const { user, login, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -29,6 +29,10 @@ const Login: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
+    // If user is not a SUPER admin, redirect to admin login
+    if (user.role !== 'SUPER') {
+      return <Navigate to="/admin-login" replace />
+    }
     return <Navigate to="/dashboard" replace />
   }
 
@@ -48,6 +52,20 @@ const Login: React.FC = () => {
 
     try {
       await login(formData.email, formData.password)
+      
+      // Check if user has SUPER role after successful login
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        const userData = JSON.parse(storedUser)
+        if (userData.role !== 'SUPER') {
+          // User is not a super admin, logout and show error
+          logout()
+          setErrors({ 
+            general: "Accès refusé. Cette page est réservée aux super-administrateurs." 
+          })
+          return
+        }
+      }
     } catch (error: any) {
       setErrors({ general: error.message || "Erreur de connexion" })
     } finally {

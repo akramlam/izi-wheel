@@ -7,7 +7,7 @@ import { PasswordInput } from "../components/ui/password-input"
 import { Zap, AlertCircle, CheckCircle2, Shield, Users, UserPlus } from "lucide-react"
 
 const AdminLogin: React.FC = () => {
-  const { user, login } = useAuth()
+  const { user, login, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
@@ -29,6 +29,10 @@ const AdminLogin: React.FC = () => {
 
   // Redirect if already logged in
   if (user) {
+    // If user is a SUPER admin, redirect to super admin login
+    if (user.role === 'SUPER') {
+      return <Navigate to="/login" replace />
+    }
     // If user has forcePasswordChange, redirect to change password
     if (user.forcePasswordChange) {
       return <Navigate to="/change-password" replace />
@@ -52,6 +56,20 @@ const AdminLogin: React.FC = () => {
 
     try {
       await login(formData.email, formData.password)
+      
+      // Check if user has ADMIN or SUB role after successful login
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        const userData = JSON.parse(storedUser)
+        if (userData.role !== 'ADMIN' && userData.role !== 'SUB') {
+          // User is not an admin or sub-admin, logout and show error
+          logout()
+          setErrors({ 
+            general: "Accès refusé. Cette page est réservée aux administrateurs d'entreprise." 
+          })
+          return
+        }
+      }
     } catch (error: any) {
       setErrors({ general: error.message || "Erreur de connexion" })
     } finally {
