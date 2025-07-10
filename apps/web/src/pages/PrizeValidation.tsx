@@ -28,7 +28,7 @@ import { api } from '../lib/api';
 interface PrizeRecord {
   id: string;
   pin: string;
-  status: 'PENDING' | 'CLAIMED' | 'REDEEMED';
+  status: 'PENDING' | 'REDEEMED';
   prize: {
     label: string;
     description?: string;
@@ -178,8 +178,7 @@ const PrizeValidation: React.FC = () => {
   const getPrizeStatusBadge = (status: string) => {
     const statusConfig = {
       PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', icon: Clock, label: 'En attente' },
-      CLAIMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', icon: CheckCircle2, label: 'Réclamé' },
-      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Échangé' }
+      REDEEMED: { color: 'bg-green-100 text-green-800 border-green-200', icon: Award, label: 'Récupéré' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -315,8 +314,7 @@ const PrizeValidation: React.FC = () => {
               >
                 <option value="all">Tous les statuts</option>
                 <option value="PENDING">En attente</option>
-                <option value="CLAIMED">Réclamé</option>
-                <option value="REDEEMED">Échangé</option>
+                <option value="REDEEMED">Récupérés</option>
               </select>
             </div>
           </div>
@@ -324,26 +322,12 @@ const PrizeValidation: React.FC = () => {
       </Card>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Cadeaux Réclamés</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {filteredPrizes.filter((p: any) => p.redemptionStatus === 'CLAIMED').length}
-                </p>
-              </div>
-              <Gift className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Cadeaux Échangés</p>
+                <p className="text-sm font-medium text-gray-600">Cadeaux Récupérés</p>
                 <p className="text-2xl font-bold text-green-600">
                   {filteredPrizes.filter((p: any) => p.redemptionStatus === 'REDEEMED').length}
                 </p>
@@ -431,7 +415,7 @@ const PrizeValidation: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                      {play.redemptionStatus === 'CLAIMED' && (
+                      {play.redemptionStatus === 'PENDING' && (
                         <Button
                           onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
                           disabled={validatingPrizeId === play.id}

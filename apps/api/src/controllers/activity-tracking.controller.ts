@@ -151,7 +151,6 @@ export const getPlayHistory = async (req: Request, res: Response) => {
     // Calculate statistics
     const winCount = plays.filter(p => p.result === 'WIN').length;
     const loseCount = plays.filter(p => p.result === 'LOSE').length;
-    const claimedCount = plays.filter(p => p.redemptionStatus === 'CLAIMED').length;
     const redeemedCount = plays.filter(p => p.redemptionStatus === 'REDEEMED').length;
 
     res.json({
@@ -182,7 +181,6 @@ export const getPlayHistory = async (req: Request, res: Response) => {
           total: totalPlays,
           wins: winCount,
           losses: loseCount,
-          claimed: claimedCount,
           redeemed: redeemedCount,
           winRate: totalPlays > 0 ? Math.round((winCount / totalPlays) * 100) : 0
         },
@@ -287,13 +285,11 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
     const [
       totalPlays,
       totalWins,
-      totalClaimed,
       totalRedeemed,
       todayPlays
     ] = await Promise.all([
       prisma.play.count({ where: whereClause }),
       prisma.play.count({ where: { ...whereClause, result: 'WIN' } }),
-      prisma.play.count({ where: { ...whereClause, redemptionStatus: 'CLAIMED' } }),
       prisma.play.count({ where: { ...whereClause, redemptionStatus: 'REDEEMED' } }),
       prisma.play.count({ 
         where: { 
@@ -330,12 +326,10 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
         overview: {
           totalPlays,
           totalWins,
-          totalClaimed,
           totalRedeemed,
           todayPlays,
           winRate: totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0,
-          claimRate: totalWins > 0 ? Math.round((totalClaimed / totalWins) * 100) : 0,
-          redeemRate: totalClaimed > 0 ? Math.round((totalRedeemed / totalClaimed) * 100) : 0
+          redeemRate: totalWins > 0 ? Math.round((totalRedeemed / totalWins) * 100) : 0
         },
         activityStats,
         recentPlays: recentPlays.map(play => ({
@@ -456,7 +450,7 @@ export const exportPlayData = async (req: Request, res: Response) => {
       const headers = Object.keys(exportData[0] || {});
       const csvContent = [
         headers.join(','),
-        ...exportData.map(row => 
+        ...exportData.map((row: any) => 
           headers.map(header => 
             JSON.stringify(row[header as keyof typeof row] || '')
           ).join(',')
