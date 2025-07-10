@@ -89,7 +89,7 @@ const Layout = () => {
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm text-gray-600 dark:text-gray-300">support@izikado.fr</span>
+                      <a href="mailto:support@izikado.fr" className="text-sm text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition duration-150">support@izikado.fr</a>
                     </div>
                     <div className="flex items-center">
                       <Phone className="h-4 w-4 mr-2 text-gray-400" />
