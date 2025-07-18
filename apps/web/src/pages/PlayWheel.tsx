@@ -767,7 +767,7 @@ const PlayWheel = () => {
         dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       }
     }
-  }, [wheelData, state.wheelConfig]);
+  }, [wheelData]); // 🔥 CRITICAL FIX: Remove state.wheelConfig from dependency array to prevent infinite loop
 
   // Modify the handleStartProcess function
   const handleStartProcess = () => {
