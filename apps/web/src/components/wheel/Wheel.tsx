@@ -213,18 +213,33 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
       
       // FIXED: Correct calculation for stopping at the right segment
-      // The pointer is at the top (12 o'clock), segments start at 0 degrees (3 o'clock)
-      // We need to rotate so the target segment ends up under the pointer
-      const targetAngle = prizeIndex * segAngle + segAngle / 2; // Center of target segment
-      const targetSegment = 360 - targetAngle + 90; // Adjust for pointer position at top
-      const target = 360 * rotations + targetSegment;
+      // The pointer is at the top (270 degrees from the start position)
+      // Segments start at 0 degrees (3 o'clock position)
+      // We need to rotate the wheel so the target segment's center aligns with the pointer
       
-      console.log('🎯 Calculated rotation:', {
+      // Calculate the center angle of the target segment
+      const segmentCenterAngle = prizeIndex * segAngle + segAngle / 2;
+      
+      // To align this segment with the pointer at 270°, we need to rotate:
+      // 270° - segmentCenterAngle (but we need to handle negative values)
+      let alignmentRotation = 270 - segmentCenterAngle;
+      
+      // Ensure positive rotation by adding 360 if negative
+      if (alignmentRotation < 0) {
+        alignmentRotation += 360;
+      }
+      
+      // Add multiple full rotations for visual effect
+      const target = 360 * rotations + alignmentRotation;
+      
+      console.log('🎯 Fixed rotation calculation:', {
         prizeIndex,
         segAngle,
-        targetAngle,
-        targetSegment,
-        totalRotation: target
+        segmentCenterAngle,
+        pointerPosition: 270,
+        alignmentRotation,
+        totalRotations: rotations,
+        finalRotation: target
       });
       
       // Set rotation and trigger animation
