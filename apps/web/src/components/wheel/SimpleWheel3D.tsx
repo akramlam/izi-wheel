@@ -106,7 +106,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
       setTimeout(() => {
         setSpinning(false);
         onSpin(); // Directly call the callback, bypassing the normal flow
-      }, 5000); // 5 seconds should be enough for visual effect
+      }, 100); // 🔥 REDUCED FROM 5000ms TO 100ms - Immediate callback after wheel stops
       
       // Calculate segment angle
       const segAngle = 360 / config.segments.length;

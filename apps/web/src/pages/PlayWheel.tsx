@@ -1020,7 +1020,7 @@ const PlayWheel = () => {
       } else {
         dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       }
-    }, 8000); // 8 seconds should be enough for most wheel animations
+    }, 6000); // 🔥 REDUCED FROM 8000ms TO 6000ms - Faster fallback since wheel delays are now shorter
 
     // Store the timeout reference
     window.fallbackTimeout = completionTimeout;

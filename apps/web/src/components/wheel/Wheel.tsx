@@ -321,7 +321,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           console.log('🎬 Calling onSpin callback now...');
           onSpin();
           console.log('🎬 onSpin callback called successfully');
-        }, 2500);
+        }, 100); // 🔥 REDUCED FROM 2500ms TO 100ms - Just enough time for pointer drop animation
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);
