@@ -726,6 +726,14 @@ const PlayWheel = () => {
           isWinning: slot.isWinning,
         }));
 
+        // 🔥 DEBUG: Log segment order for mismatch debugging
+        console.log('🎯 Frontend segment order:', segments.map((seg, index) => ({
+          index,
+          id: seg.id,
+          label: seg.label,
+          isWinning: seg.isWinning
+        })));
+
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
           ...state.wheelConfig,
           segments,
@@ -991,6 +999,17 @@ const PlayWheel = () => {
     }
 
     console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
+    
+    // 🔥 DEBUG: Log which segment this prizeIndex corresponds to
+    if (state.wheelConfig.segments && state.wheelConfig.segments.length > prizeIndexToUse) {
+      const targetSegment = state.wheelConfig.segments[prizeIndexToUse];
+      console.log('🎯 prizeIndex', prizeIndexToUse, 'corresponds to segment:', {
+        id: targetSegment.id,
+        label: targetSegment.label,
+        isWinning: targetSegment.isWinning
+      });
+    }
+    
     dispatch({ type: 'SET_SPIN_RESULT', payload: data });
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
     dispatch({ type: 'SET_MUST_SPIN', payload: true });

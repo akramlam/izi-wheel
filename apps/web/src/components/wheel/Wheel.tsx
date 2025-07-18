@@ -166,7 +166,6 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
     
   // Calculate segment angle and prepare refs array
   const segAngle = 360 / segments.length;
-  let startAngle = 0;
   
   // Initialize sound system
   useEffect(() => {
@@ -467,14 +466,16 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         {/* Render all segments with responsive text */}
         {segments.map((segment, index) => {
           const angle = segAngle;
-          const endAngle = startAngle + angle;
-          const arcPath = getArcPath(CENTER, CENTER, RADIUS, startAngle, endAngle);
           
-          const midAngle = startAngle + angle / 2;
+          // 🔥 CRITICAL FIX: Calculate startAngle for each segment without mutation
+          // This ensures consistent segment positioning on every render
+          const segmentStartAngle = index * segAngle; // Each segment starts at index * segAngle
+          const endAngle = segmentStartAngle + angle;
+          
+          const arcPath = getArcPath(CENTER, CENTER, RADIUS, segmentStartAngle, endAngle);
+          
+          const midAngle = segmentStartAngle + angle / 2;
           const textPos = getTextPosition(CENTER, CENTER, TEXT_DISTANCE, midAngle);
-          
-          const thisAngle = startAngle;
-          startAngle = endAngle;
           
           const segmentColor = segment.color || 
             (segment.isWinning ? '#28a745' : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'][index % 4]);
