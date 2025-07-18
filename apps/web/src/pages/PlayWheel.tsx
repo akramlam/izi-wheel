@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api, apiClient } from '../lib/api';
@@ -27,19 +27,37 @@ declare global {
   }
 }
 
-// Define types
+// Define improved types
+interface FormSchema {
+  fields?: FormField[];
+  [key: string]: any;
+}
+
+interface WheelSlot {
+  id: string;
+  label: string;
+  color: string;
+  weight: number;
+  isWinning: boolean;
+  position?: number;
+}
+
+interface Prize {
+  pin: string;
+  qrLink: string;
+}
+
+interface PlayData {
+  id: string;
+  result: 'WIN' | 'LOSE';
+  prize?: Prize;
+}
+
 type WheelData = {
   id: string;
   name: string;
-  formSchema: any;
-  slots: {
-    id: string;
-    label: string;
-    color: string;
-    weight: number;
-    isWinning: boolean;
-    position?: number;
-  }[];
+  formSchema: FormSchema | null;
+  slots: WheelSlot[];
   socialNetwork?: string;
   redirectUrl?: string;
   redirectText?: string;
@@ -52,18 +70,138 @@ type WheelData = {
 };
 
 type PlayResponse = {
-  play: {
-    id: string;
-    result: 'WIN' | 'LOSE';
-    prize?: {
-      pin: string;
-      qrLink: string;
-    };
-  };
+  play: PlayData;
   slot: {
+    id: string;
     label: string;
   };
 };
+
+// State management with useReducer
+type UserFlowState = 'initial' | 'completedSocial' | 'spinning' | 'won' | 'claimed';
+type CurrentStep = 'initial' | 'social' | 'spinWheel' | 'showPrize' | 'claimForm';
+
+interface AppState {
+  formData: Record<string, string>;
+  mustSpin: boolean;
+  prizeIndex: number;
+  showResultModal: boolean;
+  spinResult: PlayResponse | null;
+  formFields: FormField[];
+  wheelConfig: WheelConfig;
+  showConfetti: boolean;
+  showSocialRedirect: boolean;
+  hasCompletedSocialAction: boolean;
+  isLoading: boolean;
+  showClaimForm: boolean;
+  currentStep: CurrentStep;
+  claimFormData: Record<string, string>;
+  showThankyouMessage: boolean;
+  userFlowState: UserFlowState;
+  showRulesModal: boolean;
+}
+
+type AppAction =
+  | { type: 'SET_FORM_DATA'; payload: Record<string, string> }
+  | { type: 'SET_MUST_SPIN'; payload: boolean }
+  | { type: 'SET_PRIZE_INDEX'; payload: number }
+  | { type: 'SET_SHOW_RESULT_MODAL'; payload: boolean }
+  | { type: 'SET_SPIN_RESULT'; payload: PlayResponse | null }
+  | { type: 'SET_FORM_FIELDS'; payload: FormField[] }
+  | { type: 'SET_WHEEL_CONFIG'; payload: WheelConfig }
+  | { type: 'SET_SHOW_CONFETTI'; payload: boolean }
+  | { type: 'SET_SHOW_SOCIAL_REDIRECT'; payload: boolean }
+  | { type: 'SET_HAS_COMPLETED_SOCIAL_ACTION'; payload: boolean }
+  | { type: 'SET_IS_LOADING'; payload: boolean }
+  | { type: 'SET_SHOW_CLAIM_FORM'; payload: boolean }
+  | { type: 'SET_CURRENT_STEP'; payload: CurrentStep }
+  | { type: 'SET_CLAIM_FORM_DATA'; payload: Record<string, string> }
+  | { type: 'SET_SHOW_THANKYOU_MESSAGE'; payload: boolean }
+  | { type: 'SET_USER_FLOW_STATE'; payload: UserFlowState }
+  | { type: 'SET_SHOW_RULES_MODAL'; payload: boolean }
+  | { type: 'RESET_WHEEL_STATE' };
+
+const initialState: AppState = {
+  formData: {},
+  mustSpin: false,
+  prizeIndex: 0,
+  showResultModal: false,
+  spinResult: null,
+  formFields: [],
+  wheelConfig: {
+    segments: [],
+    spinDurationMin: 5,
+    spinDurationMax: 8,
+    sounds: {
+      tick: true,
+      win: true,
+    },
+    hapticFeedback: true,
+  },
+  showConfetti: false,
+  showSocialRedirect: false,
+  hasCompletedSocialAction: false,
+  isLoading: false,
+  showClaimForm: false,
+  currentStep: 'initial',
+  claimFormData: {},
+  showThankyouMessage: false,
+  userFlowState: 'initial',
+  showRulesModal: false,
+};
+
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case 'SET_FORM_DATA':
+      return { ...state, formData: action.payload };
+    case 'SET_MUST_SPIN':
+      return { ...state, mustSpin: action.payload };
+    case 'SET_PRIZE_INDEX':
+      return { ...state, prizeIndex: action.payload };
+    case 'SET_SHOW_RESULT_MODAL':
+      return { ...state, showResultModal: action.payload };
+    case 'SET_SPIN_RESULT':
+      return { ...state, spinResult: action.payload };
+    case 'SET_FORM_FIELDS':
+      return { ...state, formFields: action.payload };
+    case 'SET_WHEEL_CONFIG':
+      return { ...state, wheelConfig: action.payload };
+    case 'SET_SHOW_CONFETTI':
+      return { ...state, showConfetti: action.payload };
+    case 'SET_SHOW_SOCIAL_REDIRECT':
+      return { ...state, showSocialRedirect: action.payload };
+    case 'SET_HAS_COMPLETED_SOCIAL_ACTION':
+      return { ...state, hasCompletedSocialAction: action.payload };
+    case 'SET_IS_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_SHOW_CLAIM_FORM':
+      return { ...state, showClaimForm: action.payload };
+    case 'SET_CURRENT_STEP':
+      return { ...state, currentStep: action.payload };
+    case 'SET_CLAIM_FORM_DATA':
+      return { ...state, claimFormData: action.payload };
+    case 'SET_SHOW_THANKYOU_MESSAGE':
+      return { ...state, showThankyouMessage: action.payload };
+    case 'SET_USER_FLOW_STATE':
+      return { ...state, userFlowState: action.payload };
+    case 'SET_SHOW_RULES_MODAL':
+      return { ...state, showRulesModal: action.payload };
+    case 'RESET_WHEEL_STATE':
+      return {
+        ...state,
+        mustSpin: false,
+        spinResult: null,
+        showConfetti: false,
+        showResultModal: false,
+        showClaimForm: false,
+        showThankyouMessage: false,
+        currentStep: 'spinWheel',
+        userFlowState: 'completedSocial',
+      };
+    default:
+      return state;
+  }
+}
 
 // Mapping input types to icons
 const inputIcons: Record<string, React.ReactNode> = {
@@ -300,8 +438,6 @@ const SocialRedirectDialog = ({
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent 
         className="sm:max-w-md"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e: any) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold">{getTitle()}</DialogTitle>
@@ -413,37 +549,7 @@ const PlayWheel = () => {
   const effectiveParams = getEffectiveParams();
   console.log('[DEBUG] Effective params:', effectiveParams);
 
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [mustSpin, setMustSpin] = useState(false);
-  const [prizeIndex, setPrizeIndex] = useState(0);
-  const [showResultModal, setShowResultModal] = useState(false);
-  const [wheelColors, setWheelColors] = useState<string[]>([]);
-  const [spinResult, setSpinResult] = useState<PlayResponse | null>(null);
-  const [formFields, setFormFields] = useState<FormField[]>([]);
-  const [wheelConfig, setWheelConfig] = useState<WheelConfig>({
-    segments: [],
-    spinDurationMin: 5, // Increased from 3 to 5 seconds
-    spinDurationMax: 8, // Increased from 6 to 8 seconds  
-    sounds: {
-      tick: true,
-      win: true,
-    },
-    hapticFeedback: true,
-  });
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [showSocialRedirect, setShowSocialRedirect] = useState(false);
-  const [hasCompletedSocialAction, setHasCompletedSocialAction] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showClaimForm, setShowClaimForm] = useState(false);
-  const [currentStep, setCurrentStep] = useState<
-    'initial' | 'social' | 'spinWheel' | 'showPrize' | 'claimForm'
-  >('initial');
-  const [claimFormData, setClaimFormData] = useState<Record<string, string>>({});
-  const [showThankyouMessage, setShowThankyouMessage] = useState(false);
-
-  const [userFlowState, setUserFlowState] = useState<
-    'initial' | 'completedSocial' | 'spinning' | 'won' | 'claimed'
-  >('initial'); // Changed from 'completedSocial' to 'initial'
+  const [state, dispatch] = useReducer(appReducer, initialState);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
@@ -580,14 +686,14 @@ const PlayWheel = () => {
           isWinning: slot.isWinning,
         }));
 
-        setWheelConfig({
-          ...wheelConfig,
+        dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
+          ...state.wheelConfig,
           segments,
           colors: {
             primaryGradient: BRAND.primaryGradient,
             secondaryGradient: BRAND.secondaryGradient,
           },
-        });
+        } });
       } else {
         // Ensure slots have position values with STABLE sorting
         const sortedSlots = [...wheelData.slots].sort(
@@ -620,14 +726,14 @@ const PlayWheel = () => {
           isWinning: slot.isWinning,
         }));
 
-        setWheelConfig({
-          ...wheelConfig,
+        dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
+          ...state.wheelConfig,
           segments,
           colors: {
             primaryGradient: BRAND.primaryGradient,
             secondaryGradient: BRAND.secondaryGradient,
           },
-        });
+        } });
 
         // setDebugInfo(`Loaded ${segments.length} wheel segments successfully`);
       }
@@ -648,34 +754,34 @@ const PlayWheel = () => {
           fields.push(...defaultFields);
         }
       }
-      setFormFields(fields);
+      dispatch({ type: 'SET_FORM_FIELDS', payload: fields });
 
       // Initialize state based on social network requirement
       if (wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
         console.log('[DEBUG] Social network required, setting state to initial');
-        setCurrentStep('initial');
-        setUserFlowState('initial');
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'initial' });
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'initial' });
       } else {
         console.log('[DEBUG] No social network required, setting state to spinWheel');
-        setCurrentStep('spinWheel');
-        setUserFlowState('completedSocial');
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       }
     }
-  }, [wheelData]);
+  }, [wheelData, state.wheelConfig]);
 
   // Modify the handleStartProcess function
   const handleStartProcess = () => {
     // When button is clicked first time and social network is configured,
     // show the social popup immediately
-    if (currentStep === 'initial') {
+    if (state.currentStep === 'initial') {
       if (wheelData?.socialNetwork && wheelData?.socialNetwork !== 'NONE') {
         // Show social popup immediately on first button click
-        setCurrentStep('social');
-        setShowSocialRedirect(true);
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
+        dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
       } else {
         // If no social network, proceed directly to allow spinning
-        setCurrentStep('spinWheel');
-        setUserFlowState('completedSocial');
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
 
         // Proceed with spinning
         handleSpinClick();
@@ -685,7 +791,7 @@ const PlayWheel = () => {
 
     // If we've shown the social prompt and user has completed the action,
     // now we can actually spin the wheel
-    if (currentStep === 'spinWheel' && userFlowState === 'completedSocial') {
+    if (state.currentStep === 'spinWheel' && state.userFlowState === 'completedSocial') {
       // Proceed with spinning
       handleSpinClick();
     }
@@ -693,10 +799,10 @@ const PlayWheel = () => {
 
   // Handle social redirect close
   const handleSocialRedirectClose = () => {
-    setShowSocialRedirect(false);
-    setHasCompletedSocialAction(true);
-    setUserFlowState('completedSocial');
-    setCurrentStep('spinWheel');
+    dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: false });
+    dispatch({ type: 'SET_HAS_COMPLETED_SOCIAL_ACTION', payload: true });
+    dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+    dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
   };
 
   // Handle actual wheel spin after social action
@@ -707,7 +813,7 @@ const PlayWheel = () => {
       timestamp: new Date().toISOString(),
     };
 
-    setFormData(initialLead);
+    dispatch({ type: 'SET_FORM_DATA', payload: initialLead });
     spinWheel();
   };
 
@@ -715,39 +821,39 @@ const PlayWheel = () => {
   const handleSpinClick = () => {
     // Check if we need to show social popup first
     if (
-      currentStep === 'initial' &&
+      state.currentStep === 'initial' &&
       wheelData?.socialNetwork &&
       wheelData?.socialNetwork !== 'NONE'
     ) {
       // Show social popup when user first tries to spin
-      setShowSocialRedirect(true);
-      setCurrentStep('social');
+      dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
     } else if (
-      currentStep === 'spinWheel' &&
-      userFlowState === 'initial' &&
+      state.currentStep === 'spinWheel' &&
+      state.userFlowState === 'initial' &&
       wheelData?.socialNetwork &&
       wheelData?.socialNetwork !== 'NONE'
     ) {
       // Show social popup when user tries to spin and social action is required
-      setShowSocialRedirect(true);
-      setCurrentStep('social');
+      dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
     } else if (
-      currentStep === 'spinWheel' &&
-      (userFlowState === 'completedSocial' ||
+      state.currentStep === 'spinWheel' &&
+      (state.userFlowState === 'completedSocial' ||
         !wheelData?.socialNetwork ||
         wheelData?.socialNetwork === 'NONE')
     ) {
       // Only allow spin if social action is completed or not required
-      setUserFlowState('spinning');
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'spinning' });
       handleSpinWithoutSocial();
     } else if (
-      currentStep === 'initial' &&
+      state.currentStep === 'initial' &&
       (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE')
     ) {
       // If no social required, go directly to spin
-      setUserFlowState('completedSocial');
-      setCurrentStep('spinWheel');
-      setUserFlowState('spinning');
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'spinning' });
       handleSpinWithoutSocial();
     }
   };
@@ -760,7 +866,7 @@ const PlayWheel = () => {
         effectiveParams.companyId || '',
         effectiveParams.wheelId || '',
         {
-          lead: formData,
+          lead: state.formData,
         }
       );
       return response.data;
@@ -768,25 +874,25 @@ const PlayWheel = () => {
     onSuccess: (data) => {
       // wheelConfig.segments is the source of truth for visual indexing.
       // It's derived from wheelData.slots, sorted by position.
-      if (!wheelConfig.segments || wheelConfig.segments.length === 0) {
+      if (!state.wheelConfig.segments || state.wheelConfig.segments.length === 0) {
         toast({
           title: 'Erreur Roue',
           description: 'Configuration de la roue invalide.',
           variant: 'destructive',
         });
         // Potentially reset state or disable further interaction
-        setUserFlowState('completedSocial'); // Reset flow
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' }); // Reset flow
         return;
       }
       if (!data || !data.slot || !data.slot.id) {
         // Try to use the first slot as a fallback if we have wheel data
-        if (wheelConfig.segments && wheelConfig.segments.length > 0) {
+        if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
           // Create a modified data object with the first segment as the slot
           const fallbackData = {
             ...data,
             slot: {
-              id: wheelConfig.segments[0].id,
-              label: wheelConfig.segments[0].label,
+              id: state.wheelConfig.segments[0].id,
+              label: state.wheelConfig.segments[0].label,
             },
           };
 
@@ -801,7 +907,7 @@ const PlayWheel = () => {
           description: 'Réponse du serveur invalide.',
           variant: 'destructive',
         });
-        setUserFlowState('completedSocial'); // Reset flow
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' }); // Reset flow
         return;
       }
 
@@ -848,220 +954,182 @@ const PlayWheel = () => {
         });
       }
 
-      setCurrentStep('spinWheel');
-      setUserFlowState('completedSocial');
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
     },
   });
 
   // Helper function to handle spin result data
   const handleSpinResultWithData = (data: any) => {
-    // Logs from previous step (can be kept for debugging if needed)
     console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
-    console.log('🎯 PlayWheel: Frontend wheelConfig.segments:', wheelConfig.segments.map(s => ({id: s.id, label: s.label})));
 
-    // Find the index of the winning slot ID within the wheelConfig.segments array
-    let prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
-
-    if (prizeIndexFound === -1) {
-      console.error('🚨 CRITICAL: Winning slot ID from backend NOT FOUND in frontend wheelConfig.segments!', {
-        backendSlotId: data.slot.id,
-        backendSlotLabel: data.slot.label,
-        frontendSegmentsForVisualWheel: wheelConfig.segments.map(s => ({id: s.id, label: s.label})),
-      });
-      
-      // Try fallback calculation based on label matching
-      prizeIndexFound = wheelConfig.segments.findIndex(segment => segment.label === data.slot.label);
-      
-      if (prizeIndexFound === -1) {
-        console.log('⚠️ Prize index not found, using fallback index 0');
-        console.log('🔍 Detailed mismatch analysis:', {
-          backendSlotId: data.slot.id,
-          backendSlotLabel: data.slot.label,
-          frontendSegments: wheelConfig.segments.map((s, i) => `${i}: ${s.id} (${s.label})`),
-          possibleMatch: wheelConfig.segments.find(s => s.label === data.slot.label)
-        });
-        
-        toast({
-          title: 'Affichage désynchronisé',
-          description:
-            "Le prix gagné est correct (voir popup), mais l'affichage de la roue est désynchronisé. Contactez le support si cela persiste.",
-          variant: 'default',
-          duration: 15000, // Longer duration for this important warning
-        });
-
-        // Fallback: The wheel will visually spin to segment 0.
-        // The popup (from setSpinResult(data)) will show the CORRECT prize.
-        setPrizeIndex(0);
+    // 🔥 CRITICAL FIX: Use backend's prizeIndex directly instead of calculating our own
+    // The backend already calculated the correct index using the same stable sorting logic
+    let prizeIndexToUse = 0; // Default fallback
+    
+    if (data.prizeIndex !== undefined && data.prizeIndex !== null && data.prizeIndex >= 0) {
+      // Backend provided the correct index - use it directly
+      prizeIndexToUse = data.prizeIndex;
+      console.log('✅ Using backend prizeIndex:', prizeIndexToUse);
+    } else if (data.slot && data.slot.id) {
+      // Fallback: try to find by slot ID (old logic)
+      const foundIndex = state.wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
+      if (foundIndex !== -1) {
+        prizeIndexToUse = foundIndex;
+        console.log('✅ Found prizeIndex via slot ID:', prizeIndexToUse);
       } else {
-        console.log('✅ Prize index found via fallback calculation:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
-        setPrizeIndex(prizeIndexFound);
+        // Last resort: try to find by label
+        const labelIndex = state.wheelConfig.segments.findIndex(segment => segment.label === data.slot.label);
+        if (labelIndex !== -1) {
+          prizeIndexToUse = labelIndex;
+          console.log('✅ Found prizeIndex via label:', prizeIndexToUse);
+        } else {
+          console.log('⚠️ Could not find matching segment, using fallback index 0');
+          prizeIndexToUse = 0;
+        }
       }
-    } else {
-      console.log('✅ Prize index found:', prizeIndexFound, 'for segment:', wheelConfig.segments[prizeIndexFound]);
-      setPrizeIndex(prizeIndexFound);
     }
 
-    console.log('🎯 Setting spin result and triggering wheel animation');
-    console.log('🎯 About to set mustSpin to true - current state:', mustSpin);
-    setSpinResult(data); // This determines the popup content and is based on direct backend data.
-    setMustSpin(true); // Trigger the visual spin
-    console.log('🎯 Just set mustSpin to true');
+    console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
+    dispatch({ type: 'SET_SPIN_RESULT', payload: data });
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
+    dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
-    // ✅ IMMEDIATE FALLBACK: Trigger result after expected wheel duration
-    // This ensures popup appears even if wheel callback fails
-    const immediateFallback = setTimeout(() => {
-      console.log('⚡ IMMEDIATE FALLBACK: Triggering result after expected wheel duration');
-      setMustSpin(false);
-      setShowResultModal(true);
+    // 🔥 SIMPLIFIED TIMEOUT MECHANISM: Only one timeout that triggers the result
+    // Clear any existing timeouts first
+    if (window.fallbackTimeout) {
+      clearTimeout(window.fallbackTimeout);
+      window.fallbackTimeout = null;
+    }
+    if (window.immediateFallback) {
+      clearTimeout(window.immediateFallback);
+      window.immediateFallback = null;
+    }
+
+    // Set a single, reliable timeout that will trigger the result
+    // This acts as both the expected completion time and the fallback
+    const completionTimeout = setTimeout(() => {
+      console.log('⚡ Timeout triggered - showing result');
+      dispatch({ type: 'SET_MUST_SPIN', payload: false });
+      dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
       
       if (data?.play.result === 'WIN') {
-        setShowConfetti(true);
-        setUserFlowState('won');
-        setCurrentStep('showPrize');
+        dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'won' });
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
       } else {
-        setCurrentStep('spinWheel');
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       }
-    }, 11000); // 8 seconds max spin + 2.5 seconds delay + 0.5 seconds buffer
+    }, 8000); // 8 seconds should be enough for most wheel animations
 
-    // ✅ ADDED: Safety fallback timeout in case wheel callback fails
-    // This ensures the popup appears even if the wheel component doesn't call onSpin
-    const fallbackTimeout = setTimeout(() => {
-      console.log('⚠️ FALLBACK: Wheel callback didn\'t trigger in time, showing result manually');
-      console.log('⚠️ FALLBACK: Current mustSpin state:', mustSpin);
-      console.log('⚠️ FALLBACK: Current showResultModal state:', showResultModal);
-      console.log('⚠️ FALLBACK: Current spinResult:', spinResult);
-      
-      if (mustSpin) { // Only trigger if wheel is still spinning
-        setMustSpin(false);
-        setShowResultModal(true);
-        
-        if (data?.play.result === 'WIN') {
-          setShowConfetti(true);
-          setUserFlowState('won');
-          setCurrentStep('showPrize');
-        } else {
-          setCurrentStep('spinWheel');
-        }
-        
-        console.log('⚠️ FALLBACK: Triggered result modal via fallback');
-      } else {
-        console.log('⚠️ FALLBACK: Wheel already stopped, not triggering fallback');
-      }
-    }, 15000); // Extended fallback for safety
-
-    // Store the timeout references to clear them if wheel callback works properly
-    window.fallbackTimeout = fallbackTimeout;
-    window.immediateFallback = immediateFallback;
+    // Store the timeout reference
+    window.fallbackTimeout = completionTimeout;
   };
 
   // Debug effect to monitor mustSpin state changes
   useEffect(() => {
-    console.log('🎯 mustSpin state changed to:', mustSpin);
-    if (mustSpin) {
-      console.log('🎯 Wheel should now be spinning...');
-    } else {
-      console.log('🎯 Wheel should now be stopped');
-    }
-  }, [mustSpin]);
+    console.log('🎯 mustSpin state changed to:', state.mustSpin);
+  }, [state.mustSpin]);
 
   // Debug effect to monitor showResultModal state changes
   useEffect(() => {
-    console.log('🎯 showResultModal state changed to:', showResultModal);
-    if (showResultModal) {
-      console.log('🎯 Result modal should now be visible');
-    } else {
-      console.log('🎯 Result modal should now be hidden');
-    }
-  }, [showResultModal]);
+    console.log('🎯 showResultModal state changed to:', state.showResultModal);
+  }, [state.showResultModal]);
+
+  // Cleanup effect to clear any remaining timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear any remaining timeouts on unmount
+      if (window.fallbackTimeout) {
+        clearTimeout(window.fallbackTimeout);
+        window.fallbackTimeout = null;
+      }
+      if (window.immediateFallback) {
+        clearTimeout(window.immediateFallback);
+        window.immediateFallback = null;
+      }
+    };
+  }, []);
 
   // Handle wheel finishing spin - called by wheel component when animation completes
   const handleWheelFinishedSpin = () => {
-    console.log('✅ CALLBACK TRIGGERED: Wheel finished spinning, showing result');
+    console.log('✅ WHEEL CALLBACK: Wheel finished spinning');
 
-    // Clear both fallback timeouts since the proper callback was triggered
+    // 🔥 CRITICAL FIX: Clear the fallback timeout since the wheel callback worked properly
     if (window.fallbackTimeout) {
       clearTimeout(window.fallbackTimeout);
       window.fallbackTimeout = null;
-      console.log('✅ Cleared main fallback timeout - wheel callback worked properly');
-    }
-    
-    if (window.immediateFallback) {
-      clearTimeout(window.immediateFallback);
-      window.immediateFallback = null;
-      console.log('✅ Cleared immediate fallback timeout - wheel callback worked properly');
+      console.log('✅ Cleared fallback timeout - wheel callback worked properly');
     }
 
-    // Reset the spinning state
-    setMustSpin(false);
+    // Reset the spinning state immediately
+    dispatch({ type: 'SET_MUST_SPIN', payload: false });
 
     // Show result modal immediately since wheel has finished spinning
-    setShowResultModal(true);
-    console.log('✅ Result modal should now be visible');
+    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
+    console.log('✅ Result modal triggered by wheel callback');
 
-    if (spinResult?.play.result === 'WIN') {
+    if (state.spinResult?.play.result === 'WIN') {
       // Reset retry counter for QR code loading
       retryCount.current = 0;
 
       // Show confetti for wins
-      setShowConfetti(true);
-      setUserFlowState('won');
+      dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'won' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
+      console.log('✅ Set up winning result flow');
 
       // Stop confetti after 8 seconds
       setTimeout(() => {
-        // Only hide confetti if we're still in the same flow
-        if (userFlowState === 'won') {
-          setShowConfetti(false);
+        if (state.userFlowState === 'won') {
+          dispatch({ type: 'SET_SHOW_CONFETTI', payload: false });
         }
       }, 8000);
-
-      // Set next step to show prize
-      setCurrentStep('showPrize');
-      console.log('✅ Set current step to showPrize for winning result');
     } else {
-      // For losing results, just reset to initial
-      setCurrentStep('spinWheel');
-      console.log('✅ Set current step to spinWheel for losing result');
+      // For losing results, reset to spin state
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+      console.log('✅ Set up losing result flow');
     }
   };
 
   // Handle result modal close and transition to next flow step
   const handleResultModalClose = () => {
     // Stop the confetti immediately when closing the modal
-    setShowConfetti(false);
-    setShowResultModal(false);
+    dispatch({ type: 'SET_SHOW_CONFETTI', payload: false });
+    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false });
 
     // If user won and is in the showPrize step, show the claim form
-    if (spinResult?.play.result === 'WIN' && currentStep === 'showPrize') {
-      setCurrentStep('claimForm');
-      setShowClaimForm(true);
+    if (state.spinResult?.play.result === 'WIN' && state.currentStep === 'showPrize') {
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'claimForm' });
+      dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: true });
     } else {
       // Otherwise reset to initial state
 
-      setCurrentStep('spinWheel');
-      setUserFlowState('completedSocial');
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
     }
   };
 
   // Handle claim form submission
   const handleClaimFormSubmit = async (data: PlayerFormData) => {
     // Stop confetti immediately
-    setShowConfetti(false);
+    dispatch({ type: 'SET_SHOW_CONFETTI', payload: false });
 
     // Store the claim data
-    setClaimFormData({
+    dispatch({ type: 'SET_CLAIM_FORM_DATA', payload: {
       name: data.name,
       email: data.email,
       phone: data.phone || '',
-      playId: spinResult?.play.id || '',
-      prize: spinResult?.slot.label || '',
+      playId: state.spinResult?.play.id || '',
+      prize: state.spinResult?.slot.label || '',
       timestamp: new Date().toISOString(),
-    });
+    } });
 
     // Call API to claim the prize and send email
-    if (spinResult?.play.id) {
+    if (state.spinResult?.play.id) {
       try {
         const apiBaseUrl = import.meta.env.VITE_API_URL || 'https://api.izikado.fr';
-        const response = await fetch(`${apiBaseUrl}/public/plays/${spinResult.play.id}/claim`, {
+        const response = await fetch(`${apiBaseUrl}/public/plays/${state.spinResult.play.id}/claim`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1077,9 +1145,9 @@ const PlayWheel = () => {
           const result = await response.json();
 
           // Set user flow to claimed
-          setUserFlowState('claimed');
-          setShowClaimForm(false);
-          setShowThankyouMessage(true);
+          dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'claimed' });
+          dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: false });
+          dispatch({ type: 'SET_SHOW_THANKYOU_MESSAGE', payload: true });
 
           toast({
             title: 'Prix réclamé avec succès !',
@@ -1106,14 +1174,14 @@ const PlayWheel = () => {
 
       // Show thank you message for 3 seconds then reset
       setTimeout(() => {
-        setShowResultModal(false);
-        setShowThankyouMessage(false);
-        setCurrentStep('spinWheel');
+        dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false });
+        dispatch({ type: 'SET_SHOW_THANKYOU_MESSAGE', payload: false });
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
         // Reset states to allow playing again
-        setMustSpin(false);
-        setSpinResult(null);
-        setShowConfetti(false);
-        setUserFlowState('completedSocial');
+        dispatch({ type: 'SET_MUST_SPIN', payload: false });
+        dispatch({ type: 'SET_SPIN_RESULT', payload: null });
+        dispatch({ type: 'SET_SHOW_CONFETTI', payload: false });
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
       }, 3000);
     }
   };
@@ -1121,13 +1189,13 @@ const PlayWheel = () => {
   // Get QR code URL with cache busting
   const getQRCodeUrl = () => {
     // Safety check - if spinResult or prize doesn't exist
-    if (!spinResult || !spinResult.play || !spinResult.play.prize) {
+    if (!state.spinResult || !state.spinResult.play || !state.spinResult.play.prize) {
       // Return a fallback "no QR" image
       return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmMWYxZjEiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgYWxpZ25tZW50LWJhc2VsaW5lPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIHNhbnMtc2VyaWYiIGZpbGw9IiM5OTkiPlBhcyBkZSBRUjwvdGV4dD48L3N2Zz4=';
     }
 
     // We know prize is defined at this point
-    const prize = spinResult.play.prize;
+    const prize = state.spinResult.play.prize;
 
     // If we have a qrLink from the API, use it directly with cache busting
     if (prize.qrLink) {
@@ -1155,7 +1223,7 @@ const PlayWheel = () => {
     // If we have a PIN but no QR link, create a fallback QR code
     if (prize.pin) {
       // Use Google Charts API for QR code generation
-      const text = `https://roue.izikado.fr/redeem/${spinResult.play.id}`;
+      const text = `https://roue.izikado.fr/redeem/${state.spinResult.play.id}`;
       return `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(text)}&choe=UTF-8`;
     }
 
@@ -1167,7 +1235,7 @@ const PlayWheel = () => {
   // Handle QR code image download
   const handleDownloadQR = () => {
     // Safety check for valid spinResult
-    if (!spinResult || !spinResult.play || !spinResult.play.prize) {
+    if (!state.spinResult || !state.spinResult.play || !state.spinResult.play.prize) {
       toast({
         title: 'Erreur',
         description: 'Impossible de télécharger le code QR. Données de prix manquantes.',
@@ -1179,13 +1247,13 @@ const PlayWheel = () => {
     let qrUrl;
 
     // If there's a QR link in the prize, use it
-    if (spinResult.play.prize.qrLink) {
+    if (state.spinResult.play.prize.qrLink) {
       qrUrl = getQRCodeUrl();
     }
     // Otherwise, if there's a PIN, generate a QR code
-    else if (spinResult.play.prize.pin) {
-      const pin = spinResult.play.prize.pin;
-      const prizeInfo = `Prize: ${spinResult.slot.label}, PIN: ${pin}`;
+    else if (state.spinResult.play.prize.pin) {
+      const pin = state.spinResult.play.prize.pin;
+      const prizeInfo = `Prize: ${state.spinResult.slot.label}, PIN: ${pin}`;
       const encodedPrizeInfo = encodeURIComponent(prizeInfo);
 
       // Use Google Charts API for QR code generation
@@ -1203,7 +1271,7 @@ const PlayWheel = () => {
       // Create a temporary link element
       const link = document.createElement('a');
       link.href = qrUrl;
-      link.download = `prix-${spinResult.slot.label.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.download = `prix-${state.spinResult.slot.label.replace(/\s+/g, '-').toLowerCase()}.png`;
 
       // Append to the body, click, and remove
       document.body.appendChild(link);
@@ -1233,7 +1301,7 @@ const PlayWheel = () => {
   // Update the fixWheel function to call the API
   const fixWheel = async () => {
     try {
-      setIsLoading(true);
+      dispatch({ type: 'SET_IS_LOADING', payload: true });
 
       try {
         // Try to fix wheel via API
@@ -1263,8 +1331,8 @@ const PlayWheel = () => {
         }
 
         // Update wheel config
-        setWheelConfig({
-          ...wheelConfig,
+        dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
+          ...state.wheelConfig,
           segments: slots.map((slot) => ({
             label: slot.label,
             color: slot.color,
@@ -1274,7 +1342,7 @@ const PlayWheel = () => {
             primaryGradient: BRAND.primaryGradient,
             secondaryGradient: BRAND.secondaryGradient,
           },
-        });
+        } });
       }
 
       // Show success message
@@ -1284,14 +1352,14 @@ const PlayWheel = () => {
         variant: 'default',
       });
 
-      setIsLoading(false);
+      dispatch({ type: 'SET_IS_LOADING', payload: false });
     } catch (error) {
       toast({
         title: 'Erreur',
         description: 'Impossible de corriger la roue.',
         variant: 'destructive',
       });
-      setIsLoading(false);
+      dispatch({ type: 'SET_IS_LOADING', payload: false });
     }
   };
 
@@ -1326,12 +1394,12 @@ const PlayWheel = () => {
     if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
       console.log('[DEBUG] Setting userFlowState to initial (social required)');
       // Don't show social popup immediately - let user click spin first
-      setUserFlowState('initial');
-      setCurrentStep('spinWheel'); // Show the wheel, but require social action before spinning
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'initial' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' }); // Show the wheel, but require social action before spinning
     } else if (wheelData) {
       console.log('[DEBUG] Setting userFlowState to completedSocial (no social required)');
-      setUserFlowState('completedSocial');
-      setCurrentStep('spinWheel'); // Show the wheel and allow spinning
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' }); // Show the wheel and allow spinning
     }
   }, [wheelData]);
 
@@ -1394,8 +1462,8 @@ const PlayWheel = () => {
   console.log('[DEBUG] Rendering main wheel component with data:', {
     hasWheelData: !!wheelData,
     slotsCount: wheelData?.slots?.length || 0,
-    currentStep,
-    userFlowState,
+    currentStep: state.currentStep,
+    userFlowState: state.userFlowState,
     socialNetwork: wheelData?.socialNetwork,
     bannerImage: wheelData?.bannerImage,
     backgroundImage: wheelData?.backgroundImage,
@@ -1498,7 +1566,7 @@ const PlayWheel = () => {
 
       {/* Social redirect dialog */}
       <SocialRedirectDialog
-        open={showSocialRedirect}
+        open={state.showSocialRedirect}
         onClose={handleSocialRedirectClose}
         network={wheelData?.socialNetwork}
         redirectUrl={wheelData?.redirectUrl}
@@ -1506,7 +1574,7 @@ const PlayWheel = () => {
       />
 
       {/* Claim Form Dialog */}
-      <Dialog open={showClaimForm} onOpenChange={setShowClaimForm}>
+      <Dialog open={state.showClaimForm} onOpenChange={() => dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: false })}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl font-bold text-center">
@@ -1518,7 +1586,7 @@ const PlayWheel = () => {
           </DialogHeader>
 
           <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
-            {formFields.map((field) => (
+            {state.formFields.map((field) => (
               <div key={field.name} className="space-y-1 sm:space-y-2">
                 <label className="text-sm font-medium text-gray-700">
                   {field.label} {field.required && <span className="text-red-500">*</span>}
@@ -1527,17 +1595,17 @@ const PlayWheel = () => {
                   {inputIcons[field.type]}
                   <input
                     type={field.type}
-                    value={claimFormData[field.name] || ''}
+                    value={state.claimFormData[field.name] || ''}
                     onChange={(e) => {
                       let value = e.target.value;
                       // For phone field, only allow digits and limit to 10 characters
                       if (field.name === 'phone') {
                         value = value.replace(/\D/g, '').slice(0, 10);
                       }
-                      setClaimFormData({
-                        ...claimFormData,
+                      dispatch({ type: 'SET_CLAIM_FORM_DATA', payload: {
+                        ...state.claimFormData,
                         [field.name]: value,
-                      });
+                      } });
                     }}
                     className="w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
                     placeholder={`Votre ${field.label.toLowerCase()}`}
@@ -1558,56 +1626,44 @@ const PlayWheel = () => {
               onClick={() => {
                 // Convert claimFormData to PlayerFormData format
                 const playerData: PlayerFormData = {
-                  name: claimFormData.name || '',
-                  email: claimFormData.email || '',
-                  phone: claimFormData.phone,
+                  name: state.claimFormData.name || '',
+                  email: state.claimFormData.email || '',
+                  phone: state.claimFormData.phone,
                 };
                 handleClaimFormSubmit(playerData);
               }}
-              disabled={isLoading}
+              disabled={state.isLoading}
               className="flex-1 text-sm sm:text-base"
             >
-              {isLoading ? 'Récupération en cours...' : 'Récupérer mon prix'}
+              {state.isLoading ? 'Récupération en cours...' : 'Récupérer mon prix'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Prize Result Modal - Mobile responsive */}
-      <Dialog open={showResultModal} onOpenChange={(open) => {
+      <Dialog open={state.showResultModal} onOpenChange={(open) => {
         // Only allow closing if it's a losing result
-        if (!open && spinResult?.play.result === 'WIN') {
+        if (!open && state.spinResult?.play.result === 'WIN') {
           // Prevent closing for winning results - user must claim prize
           return;
         }
-        setShowResultModal(open);
+        dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: open });
       }}>
         <DialogContent 
           className="w-[calc(100vw-2rem)] max-w-lg mx-auto"
-          onInteractOutside={(e) => {
-            // Prevent closing by clicking outside for winning results
-            if (spinResult?.play.result === 'WIN') {
-              e.preventDefault();
-            }
-          }}
-          onEscapeKeyDown={(e) => {
-            // Prevent closing with Escape key for winning results
-            if (spinResult?.play.result === 'WIN') {
-              e.preventDefault();
-            }
-          }}
         >
           <DialogHeader>
             <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
-              {spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
+              {state.spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-4 sm:py-6 text-center space-y-3 sm:space-y-4">
-            {spinResult?.play.result === 'WIN' ? (
+            {state.spinResult?.play.result === 'WIN' ? (
               <>
                 <p className="text-base sm:text-lg text-gray-700 mb-4">
-                  Vous avez gagné : <strong>{spinResult.slot.label}</strong>
+                  Vous avez gagné : <strong>{state.spinResult.slot.label}</strong>
                 </p>
                 <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
                   <p className="text-sm sm:text-base text-blue-800 font-medium">
@@ -1623,11 +1679,11 @@ const PlayWheel = () => {
           </div>
 
           <div className="flex gap-2 sm:gap-3 justify-center">
-            {spinResult?.play.result === 'WIN' ? (
+            {state.spinResult?.play.result === 'WIN' ? (
               <Button
                 onClick={() => {
-                  setShowResultModal(false);
-                  setShowClaimForm(true);
+                  dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false });
+                  dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: true });
                 }}
                 className="flex-2 text-sm sm:text-base"
               >
@@ -1635,7 +1691,7 @@ const PlayWheel = () => {
               </Button>
             ) : (
               <Button
-                onClick={() => setShowResultModal(false)}
+                onClick={() => dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false })}
                 className="flex-2 text-sm sm:text-base"
               >
                 Fermer
@@ -1646,7 +1702,7 @@ const PlayWheel = () => {
       </Dialog>
 
       {/* Thank You Modal - Mobile responsive */}
-      <Dialog open={showThankyouMessage} onOpenChange={setShowThankyouMessage}>
+      <Dialog open={state.showThankyouMessage} onOpenChange={() => dispatch({ type: 'SET_SHOW_THANKYOU_MESSAGE', payload: false })}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl font-bold text-center">Merci !</DialogTitle>
@@ -1658,7 +1714,7 @@ const PlayWheel = () => {
             </p>
           </div>
           <Button
-            onClick={() => setShowThankyouMessage(false)}
+            onClick={() => dispatch({ type: 'SET_SHOW_THANKYOU_MESSAGE', payload: false })}
             className="w-full text-sm sm:text-base"
           >
             Fermer
@@ -1667,7 +1723,7 @@ const PlayWheel = () => {
       </Dialog>
 
       {/* Rules Modal - Mobile responsive */}
-      <Dialog open={showRulesModal} onOpenChange={setShowRulesModal}>
+      <Dialog open={state.showRulesModal} onOpenChange={() => dispatch({ type: 'SET_SHOW_RULES_MODAL', payload: false })}>
         <DialogContent className="w-[calc(100vw-2rem)] max-w-lg rounded-2xl bg-white/95 shadow-2xl border border-indigo-100/60">
           <DialogHeader>
             <DialogTitle className="text-center text-base sm:text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-pink-600">
@@ -1759,7 +1815,7 @@ const PlayWheel = () => {
               </Button>
             </div>
           </div>
-        ) : wheelConfig.segments.length === 0 ? (
+        ) : state.wheelConfig.segments.length === 0 ? (
           // Wheel has no segments configuration
           <div className="p-4 sm:p-6 text-center max-w-sm">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
@@ -1785,22 +1841,22 @@ const PlayWheel = () => {
               </Button>
             </div>
           </div>
-        ) : currentStep === 'spinWheel' ? (
+        ) : state.currentStep === 'spinWheel' ? (
           // Wheel View - Responsive mobile wheel container
           <div className="wheel-content-area w-full flex flex-col items-center justify-center space-y-4 px-4">
             {/* Responsive wheel container that adapts to screen size and fills available space */}
             <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
               <Wheel
-                config={wheelConfig}
-                isSpinning={mustSpin}
-                prizeIndex={prizeIndex}
+                config={state.wheelConfig}
+                isSpinning={state.mustSpin}
+                prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>
 
             {/* Spin button and message area - Mobile responsive */}
-            {!mustSpin && userFlowState === 'completedSocial' && (
+            {!state.mustSpin && state.userFlowState === 'completedSocial' && (
               <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
                 <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
                   Vous pouvez maintenant tenter de gagner
@@ -1843,7 +1899,7 @@ const PlayWheel = () => {
               </div>
             )}
             {/* Initial button when social action is required first */}
-            {!mustSpin && userFlowState === 'initial' && (
+            {!state.mustSpin && state.userFlowState === 'initial' && (
               <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
                 <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
                   Tentez votre chance de gagner !
@@ -1858,19 +1914,19 @@ const PlayWheel = () => {
               </div>
             )}
           </div>
-        ) : currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE') ? (
+        ) : state.currentStep === 'initial' && (!wheelData?.socialNetwork || wheelData?.socialNetwork === 'NONE') ? (
           // Show wheel immediately if no social network is required
           <div className="wheel-content-area w-full flex flex-col items-center justify-center space-y-4 px-4">
             <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
               <Wheel
-                config={wheelConfig}
-                isSpinning={mustSpin}
-                prizeIndex={prizeIndex}
+                config={state.wheelConfig}
+                isSpinning={state.mustSpin}
+                prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
                 showSpinButton={false}
               />
             </div>
-            {!mustSpin && (
+            {!state.mustSpin && (
               <div className="w-full max-w-[90vw] sm:max-w-[400px] md:max-w-[500px] flex flex-col items-center space-y-3">
                 <p className="text-sm sm:text-base text-indigo-700 font-medium text-center px-4 py-2 bg-white/50 rounded-full">
                   Tentez votre chance de gagner !
@@ -1890,9 +1946,9 @@ const PlayWheel = () => {
           ((() => {
             console.log(
               '[DEBUG] Rendering loading/processing state - currentStep:',
-              currentStep,
+              state.currentStep,
               'userFlowState:',
-              userFlowState
+              state.userFlowState
             );
             return null;
           })(),
@@ -1916,7 +1972,7 @@ const PlayWheel = () => {
         </div>
         <button
           className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap flex-shrink-0"
-          onClick={() => setShowRulesModal(true)}
+          onClick={() => dispatch({ type: 'SET_SHOW_RULES_MODAL', payload: true })}
           type="button"
         >
           Règles du jeu

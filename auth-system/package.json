@@ -1,0 +1,41 @@
+{
+  "name": "@your-org/auth-system",
+  "version": "1.0.0",
+  "description": "Système d'authentification réutilisable avec JWT, rôles et permissions",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "jwt",
+    "roles",
+    "permissions",
+    "react",
+    "express"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "zod": "^3.22.0",
+    "express": "^4.18.0",
+    "react": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/bcryptjs": "^2.4.0",
+    "@types/express": "^4.17.0",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-router-dom": ">=6.0.0"
+  }
+} 
