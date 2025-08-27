@@ -612,11 +612,26 @@ export const updateWheel = async (req: Request, res: Response) => {
     if (existingWheel.slots && existingWheel.slots.length > 0) {
       const totalWeight = existingWheel.slots.reduce((sum, slot) => sum + slot.weight, 0);
       
-      // For RANDOM_WIN mode, check if probabilities add up to 100%
-      if (validatedData.mode === 'RANDOM_WIN' && totalWeight !== 100) {
+      // For RANDOM_WIN mode, check if probabilities don't exceed 100%
+      // But allow totals less than 100% (missing percentage = losing chances)
+      if (validatedData.mode === 'RANDOM_WIN' && totalWeight > 100) {
         return res.status(400).json({
-          error: 'Probabilities must total 100%',
-          userMessage: `Les probabilités des lots doivent totaliser 100%. Actuellement: ${totalWeight}%. Veuillez ajuster les probabilités des lots ou utiliser le bouton "Normaliser à 100%" avant de sauvegarder.`,
+          error: 'Probabilities cannot exceed 100%',
+          userMessage: `Les probabilités des lots ne peuvent pas dépasser 100%. Actuellement: ${totalWeight}%. Veuillez ajuster les probabilités des lots.`,
+          currentTotal: totalWeight,
+          expectedTotal: 100,
+          slots: existingWheel.slots.map(slot => ({
+            label: slot.label,
+            weight: slot.weight
+          }))
+        });
+      }
+      
+      // For ALL_WIN mode, check if probabilities add up to exactly 100%
+      if (validatedData.mode === 'ALL_WIN' && totalWeight !== 100) {
+        return res.status(400).json({
+          error: 'Probabilities must total exactly 100% for ALL_WIN mode',
+          userMessage: `Pour "Gagnant à tous les coups", les probabilités des lots doivent totaliser exactement 100%. Actuellement: ${totalWeight}%. Veuillez ajuster les probabilités des lots.`,
           currentTotal: totalWeight,
           expectedTotal: 100,
           slots: existingWheel.slots.map(slot => ({
