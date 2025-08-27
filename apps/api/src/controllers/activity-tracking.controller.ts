@@ -355,12 +355,22 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
 
     // Get date range from query params (default to 30 days)
     const range = req.query.range as string || '30d';
-    const days = parseInt(range.replace('d', '')) || 30;
     
-    // Calculate start date based on range
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-    startDate.setHours(0, 0, 0, 0);
+    // Handle different range values including 'all'
+    let days: number;
+    let startDate: Date;
+    
+    if (range === 'all') {
+      // For 'all', get data from the beginning of time
+      days = 365; // Use a large number to show meaningful data
+      startDate = new Date(0); // Beginning of time
+    } else {
+      // For numeric ranges (7d, 30d, 90d)
+      days = parseInt(range.replace('d', '')) || 30;
+      startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      startDate.setHours(0, 0, 0, 0);
+    }
 
     // Get all data in parallel
     const [
@@ -415,12 +425,17 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
     // Group plays by day
     const playsByDayMap = new Map<string, number>();
     
-    // Initialize all days in range with 0
-    for (let i = 0; i < days; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      const dateKey = date.toISOString().split('T')[0];
-      playsByDayMap.set(dateKey, 0);
+    if (range === 'all') {
+      // For 'all', don't pre-initialize days, just use actual data
+      // This will show only days where there are actual plays
+    } else {
+      // Initialize all days in range with 0 for specific ranges
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        playsByDayMap.set(dateKey, 0);
+      }
     }
     
     // Count actual plays per day

@@ -77,7 +77,7 @@ const Dashboard = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companyStats, setCompanyStats] = useState<CompanyStatistics | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'all'>('30');
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   useEffect(() => {
     fetchDashboardData();
@@ -90,7 +90,9 @@ const Dashboard = () => {
       // Fetch activity dashboard data with date range support
       const activityParams = new URLSearchParams();
       if (dateRange !== 'all') {
-        activityParams.append('range', `${dateRange}d`);
+        activityParams.append('range', `${dateRange}`);
+      } else {
+        activityParams.append('range', 'all');
       }
       
       const activityResponse = await api.getActivityDashboard(activityParams.toString());
@@ -106,7 +108,8 @@ const Dashboard = () => {
           const companiesWithStats = await Promise.all(
             companiesResponse.data.companies.map(async (company: any) => {
               try {
-                const statsResponse = await api.getCompanyStatistics(company.id, { range: `${dateRange}d` });
+                const statsParams = dateRange === 'all' ? { range: 'all' } : { range: `${dateRange}` };
+                const statsResponse = await api.getCompanyStatistics(company.id, statsParams);
                 return {
                   ...company,
                   totalPlays: statsResponse.data?.totalPlays || 0,
@@ -130,7 +133,8 @@ const Dashboard = () => {
         }
       } else if (user?.companyId) {
         // For regular admins, fetch their company statistics
-        const statsResponse = await api.getCompanyStatistics(user.companyId, { range: `${dateRange}d` });
+        const statsParams = dateRange === 'all' ? { range: 'all' } : { range: `${dateRange}` };
+        const statsResponse = await api.getCompanyStatistics(user.companyId, statsParams);
         if (statsResponse.data) {
           setCompanyStats(statsResponse.data);
         }
@@ -187,7 +191,14 @@ const Dashboard = () => {
     
     // Fallback: Generate mock data based on date range for Super Admins
     if (user?.role === 'SUPER' && dashboardData?.overview) {
-      const days = dateRange === '7' ? 7 : dateRange === '30' ? 30 : dateRange === '90' ? 90 : 30;
+      let days: number;
+      if (dateRange === 'all') {
+        // For 'all', show last 30 days as a reasonable default for the chart
+        days = 30;
+      } else {
+        days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : dateRange === '90d' ? 90 : 30;
+      }
+      
       const labels = [];
       const data = [];
       
@@ -317,31 +328,31 @@ const Dashboard = () => {
         <div className="flex flex-wrap gap-1 sm:gap-0 sm:rounded-lg sm:shadow-sm sm:overflow-hidden sm:border sm:border-gray-200">
           <button 
             className={`px-2 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out rounded sm:rounded-none ${
-              dateRange === '7' 
+              dateRange === '7d' 
                 ? 'bg-purple-600 text-white shadow-sm' 
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setDateRange('7')}
+            onClick={() => setDateRange('7d')}
           >
             7 jours
           </button>
           <button 
             className={`px-2 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out rounded sm:rounded-none ${
-              dateRange === '30' 
+              dateRange === '30d' 
                 ? 'bg-purple-600 text-white shadow-sm' 
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setDateRange('30')}
+            onClick={() => setDateRange('30d')}
           >
             30 jours
           </button>
           <button 
             className={`px-2 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out rounded sm:rounded-none ${
-              dateRange === '90' 
+              dateRange === '90d' 
                 ? 'bg-purple-600 text-white shadow-sm' 
                 : 'bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setDateRange('90')}
+            onClick={() => setDateRange('90d')}
           >
             90 jours
           </button>

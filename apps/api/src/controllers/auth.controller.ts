@@ -272,7 +272,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
+    } 
 
     // Verify current password
     const isPasswordValid = await comparePassword(currentPassword, user.password!);
