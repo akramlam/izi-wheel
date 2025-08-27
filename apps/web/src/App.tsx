@@ -24,6 +24,7 @@ import Statistiques from './pages/Statistiques';
 import EmailTracking from './pages/EmailTracking';
 import ActivityTracking from './pages/ActivityTracking';
 import PrizeValidation from './pages/PrizeValidation';
+import PlayWheelV2 from './pages/PlayWheelV2';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -99,6 +100,8 @@ function App() {
         <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
         <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
         <Route path="/redeem/:playId" element={<RedeemPrize />} />
+        <Route path="/play-v2" element={<PlayWheelV2 />} />
+        <Route path="/play-v2/:companyId/:wheelId" element={<PlayWheelV2 />} />
         
         {/* Not found route */}
         <Route path="*" element={<NotFound />} />
