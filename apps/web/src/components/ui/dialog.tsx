@@ -31,6 +31,11 @@ interface DialogFooterProps {
   className?: string;
 }
 
+interface DialogCloseProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
   if (!open) return null;
 
@@ -112,3 +117,11 @@ export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className 
     </div>
   );
 }; 
+
+export const DialogClose: React.FC<DialogCloseProps> = ({ children, className = '' }) => {
+  return (
+    <div className={`absolute top-2 right-2 ${className}`}>
+      {children}
+    </div>
+  );
+};

@@ -6,11 +6,11 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Eye, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown } from "lucide-react"
+import { Plus, Search, Eye, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown, X } from "lucide-react"
 import { ExternalLink } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "../components/ui/dialog"
 import { apiClient, api } from "@/services/api"
 import { useAuth } from "../hooks/useAuth"
 import UpgradePlanModal from "../components/UpgradePlanModal"
@@ -1007,6 +1007,11 @@ const Roues: React.FC = () => {
       <Dialog open={!!selectedWheelForQR} onOpenChange={(open) => !open && setSelectedWheelForQR(null)}>
         <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
+            <DialogClose>
+              <Button variant="ghost" size="sm" className="absolute top-2 right-2">
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
             <DialogTitle className="text-lg sm:text-xl">QR Code</DialogTitle>
             <DialogDescription className="text-sm sm:text-base">
               Scannez ce QR code ou partagez-le pour accéder à votre roue.

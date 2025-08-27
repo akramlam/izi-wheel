@@ -183,8 +183,9 @@ const PlayWheelV2 = () => {
       setPrizeIndex(slotIndex);
       setWheelConfig({
         ...wheelConfig,
-        segments: wheelData.slots.map((slot: any) => ({
+        segments: wheelData.slots.map((slot: any, idx: number) => ({
           label: slot.label,
+          color: slot.color || (wheelConfig.segments[idx]?.color) || '#36A2EB',
           isWinning: slot.isWinning || data.play.result === 'WIN'
         }))
       });
