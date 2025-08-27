@@ -10,6 +10,7 @@ import { Wheel3D, WheelConfig } from '../components/wheel';
 import soundUtils from '../lib/sound';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 import { toast } from '../hooks/use-toast';
+import SpinWheelWrapper from '../components/wheel/SpinWheelWrapper';
 
 // Brand accent color and confetti colors
 const ACCENT = '#6366f1'; // Indigo
@@ -339,13 +340,28 @@ const PlayWheelV2 = () => {
           <div className="flex justify-center">
             <div className="relative bg-white/20 rounded-3xl p-8 backdrop-blur-lg border border-white/40 shadow-xl">
               {wheelData?.slots && wheelData.slots.length > 0 ? (
-                <Wheel3D
-                  config={wheelConfig}
-                  isSpinning={isSpinning}
-                  prizeIndex={prizeIndex}
-                  onSpin={handleWheelFinishedSpin}
-                  showSpinButton={false}
-                />
+                // Render SpinWheelWrapper while preserving existing Wheel3D (kept for fallback/testing)
+                <div className="flex items-center justify-center">
+                  <div className="hidden md:block" style={{ width: 384 }}>
+                    <SpinWheelWrapper
+                      items={wheelConfig.segments.map((s, idx) => ({
+                        label: s.label,
+                        backgroundColor: s.color,
+                        weight: wheelData?.slots?.[idx]?.weight || 1,
+                      }))}
+                      onRest={() => handleWheelFinishedSpin()}
+                    />
+                  </div>
+                  <div className="md:hidden">
+                    <Wheel3D
+                      config={wheelConfig}
+                      isSpinning={isSpinning}
+                      prizeIndex={prizeIndex}
+                      onSpin={handleWheelFinishedSpin}
+                      showSpinButton={false}
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60 backdrop-blur-2xl">
                   <div className="p-8 text-center">

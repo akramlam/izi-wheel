@@ -43,6 +43,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.56.3",
     "react-router-dom": "^6.30.0",
+    "spin-wheel": "^5.0.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.176.0",
