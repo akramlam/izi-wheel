@@ -171,13 +171,8 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
       // CRITICAL FIX: Force all segments to be winning for consistency
       // This ensures we always consider the result as a win
       const isWinningSegment = true; // Force winning for all segments
-      
-        allSegmentsWinning, 
-        currentSegmentIsWinning,
-        isWinningSegment: true, // Always true with our fix
-        segmentLabel: config.segments[prizeIndex]?.label,
-        prizeIndex: prizeIndex
-      });
+      // Debug: spin evaluation state (kept as a comment to avoid build issues)
+      // console.debug('Spin evaluation', { allSegmentsWinning, currentSegmentIsWinning, isWinningSegment: true, segmentLabel: config.segments[prizeIndex]?.label, prizeIndex });
       
       // When animation completes, we'll set the final position precisely
       animationEndTimer = window.setTimeout(() => {
@@ -257,10 +252,7 @@ const SimpleWheel3D: React.FC<WheelProps> = (props) => {
   useEffect(() => {
     if (isSpinning && config.segments.length > 0) {
       const allSegmentsWinning = config.segments.every(segment => segment.isWinning);
-        allSegmentsWinning, 
-        prizeSegmentIsWinning: config.segments[prizeIndex]?.isWinning,
-        prizeLabel: config.segments[prizeIndex]?.label
-      });
+		// console.debug('Prize detection', { allSegmentsWinning, prizeSegmentIsWinning: config.segments[prizeIndex]?.isWinning, prizeLabel: config.segments[prizeIndex]?.label });
     }
   }, [isSpinning, config.segments, prizeIndex]);
 

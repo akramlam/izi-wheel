@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-// Using ESM path per library README; vite will resolve this
-import { Wheel as SpinWheel } from 'spin-wheel/dist/spin-wheel-esm.js';
+// Use package root so Vite resolves via exports field (fixes CI deep import error)
+import { Wheel as SpinWheel } from 'spin-wheel';
 
 export type SpinWheelItem = {
   label: string;
