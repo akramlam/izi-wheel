@@ -100,7 +100,7 @@ const PlayWheelV2 = () => {
         const match = wheelData.slots.findIndex((s: any) => s.label && s.label.trim().toLowerCase() === data.slot.label.trim().toLowerCase());
         slotIndex = match >= 0 ? match : 0;
       }
-
+      console.log('slotIndex', setSpinResult);
       setPrizeIndex(slotIndex);
       setSpinResult(data);
 
