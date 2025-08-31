@@ -313,6 +313,7 @@ const PlayWheelV2 = () => {
   };
 
   // --- UI ---
+  const isPublic = typeof window !== 'undefined' && window.location.hostname === 'roue.izikado.fr';
   return (
     <div 
       className="relative min-h-screen w-full flex items-center justify-center overflow-x-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 animate-gradient-move"
@@ -337,12 +338,11 @@ const PlayWheelV2 = () => {
       <div className="container z-10 px-4 py-20 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Wheel section with enhanced card */}
-          <div className="flex justify-center">
-            <div className="relative bg-white/20 rounded-3xl p-8 backdrop-blur-lg border border-white/40 shadow-xl">
+          <div className="flex justify-center w-full">
+            <div className="relative p-4">
               {wheelData?.slots && wheelData.slots.length > 0 ? (
-                // Render SpinWheelWrapper while preserving existing Wheel3D (kept for fallback/testing)
                 <div className="flex items-center justify-center">
-                  <div className="hidden md:block" style={{ width: 384 }}>
+                  <div style={{ width: isPublic ? 'min(92vw, 92vh)' as any : 384 }}>
                     <SpinWheelWrapper
                       items={wheelConfig.segments.map((s, idx) => ({
                         label: s.label,
@@ -352,49 +352,31 @@ const PlayWheelV2 = () => {
                       onRest={() => handleWheelFinishedSpin()}
                     />
                   </div>
-                  <div className="md:hidden">
-                    <Wheel3D
-                      config={wheelConfig}
-                      isSpinning={isSpinning}
-                      prizeIndex={prizeIndex}
-                      onSpin={handleWheelFinishedSpin}
-                      showSpinButton={false}
-                    />
-                  </div>
                 </div>
               ) : (
-                <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60 backdrop-blur-2xl">
+                <div className="flex h-96 w-96 flex-col items-center justify-center rounded-full border-[12px] border-indigo-400/80 bg-white/60">
                   <div className="p-8 text-center">
                     <p className="text-xl font-bold text-gray-800">La roue n'est pas configurée</p>
                     <p className="mt-2 text-gray-600">Aucune option n'est disponible pour cette roue.</p>
                   </div>
                 </div>
               )}
-              
-              {/* Add informational text under the wheel */}
-              <div className="mt-4 text-center">
-                <p className="text-indigo-700 font-medium px-4 py-2 bg-white/50 rounded-full inline-block">
-                  {isSpinning ? 
-                    "La roue tourne..." : 
-                    "Vous pouvez maintenant tourner la roue pour tenter de gagner un lot !"}
-                </p>
-              </div>
             </div>
           </div>
           
-          {/* Form Section with enhanced styling */}
-          <div className="w-full max-w-md mx-auto rounded-3xl bg-white/70 shadow-2xl backdrop-blur-2xl p-10 flex flex-col gap-8 border border-indigo-100/60 glassmorphic-card">
-            <div className="text-center mb-2">
-              <h2 className="text-2xl font-bold text-indigo-700">Participez au jeu</h2>
-              <p className="text-gray-600 mt-2">Remplissez le formulaire pour faire tourner la roue et tenter de gagner</p>
+          {!isPublic && (
+            <div className="w-full max-w-md mx-auto rounded-3xl bg-white/70 shadow-2xl backdrop-blur-2xl p-10 flex flex-col gap-8 border border-indigo-100/60 glassmorphic-card">
+              <div className="text-center mb-2">
+                <h2 className="text-2xl font-bold text-indigo-700">Participez au jeu</h2>
+                <p className="text-gray-600 mt-2">Remplissez le formulaire pour faire tourner la roue et tenter de gagner</p>
+              </div>
+              <PlayerForm
+                fields={formFields}
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSpinningMutation || isSpinning}
+              />
             </div>
-            
-            <PlayerForm
-              fields={formFields}
-              onSubmit={handleFormSubmit}
-              isSubmitting={isSpinningMutation || isSpinning}
-            />
-          </div>
+          )}
         </div>
       </div>
 
