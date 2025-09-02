@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "../components/ui/card"
-import { Search, Folder, DollarSign, Users, TrendingUp, TrendingDown, ChevronDown } from "lucide-react"
+import { Folder, DollarSign, Users, TrendingUp, TrendingDown, ChevronDown } from "lucide-react"
 import { api } from '../lib/api'
 import { useToast } from '../hooks/use-toast'
 import { useAuth } from '../hooks/useAuth'
@@ -77,6 +77,11 @@ const Statistiques: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [statsData, setStatsData] = useState<StatisticsData | null>(null)
+  const [trends, setTrends] = useState<{ plays: number | null; prizes: number | null; conversion: number | null }>({
+    plays: null,
+    prizes: null,
+    conversion: null,
+  })
   
   // New state for company and wheel selection
   const [companies, setCompanies] = useState<Company[]>([])
@@ -184,6 +189,50 @@ const Statistiques: React.FC = () => {
 
       const response = await api.getCompanyStatistics(companyId, params)
       setStatsData(response.data)
+
+      // Compute trends versus the previous equivalent period (except for 'all')
+      try {
+        if (dateRange !== 'all' && response.data?.dateRange?.from && response.data?.dateRange?.to) {
+          const from = new Date(response.data.dateRange.from)
+          const to = new Date(response.data.dateRange.to)
+          const periodMs = Math.max(1, to.getTime() - from.getTime())
+          const prevTo = new Date(from.getTime() - 24 * 60 * 60 * 1000)
+          const prevFrom = new Date(prevTo.getTime() - periodMs)
+
+          const prevParams: any = {
+            from: prevFrom.toISOString(),
+            to: prevTo.toISOString(),
+          }
+          if (selectedWheelIds.length > 0) {
+            prevParams.wheelIds = selectedWheelIds.join(',')
+          }
+
+          const prevResp = await api.getCompanyStatistics(companyId, prevParams)
+          const currentTotalPlays = Number(response.data?.totalPlays || 0)
+          const currentTotalPrizes = Number(response.data?.totalPrizes || 0)
+          const prevTotalPlays = Number(prevResp.data?.totalPlays || 0)
+          const prevTotalPrizes = Number(prevResp.data?.totalPrizes || 0)
+
+          const computeTrend = (curr: number, prev: number): number | null => {
+            if (!isFinite(prev) || prev <= 0) return null
+            return ((curr - prev) / prev) * 100
+          }
+
+          const currentConv = currentTotalPlays > 0 ? (currentTotalPrizes / currentTotalPlays) * 100 : 0
+          const prevConv = prevTotalPlays > 0 ? (prevTotalPrizes / prevTotalPlays) * 100 : 0
+
+          setTrends({
+            plays: computeTrend(currentTotalPlays, prevTotalPlays),
+            prizes: computeTrend(currentTotalPrizes, prevTotalPrizes),
+            conversion: computeTrend(currentConv, prevConv),
+          })
+        } else {
+          setTrends({ plays: null, prizes: null, conversion: null })
+        }
+      } catch (trendError) {
+        console.error('Failed to compute trends:', trendError)
+        setTrends({ plays: null, prizes: null, conversion: null })
+      }
     } catch (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
       showErrorToast(toast, error, 'Erreur', 'Échec de la récupération des statistiques. Veuillez réessayer.')
@@ -318,7 +367,8 @@ const Statistiques: React.FC = () => {
   }
 
   // Helper function to format trends
-  const formatTrend = (trend: number) => {
+  const formatTrend = (trend: number | null) => {
+    if (trend === null) return null
     const isPositive = trend >= 0
     return (
       <div className={`flex items-center ${isPositive ? "text-green-600" : "text-red-600"}`}>
@@ -468,9 +518,7 @@ const Statistiques: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {statsData?.totalPlays?.toLocaleString() || 0}
                 </p>
-                {statsData?.playsByDay && statsData.playsByDay.length > 1 && (
-                  formatTrend(10.5) // This would be calculated based on historical data
-                )}
+                {formatTrend(trends.plays)}
                 </div>
                 <div className="p-3 bg-blue-100 rounded-full">
                   <Folder className="h-6 w-6 text-blue-600" />
@@ -487,9 +535,7 @@ const Statistiques: React.FC = () => {
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {statsData?.totalPrizes?.toLocaleString() || 0}
                   </p>
-                {statsData?.prizeDistribution && statsData.prizeDistribution.length > 0 && (
-                  formatTrend(5.2) // This would be calculated based on historical data
-                )}
+                {formatTrend(trends.prizes)}
                 </div>
                 <div className="p-3 bg-green-100 rounded-full">
                   <DollarSign className="h-6 w-6 text-green-600" />
@@ -508,9 +554,7 @@ const Statistiques: React.FC = () => {
                     ? `${((statsData.totalPrizes / statsData.totalPlays) * 100).toFixed(1)}%` 
                     : '0%'}
                 </p>
-                {statsData?.totalPlays && statsData?.totalPrizes && (
-                  formatTrend(2.8) // This would be calculated based on historical data
-                )}
+                {formatTrend(trends.conversion)}
                 </div>
                 <div className="p-3 bg-purple-100 rounded-full">
                   <Users className="h-6 w-6 text-purple-600" />
