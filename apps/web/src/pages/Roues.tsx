@@ -74,6 +74,7 @@ const Roues: React.FC = () => {
   const [remainingPlays, setRemainingPlays] = useState<number>(0)
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false)
   const [upgradeModalType, setUpgradeModalType] = useState<'wheel' | 'play'>('wheel')
+  const [currentPlan, setCurrentPlan] = useState<string>('FREE')
   
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -140,6 +141,7 @@ const Roues: React.FC = () => {
           
           // Check if user is on free plan
           setIsFreePlan(profileResponse.data.user.company.plan === 'FREE');
+          setCurrentPlan(profileResponse.data.user.company.plan || 'FREE');
           setRemainingPlays(profileResponse.data.user.company.remainingPlays || 0);
           
           // Fetch wheels for this company
@@ -193,6 +195,10 @@ const Roues: React.FC = () => {
                 // Fallback for companies without maxWheels set
                 setWheelsLimit(5); // Default to 5 for BASIC plan
                 console.log("Using default wheel limit: 5");
+              }
+              if (company.plan) {
+                setCurrentPlan(company.plan);
+                setIsFreePlan(company.plan === 'FREE');
               }
               
               if (company.id) {
@@ -336,6 +342,10 @@ const Roues: React.FC = () => {
             if (selectedCompany.maxWheels) {
               setWheelsLimit(selectedCompany.maxWheels);
             }
+            if ((selectedCompany as any).plan) {
+              setCurrentPlan((selectedCompany as any).plan);
+              setIsFreePlan((selectedCompany as any).plan === 'FREE');
+            }
           }
           
           // Fetch wheels for this company
@@ -352,6 +362,10 @@ const Roues: React.FC = () => {
           // Store wheel limit from company data
           if (firstCompany.maxWheels) {
             setWheelsLimit(firstCompany.maxWheels);
+          }
+          if ((firstCompany as any).plan) {
+            setCurrentPlan((firstCompany as any).plan);
+            setIsFreePlan((firstCompany as any).plan === 'FREE');
           }
           
           // Fetch wheels for first company
@@ -1045,23 +1059,26 @@ const Roues: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         limitType={upgradeModalType}
         remainingPlays={remainingPlays}
+        currentPlan={currentPlan}
       />
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center space-x-2">
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
-        {[1, 2, 3, 4, 5].map((page) => (
-          <button
-            key={page}
-            className={`px-3 py-2 text-sm rounded ${
-              page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
-        ))}
-        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
-      </div>
+      {/* Pagination - hidden until real paging is implemented */}
+      {false && (
+        <div className="flex items-center justify-center space-x-2">
+          <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
+          {[1, 2, 3, 4, 5].map((page) => (
+            <button
+              key={page}
+              className={`px-3 py-2 text-sm rounded ${
+                page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       <ConfirmationDialog

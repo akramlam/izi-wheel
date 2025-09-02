@@ -30,9 +30,16 @@ apiClient.interceptors.response.use(
     // Handle expired tokens
     if (error.response && error.response.status === 401) {
       // If not already on the login page, we can redirect or clear token
-      if (window.location.pathname !== '/login') {
+      const pathname = window.location.pathname;
+      if (pathname !== '/admin-login' && pathname !== '/superadmin-login') {
+        const storedUserRaw = localStorage.getItem('user');
+        let redirect = '/admin-login';
+        try {
+          const storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+          if (storedUser?.role === 'SUPER') redirect = '/superadmin-login';
+        } catch {}
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        window.location.href = redirect;
       }
     }
     return Promise.reject(error);

@@ -63,7 +63,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     delete apiClient.defaults.headers.common['Authorization'];
-    navigate('/superadmin-login');
+    // Redirect to the correct login page based on last known role
+    try {
+      const storedUserRaw = localStorage.getItem('user');
+      const storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+      const role = storedUser?.role || user?.role;
+      if (role === 'SUPER') {
+        navigate('/superadmin-login');
+      } else {
+        navigate('/admin-login');
+      }
+    } catch {
+      // Fallback
+      navigate('/admin-login');
+    }
   };
 
   // Check if token is valid on startup

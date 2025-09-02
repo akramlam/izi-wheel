@@ -22,8 +22,8 @@ router.post('/', authMiddleware, roleGuard([Role.SUPER]), createCompany);
 router.delete('/:id', authMiddleware, roleGuard([Role.SUPER]), deleteCompany);
 router.patch('/:id/plan', authMiddleware, roleGuard([Role.SUPER]), updateCompany);
 
-// Statistics endpoint
-router.get('/:companyId/statistics', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), getCompanyStatistics);
+// Statistics endpoint - allow SUB to view statistics of their company
+router.get('/:companyId/statistics', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN, Role.SUB]), getCompanyStatistics);
 
 // User management endpoints (ADMIN+)
 router.get('/:companyId/users', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), getCompanyUsers);
