@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import Badge from '../components/ui/Badge';
 import { useToast } from '../hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Gift,
@@ -26,30 +26,11 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 
-interface PrizeRecord {
-  id: string;
-  pin: string;
-  status: 'PENDING' | 'REDEEMED';
-  prize: {
-    label: string;
-    description?: string;
-  };
-  lead: {
-    name?: string;
-    email?: string;
-    phone?: string;
-  };
-  createdAt: string;
-  claimedAt?: string;
-  redeemedAt?: string;
-  wheel: {
-    name: string;
-  };
-}
+// type kept for future strict typing
+// interface PrizeRecord { /* ... */ }
 
 const PrizeValidation: React.FC = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   
   const [pinInput, setPinInput] = useState('');
@@ -120,7 +101,7 @@ const PrizeValidation: React.FC = () => {
       const response = await api.redeemPrize(playId, { pin });
       return response.data;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       toast({
         title: "✅ Cadeau validé!",
         description: "Le cadeau a été marqué comme récupéré avec succès.",
@@ -130,7 +111,7 @@ const PrizeValidation: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['prizes'] });
       refetch();
     },
-    onError: (error: any, variables) => {
+    onError: (error: any) => {
       toast({
         title: "Erreur de validation",
         description: error.message || "Erreur lors de la validation du cadeau",
@@ -139,6 +120,39 @@ const PrizeValidation: React.FC = () => {
       setValidatingPrizeId(null);
     }
   });
+
+  // Direct validation for admins without requiring customer to re-enter info
+  const validatePrizeDirect = async (play: any) => {
+    if (!play || !play.id) {
+      toast({
+        title: "Cadeau invalide",
+        description: "Élément de cadeau introuvable",
+        variant: "destructive"
+      });
+      return;
+    }
+    // A winning play should always have a PIN generated at play time
+    if (!play.pin) {
+      toast({
+        title: "PIN manquant",
+        description: "Ce cadeau n'a pas de code PIN associé",
+        variant: "destructive"
+      });
+      return;
+    }
+    setValidatingPrizeId(play.id);
+    try {
+      await validatePrizeMutation.mutateAsync({ playId: play.id, pin: play.pin });
+    } catch (e: any) {
+      toast({
+        title: "Erreur",
+        description: e?.message || "Impossible de valider le cadeau",
+        variant: "destructive"
+      });
+    } finally {
+      setValidatingPrizeId(null);
+    }
+  };
 
   // Validate prize by PIN code
   const validatePrizeByPin = async () => {
@@ -515,9 +529,9 @@ const PrizeValidation: React.FC = () => {
                     </div>
                     
                     <div className="flex justify-end lg:ml-4">
-                      {play.redemptionStatus === 'PENDING' && play.claimedAt && (
+                      {play.result === 'WIN' && play.redemptionStatus !== 'REDEEMED' && (
                         <Button
-                          onClick={() => navigate(`/redeem/${play.id}?admin=true`)}
+                          onClick={() => validatePrizeDirect(play)}
                           disabled={validatingPrizeId === play.id}
                           className="bg-green-600 hover:bg-green-700 text-sm px-3 py-2 min-w-0 flex-shrink-0"
                           size="sm"

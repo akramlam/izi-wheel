@@ -254,6 +254,9 @@ export const inviteUser = async (req: Request, res: Response) => {
       const response: any = { 
         user: userWithoutPassword,
         emailSent,
+        // Always include the temporary password in the API response for admins
+        // so they can securely share it if email delivery fails (or in test mode)
+        tempPassword,
         message: emailSent 
           ? 'Utilisateur créé avec succès. Email d\'invitation envoyé.'
           : 'Utilisateur créé avec succès, mais l\'email d\'invitation a échoué.'
