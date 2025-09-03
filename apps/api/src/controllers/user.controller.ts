@@ -405,13 +405,13 @@ export const updateUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { companyId, uid } = req.params;
+    const requestingUser = req.user;
     
-    // Check if user exists and belongs to the company
+    // SUPER admins can delete by ID across companies. Others must match companyId
     const user = await prisma.user.findFirst({
-      where: {
-        id: uid,
-        companyId
-      }
+      where: requestingUser?.role === Role.SUPER || requestingUser?.role === Role.ADMIN
+        ? { id: uid }
+        : { id: uid, companyId }
     });
     
     if (!user) {
