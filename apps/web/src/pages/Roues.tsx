@@ -16,7 +16,7 @@ import { useAuth } from "../hooks/useAuth"
 import UpgradePlanModal from "../components/UpgradePlanModal"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "../components/ui/dropdown-menu"
 import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
-
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select"
 interface Roue {
   id: string
   entreprise: string
@@ -633,42 +633,39 @@ const Roues: React.FC = () => {
 
             {/* Type filter */}
             <div className="w-full md:w-48">
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
-              >
-                <option value="all">Tous les types</option>
-                <option value="gagnant">Gagnant à tous les coups</option>
-                <option value="aleatoire">Gain aléatoire</option>
-              </select>
+              <Select value={filterType} onValueChange={(v) => setFilterType(v)}>
+                <SelectTrigger><SelectValue placeholder="Tous les types" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les types</SelectItem>
+                  <SelectItem value="gagnant">Gagnant à tous les coups</SelectItem>
+                  <SelectItem value="aleatoire">Gain aléatoire</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Status filter */}
             <div className="w-full md:w-48">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="actif">Actif</option>
-                <option value="inactif">Inactif</option>
-              </select>
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v)}>
+                <SelectTrigger><SelectValue placeholder="Tous les statuts" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="actif">Actif</SelectItem>
+                  <SelectItem value="inactif">Inactif</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Sort field */}
             <div className="w-full md:w-56">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
-              >
-                <option value="nom">Nom</option>
-                <option value="type">Type</option>
-                <option value="parties">Parties</option>
-                <option value="statut">Statut</option>
-              </select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v)}>
+                <SelectTrigger><SelectValue placeholder="Trier par" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nom">Nom</SelectItem>
+                  <SelectItem value="type">Type</SelectItem>
+                  <SelectItem value="parties">Parties</SelectItem>
+                  <SelectItem value="statut">Statut</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Direction + Reset */}
