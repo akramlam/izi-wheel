@@ -6,12 +6,12 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Filter, ArrowUpDown, MoreHorizontal, Edit, Trash2, Pencil, Check, X, RefreshCw, User, Mail, UserCheck, UserX, Eye, EyeOff } from "lucide-react"
+import { Plus, Search, ArrowUpDown, Trash2, Pencil, Check, X, RefreshCw } from "lucide-react"
 import { api } from '../lib/api';
 import { useToast } from '../hooks/use-toast';
 import { useAuth } from '../hooks/useAuth';
 import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
-import { Input } from '../components/ui/input';
+// import { Input } from '../components/ui/input';
 import { PasswordInput } from '../components/ui/password-input';
 
 // Data types from SubAdminManager.tsx
@@ -56,6 +56,9 @@ const SousAdministrateurs: React.FC = () => {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     subAdminId: string | null;
@@ -525,15 +528,40 @@ const SousAdministrateurs: React.FC = () => {
 
   // Provide a fallback in case searchTerm or admin object are undefined
   const safeSearchTerm = searchTerm || '';
-  const filteredSubAdmins = subAdmins.filter(
-    (admin) => {
-      if (!admin) return false;
-      const name = (admin.name || '').toLowerCase();
-      const email = (admin.email || '').toLowerCase();
-      const term = safeSearchTerm.toLowerCase();
-      return name.includes(term) || email.includes(term);
+  const filteredSubAdmins = subAdmins.filter((admin) => {
+    if (!admin) return false;
+    const name = (admin.name || '').toLowerCase();
+    const email = (admin.email || '').toLowerCase();
+    const term = safeSearchTerm.toLowerCase();
+    const matchesSearch = name.includes(term) || email.includes(term);
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? admin.isActive : !admin.isActive);
+    return matchesSearch && matchesStatus;
+  });
+
+  const sortedSubAdmins = [...filteredSubAdmins].sort((a, b) => {
+    let aVal: any = '';
+    let bVal: any = '';
+    switch (sortBy) {
+      case 'name':
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+        break;
+      case 'createdAt':
+        aVal = new Date(a.createdAt).getTime();
+        bVal = new Date(b.createdAt).getTime();
+        break;
+      case 'status':
+        aVal = a.isActive ? 1 : 0;
+        bVal = b.isActive ? 1 : 0;
+        break;
+      default:
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
     }
-  );
+    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const getStatusVariant = (isActive: boolean) => {
     return isActive ? "success" : "error"
@@ -671,17 +699,8 @@ const SousAdministrateurs: React.FC = () => {
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            {/* Example filter buttons, functionality to be implemented if needed */}
-            <Button variant="outline" size="sm" className="flex items-center space-x-2 w-full sm:w-auto" disabled={true}>
-              <Filter className="h-4 w-4" />
-              <span>Filtrer</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center space-x-2 w-full sm:w-auto" disabled={true}>
-              <ArrowUpDown className="h-4 w-4" />
-              <span>Trier</span>
-            </Button>
-            <div className="flex-1"></div>
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            {/* Search */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -692,6 +711,44 @@ const SousAdministrateurs: React.FC = () => {
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
                 disabled={ (user?.role === 'SUPER' && !selectedCompanyId && companies.length > 0) || isLoading }
               />
+            </div>
+
+            {/* Status filter */}
+            <div className="w-full sm:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+                disabled={ (user?.role === 'SUPER' && !selectedCompanyId && companies.length > 0) || isLoading }
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+            </div>
+
+            {/* Sort field */}
+            <div className="w-full sm:w-56">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+                disabled={ (user?.role === 'SUPER' && !selectedCompanyId && companies.length > 0) || isLoading }
+              >
+                <option value="name">Nom</option>
+                <option value="createdAt">Date de création</option>
+                <option value="status">Statut</option>
+              </select>
+            </div>
+
+            {/* Direction + Reset */}
+            <div className="flex w-full sm:w-auto gap-2">
+              <Button variant="outline" size="sm" className="w-24" onClick={() => setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')}>
+                <ArrowUpDown className="h-4 w-4 mr-2" /> {sortDir === 'asc' ? 'Asc' : 'Desc'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setStatusFilter('all'); setSortBy('name'); setSortDir('asc'); setSearchTerm(''); }}>
+                <X className="h-4 w-4 mr-2" /> Réinitialiser
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -737,7 +794,7 @@ const SousAdministrateurs: React.FC = () => {
                       </td>
                     </tr>
                 ) : (
-                filteredSubAdmins.map((admin) => (
+                sortedSubAdmins.map((admin) => (
                 <TableRow key={admin.id}>
                     <TableCell className="font-medium">{admin.name}</TableCell>
                   <TableCell>{admin.email}</TableCell>

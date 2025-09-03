@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Search, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown, X } from "lucide-react"
+import { Search, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, ArrowUpDown, X } from "lucide-react"
 import { ExternalLink } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
@@ -55,8 +55,6 @@ const Roues: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("nom")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
-  const [showSortDropdown, setShowSortDropdown] = useState(false)
   
   // Add companies state for super admin
   const [companies, setCompanies] = useState<Company[]>([])
@@ -85,21 +83,7 @@ const Roues: React.FC = () => {
   // Check if user is super admin
   const isSuperAdmin = user?.role === "SUPER"
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (!target.closest('.relative')) {
-        setShowFilterDropdown(false)
-        setShowSortDropdown(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+  // Removed dropdown outside-click handler (no dropdowns in unified UI)
 
   // Removed unused getCompanyNameForDisplay
 
@@ -631,171 +615,70 @@ const Roues: React.FC = () => {
         </Card>
       )}
 
-      {/* Controls - Mobile responsive */}
+      {/* Unified filter/sort/search bar */}
       <Card className="mb-4 sm:mb-6">
         <CardContent className="p-3 sm:p-6">
-          <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-            {/* Left side - Add button */}
-            <div className="flex"></div>
-            
-            {/* Right side - Search and Filter/Sort controls */}
-            <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
-              {/* Search */}
-              <div className="sm:w-64">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Rechercher"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-              </div>
-              
-              {/* Filter and Sort controls */}
-              <div className="flex items-center space-x-2">
-                {/* Remove all filters button - only show when filters are active */}
-                {(filterType !== "all" || filterStatus !== "all") && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                    onClick={() => {
-                      setFilterType("all")
-                      setFilterStatus("all")
-                      setShowFilterDropdown(false)
-                      setShowSortDropdown(false)
-                    }}
-                  >
-                    Effacer filtres
-                  </Button>
-                )}
-                
-                {/* Filter Button */}
-                <div className="relative">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={`flex items-center space-x-2 ${(filterType !== "all" || filterStatus !== "all") ? 'bg-purple-50 border-purple-200' : ''}`}
-                    onClick={() => {
-                      setShowFilterDropdown(!showFilterDropdown)
-                      setShowSortDropdown(false)
-                    }}
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span>Filtrer</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                  
-                  {showFilterDropdown && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                      <div className="p-3">
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
-                          <select
-                            value={filterType}
-                            onChange={(e) => setFilterType(e.target.value)}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="all">Tous les types</option>
-                            <option value="gagnant">Gagnant à tous les coups</option>
-                            <option value="aleatoire">Gain aléatoire</option>
-                          </select>
-                        </div>
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Statut</label>
-                          <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="all">Tous les statuts</option>
-                            <option value="actif">Actif</option>
-                            <option value="inactif">Inactif</option>
-                          </select>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="text-xs flex-1"
-                            onClick={() => {
-                              setFilterType("all")
-                              setFilterStatus("all")
-                            }}
-                          >
-                            Réinitialiser
-                          </Button>
-                          <Button 
-                            size="sm"
-                            className="text-xs flex-1"
-                            onClick={() => setShowFilterDropdown(false)}
-                          >
-                            Appliquer
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Sort Button */}
-                <div className="relative">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center space-x-2"
-                    onClick={() => {
-                      setShowSortDropdown(!showSortDropdown)
-                      setShowFilterDropdown(false)
-                    }}
-                  >
-                    <SortAsc className="h-4 w-4" />
-                    <span>Trier</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                  
-                  {showSortDropdown && (
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                      <div className="p-3">
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Trier par</label>
-                          <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="nom">Nom</option>
-                            <option value="type">Type</option>
-                            <option value="parties">Parties</option>
-                            <option value="statut">Statut</option>
-                          </select>
-                        </div>
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Ordre</label>
-                          <select
-                            value={sortOrder}
-                            onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                            className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                          >
-                            <option value="asc">Croissant</option>
-                            <option value="desc">Décroissant</option>
-                          </select>
-                        </div>
-                        <Button 
-                          size="sm"
-                          className="text-xs w-full"
-                          onClick={() => setShowSortDropdown(false)}
-                        >
-                          Appliquer
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            {/* Search */}
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+
+            {/* Type filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+              >
+                <option value="all">Tous les types</option>
+                <option value="gagnant">Gagnant à tous les coups</option>
+                <option value="aleatoire">Gain aléatoire</option>
+              </select>
+            </div>
+
+            {/* Status filter */}
+            <div className="w-full md:w-48">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="actif">Actif</option>
+                <option value="inactif">Inactif</option>
+              </select>
+            </div>
+
+            {/* Sort field */}
+            <div className="w-full md:w-56">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+              >
+                <option value="nom">Nom</option>
+                <option value="type">Type</option>
+                <option value="parties">Parties</option>
+                <option value="statut">Statut</option>
+              </select>
+            </div>
+
+            {/* Direction + Reset */}
+            <div className="flex w-full md:w-auto gap-2">
+              <Button variant="outline" size="sm" className="w-24" onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}>
+                <ArrowUpDown className="h-4 w-4 mr-2" /> {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setFilterType('all'); setFilterStatus('all'); setSortBy('nom'); setSortOrder('asc'); setSearchTerm(''); }}>
+                <X className="h-4 w-4 mr-2" /> Réinitialiser
+              </Button>
             </div>
           </div>
         </CardContent>
