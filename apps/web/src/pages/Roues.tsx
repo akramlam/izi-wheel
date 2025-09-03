@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Plus, Search, Eye, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown, X } from "lucide-react"
+import { Search, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, Filter, SortAsc, ChevronDown, X } from "lucide-react"
 import { ExternalLink } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
@@ -67,13 +67,15 @@ const Roues: React.FC = () => {
   const [wheelsUsed, setWheelsUsed] = useState<number>(0)
   
   // Add a state variable to store the company name for display
+  // Display company name is set in state but not used directly after UI refactor
   const [displayCompanyName, setDisplayCompanyName] = useState<string>("Votre entreprise");
   
   // Free plan state
+  // Free plan flag reserved for future UI conditions
   const [isFreePlan, setIsFreePlan] = useState<boolean>(false)
   const [remainingPlays, setRemainingPlays] = useState<number>(0)
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false)
-  const [upgradeModalType, setUpgradeModalType] = useState<'wheel' | 'play'>('wheel')
+  const upgradeModalType: 'wheel' | 'play' = 'wheel'
   const [currentPlan, setCurrentPlan] = useState<string>('FREE')
   
   const navigate = useNavigate()
@@ -99,27 +101,7 @@ const Roues: React.FC = () => {
     }
   }, [])
 
-  // Add direct mapping right in the render to override any issues with state timing
-  const getCompanyNameForDisplay = () => {
-    // For super admin with selected company
-    if (isSuperAdmin && selectedCompanyId) {
-      const company = companies.find(c => c.id === selectedCompanyId);
-      if (company?.name) return company.name;
-    }
-    
-    // For sub-admins or regular users, use the stored display name
-    if (displayCompanyName && displayCompanyName !== "N/A" && displayCompanyName !== "Votre entreprise") {
-      return displayCompanyName;
-    }
-    
-    // Try to get from user context if available
-    if (user?.companyId) {
-      return user.companyId;
-    }
-    
-    // Final fallback
-    return "Votre entreprise";
-  };
+  // Removed unused getCompanyNameForDisplay
 
   // Fetch user profile and company data
   useEffect(() => {
@@ -417,15 +399,7 @@ const Roues: React.FC = () => {
     }
   };
 
-  const handleCreateWheel = () => {
-    // Check if wheel limit reached for any plan
-    if (wheelsUsed >= wheelsLimit) {
-      setUpgradeModalType('wheel');
-      setShowUpgradeModal(true);
-    } else {
-      navigate('/roues/create');
-    }
-  };
+  // Removed unused handleCreateWheel
 
   const handleEditRoue = (id: string) => {
     navigate(`/roues/edit/${id}`)
@@ -473,32 +447,7 @@ const Roues: React.FC = () => {
     }
   };
 
-  const handleViewRoue = (id: string) => {
-    // Find the wheel to check if it's active
-    const roue = roues.find(r => r.id === id);
-    
-    if (!roue) {
-      toast({
-        title: "Erreur",
-        description: "Roue introuvable",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (roue.statut !== "Actif") {
-      toast({
-        title: "Roue inactive",
-        description: "Cette roue doit être activée avant d'être accessible publiquement",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Open the public wheel link in a new tab
-    const wheelLink = `https://roue.izikado.fr/play/company/${id}`;
-    window.open(wheelLink, '_blank');
-  }
+  // Removed unused handleViewRoue
 
   const handleViewQRCode = (id: string) => {
     setSelectedWheelForQR(id)
@@ -653,10 +602,6 @@ const Roues: React.FC = () => {
             <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center sm:text-right">
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
-            <Button className="flex items-center justify-center space-x-2 w-full sm:w-auto" onClick={handleCreateWheel}>
-              <Plus className="h-4 w-4" />
-              <span>Nouvelle roue</span>
-            </Button>
           </div>
         )}
       </div>
@@ -691,15 +636,7 @@ const Roues: React.FC = () => {
         <CardContent className="p-3 sm:p-6">
           <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
             {/* Left side - Add button */}
-            <div className="flex">
-              {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
-                <Button variant="outline" size="sm" className="flex items-center space-x-2" onClick={handleCreateWheel}>
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Ajouter</span>
-                  <span className="sm:hidden">Nouvelle</span>
-                </Button>
-              )}
-            </div>
+            <div className="flex"></div>
             
             {/* Right side - Search and Filter/Sort controls */}
             <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">

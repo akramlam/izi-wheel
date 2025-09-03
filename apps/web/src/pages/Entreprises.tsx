@@ -572,7 +572,7 @@ const Entreprises: React.FC = () => {
                     <SelectItem value="name">Nom</SelectItem>
                     <SelectItem value="createdAt">Date de création</SelectItem>
                     <SelectItem value="plan">Plan</SelectItem>
-                    <SelectItem value="adminCount"># Admins</SelectItem>
+                    <SelectItem value="adminCount">Admins</SelectItem>
                     <SelectItem value="maxWheels">Roues max</SelectItem>
                   </SelectContent>
                 </Select>
