@@ -93,11 +93,8 @@ const Entreprises: React.FC = () => {
   const fetchCompanies = async () => {
     setIsLoading(true);
     try {
-      console.log("Fetching companies...");
-      console.log("number of admins:", companies[0].adminCount);
-      
+      console.log("Fetching companies...");      
       const response = await api.getAllCompanies();
-      console.log("number of admins:", response.data.companies[11].adminCount);
       console.log("Companies response:", response);
       if (response.data && response.data.companies) {
         setCompanies(response.data.companies);
