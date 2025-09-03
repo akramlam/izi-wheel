@@ -97,7 +97,12 @@ const Entreprises: React.FC = () => {
       const response = await api.getAllCompanies();
       console.log("Companies response:", response);
       if (response.data && response.data.companies) {
-        setCompanies(response.data.companies);
+        // Map _count.admins to adminCount for proper display
+        const companiesWithMappedCounts = response.data.companies.map((company: any) => ({
+          ...company,
+          adminCount: company._count?.admins || 0
+        }));
+        setCompanies(companiesWithMappedCounts);
       }
       } catch (error) {
       console.error('Failed to fetch companies:', error);
