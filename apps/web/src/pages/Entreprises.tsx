@@ -14,6 +14,7 @@ import { EnhancedConfirmationDialog } from '../components/ui/enhanced-confirmati
 import { api } from '../lib/api' // Fixed import path
 import { useToast } from '../hooks/use-toast' // Fixed import path
 import { Plus, Search, Filter, ArrowUpDown, TrendingUp, TrendingDown, Pencil, Trash2, Check, X, UserPlus, Users } from "lucide-react"
+import { number } from "framer-motion"
 
 // More comprehensive company type based on SuperAdmin.tsx
 interface Company {
@@ -93,7 +94,10 @@ const Entreprises: React.FC = () => {
     setIsLoading(true);
     try {
       console.log("Fetching companies...");
+      console.log("number of admins:", companies[0].adminCount);
+      
       const response = await api.getAllCompanies();
+      console.log("number of admins:", response.data.companies[10].adminCount);
       console.log("Companies response:", response);
       if (response.data && response.data.companies) {
         setCompanies(response.data.companies);
