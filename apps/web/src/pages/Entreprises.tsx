@@ -42,6 +42,10 @@ const Entreprises: React.FC = () => {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [planFilter, setPlanFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [isLoading, setIsLoading] = useState(true); // Renamed from loading to isLoading
 
   // States from SuperAdmin.tsx
@@ -328,9 +332,45 @@ const Entreprises: React.FC = () => {
     }
   };
   
-  const filteredCompanies = companies.filter(company => 
-    company.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCompanies = companies.filter(company => {
+    const matchesSearch = company.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesPlan = planFilter === 'all' || (company.plan || 'N/A') === planFilter
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? company.isActive : !company.isActive)
+    return matchesSearch && matchesPlan && matchesStatus
+  })
+
+  const sortedCompanies = [...filteredCompanies].sort((a, b) => {
+    let aVal: any = ''
+    let bVal: any = ''
+    switch (sortBy) {
+      case 'name':
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+        break;
+      case 'createdAt':
+        aVal = new Date(a.createdAt).getTime();
+        bVal = new Date(b.createdAt).getTime();
+        break;
+      case 'plan':
+        aVal = a.plan || '';
+        bVal = b.plan || '';
+        break;
+      case 'adminCount':
+        aVal = a.adminCount ?? 0;
+        bVal = b.adminCount ?? 0;
+        break;
+      case 'maxWheels':
+        aVal = a.maxWheels ?? 0;
+        bVal = b.maxWheels ?? 0;
+        break;
+      default:
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+    }
+    if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  })
 
   const handleManageCompany = (companyId: string) => {
     navigate(`/entreprises/${companyId}/admins`);
@@ -482,20 +522,11 @@ const Entreprises: React.FC = () => {
       {/* Render Create/Update Form */} 
       {(isCreating || isUpdating) && renderForm()}
 
-      {/* Filters and Search Card - Kept from original UI, functionality can be expanded */} 
+      {/* Filters and Search */} 
       <Card className="shadow-sm">
         <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
-            {/* Placeholder buttons for filter/sort - can be implemented later */}
-            <Button variant="outline" size="sm" className="flex items-center space-x-2 w-full md:w-auto">
-              <Filter className="h-4 w-4" />
-              <span>Filtrer</span>
-            </Button>
-            <Button variant="outline" size="sm" className="flex items-center space-x-2 w-full md:w-auto">
-              <ArrowUpDown className="h-4 w-4" />
-              <span>Trier</span>
-            </Button>
-            <div className="flex-1 w-full md:w-auto"></div>
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
+            {/* Search */}
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -506,13 +537,60 @@ const Entreprises: React.FC = () => {
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
               />
             </div>
+
+            {/* Plan filter */}
+            <div className="w-full md:w-48">
+              <Select value={planFilter} onValueChange={(v) => setPlanFilter(v)}>
+                <SelectTrigger><SelectValue placeholder="Plan" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les plans</SelectItem>
+                  <SelectItem value="BASIC">Basic</SelectItem>
+                  <SelectItem value="PREMIUM">Premium</SelectItem>
+                  <SelectItem value="FREE">Free</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status filter */}
+            <div className="w-full md:w-48">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                <SelectTrigger><SelectValue placeholder="Statut" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="active">Actives</SelectItem>
+                  <SelectItem value="inactive">Inactives</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort controls */}
+            <div className="flex w-full md:w-auto gap-2">
+              <div className="w-full md:w-56">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v)}>
+                  <SelectTrigger><SelectValue placeholder="Trier par" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Nom</SelectItem>
+                    <SelectItem value="createdAt">Date de création</SelectItem>
+                    <SelectItem value="plan">Plan</SelectItem>
+                    <SelectItem value="adminCount"># Admins</SelectItem>
+                    <SelectItem value="maxWheels">Roues max</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" size="sm" className="w-28" onClick={() => setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')}>
+                <ArrowUpDown className="h-4 w-4 mr-2" /> {sortDir === 'asc' ? 'Asc' : 'Desc'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { setPlanFilter('all'); setStatusFilter('all'); setSortBy('name'); setSortDir('asc'); setSearchTerm(''); }}>
+                <X className="h-4 w-4 mr-2" /> Réinitialiser
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Companies Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCompanies.map((company) => (
+        {sortedCompanies.map((company) => (
           <Card key={company.id} className="group hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-purple-300 bg-white">
             <CardContent className="p-6">
               {/* Header with Logo and Status */}
