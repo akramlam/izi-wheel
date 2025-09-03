@@ -97,7 +97,7 @@ const Entreprises: React.FC = () => {
       console.log("number of admins:", companies[0].adminCount);
       
       const response = await api.getAllCompanies();
-      console.log("number of admins:", response.data.companies[10].adminCount);
+      console.log("number of admins:", response.data.companies[11].adminCount);
       console.log("Companies response:", response);
       if (response.data && response.data.companies) {
         setCompanies(response.data.companies);
