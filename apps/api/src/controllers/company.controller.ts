@@ -461,7 +461,15 @@ export const createCompany = async (req: Request, res: Response) => {
             },
           });
           // Send invitation email
-          await sendInviteEmail(admin.email, tempPassword, company.name, req.user?.name, admin.name);
+          await sendInviteEmail(
+            admin.email, 
+            tempPassword, 
+            company.name, 
+            req.user?.name, 
+            admin.name,
+            company.id,
+            newUser.id
+          );
           const { password, ...adminWithoutPassword } = newUser;
           createdAdmins.push(adminWithoutPassword);
         } catch (userError) {

@@ -134,31 +134,12 @@ export const inviteUser = async (req: Request, res: Response) => {
       });
       
       if (existingUser) {
-        console.log(`Email already in use: ${email}`);
-        
-        // If the user exists but with a different company, update their company ID
-        if (forceUpdate || existingUser.companyId !== companyId) {
-          console.log(`Updating user ${email} to new company ID: ${companyId}`);
-          
-          const updatedUser = await prisma.user.update({
-            where: { id: existingUser.id },
-            data: { 
-              companyId,
-              role, // Update role if provided
-              name: name || existingUser.name, // Update name if provided
-              isActive: true // Ensure user is active
-            }
-          });
-          
-          const { password, ...userWithoutPassword } = updatedUser;
-          
-          return res.status(200).json({
-            user: userWithoutPassword,
-            message: 'User updated with new company successfully.'
-          });
-        }
-        
-        return res.status(409).json({ error: 'Email already in use. Please use a different email address.' });
+        console.log(`Email already in use: ${email} (companyId: ${existingUser.companyId || 'none'})`);
+        // Disallow reusing an email across companies or the same company
+        return res.status(409).json({
+          error: 'Email already in use. An account with this email already exists and cannot be assigned to another company.',
+          code: 'EMAIL_IN_USE',
+        });
       }
     } catch (findError) {
       console.error('Error checking for existing user:', findError);

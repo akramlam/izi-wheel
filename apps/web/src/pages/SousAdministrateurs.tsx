@@ -344,8 +344,8 @@ const SousAdministrateurs: React.FC = () => {
           errorMsg = error.response.data.error;
           
           // Handle specific error cases
-          if (errorMsg.includes('Email already in use')) {
-            errorMsg = 'Cette adresse email est déjà utilisée.';
+          if (errorMsg.includes('Email already in use') || error.response.data.code === 'EMAIL_IN_USE') {
+            errorMsg = 'Cette adresse email est déjà utilisée. Un compte existe déjà avec cet email.';
           } else if (errorMsg.includes('Company not found')) {
             errorMsg = 'Entreprise non trouvée. Veuillez rafraîchir la page.';
           }
@@ -353,7 +353,7 @@ const SousAdministrateurs: React.FC = () => {
           errorMsg = 'Erreur serveur. Veuillez contacter l\'administrateur.';
           errorDetails = 'Le serveur a rencontré une erreur interne.';
         } else if (error.response.status === 409) {
-          errorMsg = 'Un utilisateur avec cet email existe déjà.';
+          errorMsg = 'Cette adresse email est déjà utilisée. Un compte existe déjà avec cet email.';
         } else if (error.response.status === 400) {
           errorMsg = 'Données invalides. Vérifiez les informations saisies.';
         }
@@ -635,7 +635,7 @@ const SousAdministrateurs: React.FC = () => {
           <CardContent className="p-6">
             <h3 className="text-lg font-medium mb-4">
               {isUpdating ? `Modifier: ${formData.name}` : 'Créer un nouveau sous-administrateur'}
-              {companyName && <span className="text-sm text-gray-500"> pour {companyName}</span>}
+              {companyName && <span className="text-lg font-medium mb-4"> pour {companyName}</span>}
             </h3>
             <form onSubmit={isUpdating ? (e) => { e.preventDefault(); if(isUpdating) handleUpdateSubAdmin(isUpdating); } : handleCreateSubAdmin} className="space-y-4">
               <div>

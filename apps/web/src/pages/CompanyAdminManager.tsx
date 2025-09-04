@@ -107,12 +107,23 @@ const CompanyAdminManager: React.FC = () => {
       fetchUsers();
     } catch (error: any) {
       console.error('Error inviting user:', error);
-      const errorMessage = error.response?.data?.error || 'Impossible d\'envoyer l\'invitation';
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: errorMessage
-      });
+      const status = error?.response?.status;
+      const code = error?.response?.data?.code;
+      const message = error?.response?.data?.error || "Impossible d'envoyer l'invitation";
+
+      if (status === 409 || code === 'EMAIL_IN_USE' || /Email already in use/i.test(message)) {
+        toast({
+          variant: 'destructive',
+          title: 'Email déjà utilisé',
+          description: 'Un compte existe déjà avec cet email. Utilisez une autre adresse.',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: message,
+        });
+      }
     } finally {
       setIsInviting(false);
     }
