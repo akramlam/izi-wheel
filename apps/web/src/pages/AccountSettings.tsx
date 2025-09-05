@@ -58,6 +58,7 @@ const AccountSettings = () => {
         try {
             // Simuler un appel API pour mettre à jour le profil
             // Dans une implémentation réelle, vous auriez un endpoint API pour cela
+            await api.updateUser(user?.id || "", formData);
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             toast({
