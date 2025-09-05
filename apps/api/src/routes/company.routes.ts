@@ -28,8 +28,8 @@ router.get('/:companyId/statistics', authMiddleware, roleGuard([Role.SUPER, Role
 // User management endpoints (ADMIN+)
 router.get('/:companyId/users', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), getCompanyUsers);
 router.post('/:companyId/users', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), inviteUser);
-router.put('/:companyId/users/:uid', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), updateUser);
-router.put('/:companyId/users/:uid/reset-password', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), resetUserPassword);
+router.put('/:companyId/users/:uid', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN, Role.SUB]), updateUser);
+router.put('/:companyId/users/:uid/reset-password', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN, Role.SUB]), resetUserPassword);
 router.delete('/:companyId/users/:uid', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), deleteUser);
 
 // Company CRUD operations
