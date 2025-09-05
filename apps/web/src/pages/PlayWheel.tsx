@@ -971,31 +971,40 @@ const PlayWheel = () => {
   const handleSpinResultWithData = (data: any) => {
     console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
 
-    // 🔥 CRITICAL FIX: Use backend's prizeIndex directly instead of calculating our own
-    // The backend already calculated the correct index using the same stable sorting logic
+    // Always derive the visual index from the current segments using slot.id first,
+    // then label; only fallback to backend prizeIndex if necessary.
     let prizeIndexToUse = 0; // Default fallback
-    
-    if (data.prizeIndex !== undefined && data.prizeIndex !== null && data.prizeIndex >= 0) {
-      // Backend provided the correct index - use it directly
-      prizeIndexToUse = data.prizeIndex;
-      console.log('✅ Using backend prizeIndex:', prizeIndexToUse);
-    } else if (data.slot && data.slot.id) {
-      // Fallback: try to find by slot ID (old logic)
-      const foundIndex = state.wheelConfig.segments.findIndex(segment => segment.id === data.slot.id);
-      if (foundIndex !== -1) {
-        prizeIndexToUse = foundIndex;
-        console.log('✅ Found prizeIndex via slot ID:', prizeIndexToUse);
+
+    if (data?.slot?.id) {
+      const byId = state.wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
+      if (byId !== -1) {
+        prizeIndexToUse = byId;
+        console.log('✅ Using index resolved by slot.id:', prizeIndexToUse);
       } else {
-        // Last resort: try to find by label
-        const labelIndex = state.wheelConfig.segments.findIndex(segment => segment.label === data.slot.label);
-        if (labelIndex !== -1) {
-          prizeIndexToUse = labelIndex;
-          console.log('✅ Found prizeIndex via label:', prizeIndexToUse);
+        const byLabel = state.wheelConfig.segments.findIndex((segment) => segment.label === data.slot.label);
+        if (byLabel !== -1) {
+          prizeIndexToUse = byLabel;
+          console.log('✅ Using index resolved by slot.label:', prizeIndexToUse);
+        } else if (typeof data.prizeIndex === 'number') {
+          prizeIndexToUse = data.prizeIndex;
+          console.log('⚠️ Fallback to backend prizeIndex (id/label not matched):', prizeIndexToUse);
         } else {
-          console.log('⚠️ Could not find matching segment, using fallback index 0');
+          console.log('⚠️ Could not resolve prize index; using 0');
           prizeIndexToUse = 0;
         }
       }
+    } else if (typeof data?.prizeIndex === 'number') {
+      prizeIndexToUse = data.prizeIndex;
+      console.log('⚠️ No slot.id; using backend prizeIndex:', prizeIndexToUse);
+    }
+
+    // Clamp to valid bounds just in case
+    const segCount = state.wheelConfig.segments.length;
+    if (segCount > 0) {
+      if (prizeIndexToUse < 0 || prizeIndexToUse >= segCount) {
+        console.log('⚠️ prizeIndex out of bounds, clamping:', prizeIndexToUse, '->', Math.max(0, Math.min(segCount - 1, prizeIndexToUse)));
+      }
+      prizeIndexToUse = Math.max(0, Math.min(segCount - 1, prizeIndexToUse));
     }
 
     console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);

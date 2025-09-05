@@ -73,13 +73,27 @@ const PlayWheelV2 = () => {
       setFormFields(fields);
     }
     
-    // Build segments from saved slots (no forced winning)
+    // Build segments from saved slots using the SAME stable ordering as backend
     if (wheelData?.slots && wheelData.slots.length > 0) {
       const preset = ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#7CFC00','#FF4500','#1E90FF','#20B2AA'];
-      const segments = wheelData.slots.map((slot: any, i: number) => ({
+
+      const sortedSlots = [...wheelData.slots].sort((a: any, b: any) => {
+        const pa = a?.position !== undefined ? a.position : 999;
+        const pb = b?.position !== undefined ? b.position : 999;
+        if (pa === pb) {
+          const ida = String(a?.id || '');
+          const idb = String(b?.id || '');
+          return ida.localeCompare(idb);
+        }
+        return pa - pb;
+      });
+
+      const segments = sortedSlots.map((slot: any, i: number) => ({
+        id: slot.id,
         label: (slot.label && String(slot.label).trim()) || `Lot ${i + 1}`,
         color: slot.color || preset[i % preset.length]
       }));
+
       setWheelConfig(prev => ({ ...prev, segments }));
     }
   }, [wheelData, isPublic]);

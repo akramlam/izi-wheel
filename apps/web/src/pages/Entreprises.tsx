@@ -668,6 +668,7 @@ const Entreprises: React.FC = () => {
                     size="sm" 
                     onClick={() => startUpdating(company)} 
                     className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    
                   >
                     <Pencil className="h-4 w-4 mr-2" />
                     Modifier

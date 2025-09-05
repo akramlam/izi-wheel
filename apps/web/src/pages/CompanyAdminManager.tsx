@@ -41,6 +41,11 @@ const CompanyAdminManager: React.FC = () => {
     role: 'ADMIN' as 'ADMIN' | 'SUB'
   });
 
+  // Delete confirmation dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; userId: string | null; userName: string }>(
+    { open: false, userId: null, userName: '' }
+  );
+
   useEffect(() => {
     if (companyId) {
       fetchCompanyData();
@@ -129,25 +134,23 @@ const CompanyAdminManager: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${userName}" ?`)) {
-      return;
-    }
+  // Open delete confirmation dialog
+  const handleDeleteUser = (userId: string, userName: string) => {
+    setDeleteDialog({ open: true, userId, userName });
+  };
 
+  // Confirm deletion from dialog
+  const confirmDeleteUser = async () => {
+    if (!deleteDialog.userId) return;
     try {
-      await api.deleteUser(userId);
-      toast({
-        title: 'Succès',
-        description: 'Utilisateur supprimé avec succès'
-      });
+      await api.deleteUser(deleteDialog.userId);
+      toast({ title: 'Succès', description: 'Utilisateur supprimé avec succès' });
       fetchUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de supprimer l\'utilisateur'
-      });
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de supprimer l\'utilisateur' });
+    } finally {
+      setDeleteDialog(prev => ({ ...prev, open: false }));
     }
   };
 
@@ -350,6 +353,18 @@ const CompanyAdminManager: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmationDialog
+        isOpen={deleteDialog.open}
+        onClose={() => setDeleteDialog(prev => ({ ...prev, open: false }))}
+        onConfirm={confirmDeleteUser}
+        title="Supprimer l'utilisateur"
+        description={`Êtes-vous sûr de vouloir supprimer l'utilisateur "${deleteDialog.userName}" ? Cette action est irréversible.`}
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="destructive"
+      />
     </div>
   );
 };
