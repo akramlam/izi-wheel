@@ -221,8 +221,10 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       // Calculate the center angle of the target segment
       const segmentCenterAngle = (prizeIndex * segAngle + segAngle / 2) % 360;
 
-      // Align this segment center to the pointer at the top (0°): rotate by (360 - center) mod 360
-      let alignmentRotation = (360 - segmentCenterAngle) % 360;
+      // Align this segment center to the pointer. Empirically offset by one segment to match visual pointer.
+      // Base alignment: rotate by (360 - center) so mid lands at 0° (top).
+      // Then shift by +segAngle to match the pointer tip.
+      let alignmentRotation = (360 - segmentCenterAngle + segAngle) % 360;
       
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
