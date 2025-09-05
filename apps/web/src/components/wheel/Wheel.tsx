@@ -212,30 +212,24 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
       
       // FIXED: Correct calculation for stopping at the right segment
-      // The pointer is at the top (270 degrees from the start position)
-      // Segments start at 0 degrees (3 o'clock position)
-      // We need to rotate the wheel so the target segment's center aligns with the pointer
+      // Pointer is at the top.
+      // Segments start at 0° at the top (due to polarToCartesian using angle-90)
+      // We need to rotate the wheel so the target segment's center aligns with the pointer at the top.
       
       // Calculate the center angle of the target segment
-      const segmentCenterAngle = prizeIndex * segAngle + segAngle / 2;
-      
-      // To align this segment with the pointer at 270°, we need to rotate:
-      // 270° - segmentCenterAngle (but we need to handle negative values)
-      let alignmentRotation = 270 - segmentCenterAngle;
-      
-      // Ensure positive rotation by adding 360 if negative
-      if (alignmentRotation < 0) {
-        alignmentRotation += 360;
-      }
+      const segmentCenterAngle = (prizeIndex * segAngle + segAngle / 2) % 360;
+
+      // Align this segment center to the pointer at the top (0°): rotate by (360 - center) mod 360
+      let alignmentRotation = (360 - segmentCenterAngle) % 360;
       
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
       
-      console.log('🎯 Fixed rotation calculation:', {
+      console.log('🎯 Fixed rotation calculation (top-pointer alignment):', {
         prizeIndex,
         segAngle,
         segmentCenterAngle,
-        pointerPosition: 270,
+        pointerPosition: 0,
         alignmentRotation,
         totalRotations: rotations,
         finalRotation: target
