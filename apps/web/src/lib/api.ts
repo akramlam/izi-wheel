@@ -261,7 +261,9 @@ export const api = {
   
   updateUser: async (userId: string, data: any) => {
     const companyId = await getValidCompanyId();
-    if (!companyId) return { data: null };
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!companyId && (user.role == "ADMIN" || user.role == "SUPER" || user.role == "SUB")) return { data: null };
     return apiClient.put(`/companies/${companyId}/users/${userId}`, data);
   },
   
