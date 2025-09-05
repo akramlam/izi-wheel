@@ -1136,7 +1136,6 @@ const WheelEdit = () => {
                     <SelectValue placeholder="Sélectionner une entreprise" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sélectionner une entreprise</SelectItem>
                     {companies.map(company => (
                       <SelectItem key={company.id} value={company.id}>
                         {company.name}
