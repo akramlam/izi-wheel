@@ -149,6 +149,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   const [rotation, setRotation] = useState(0);
   const [pointerDropped, setPointerDropped] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const [spinSeconds, setSpinSeconds] = useState<number>(5);
   
   // References
   const wheelRef = useRef<SVGSVGElement>(null);
@@ -207,6 +208,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       const duration = Math.random() * 
         (config.spinDurationMax - config.spinDurationMin) + 
         config.spinDurationMin;
+      setSpinSeconds(duration);
       
       // Calculate target rotation: Multiple full rotations + offset to prize
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
@@ -423,11 +425,11 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         height={wheelDisplaySize}
         viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}
         className="block mx-auto relative z-0 touch-none"
-        style={{
+        style={{ 
           borderRadius: '50%',
           transform: `rotate(${rotation}deg)`,
           transition: spinning 
-            ? `transform ${spinning ? 5 + (rotation % 360) / 360 : 0}s cubic-bezier(0.18, 0.76, 0.22, 0.96)`
+            ? `transform ${spinSeconds}s cubic-bezier(0.18, 0.76, 0.22, 0.96)`
             : undefined,
           willChange: 'transform',
           maxWidth: '100%',
