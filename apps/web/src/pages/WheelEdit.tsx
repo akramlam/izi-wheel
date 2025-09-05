@@ -454,8 +454,8 @@ const WheelEdit = () => {
     }));
   };
 
-  const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCompanyId = e.target.value;
+  const handleCompanyChange = (value: string) => {
+    const newCompanyId = value;
     if (newCompanyId && !/^\d+$/.test(newCompanyId)) {
       setSelectedCompanyId(newCompanyId);
       localStorage.setItem('companyId', newCompanyId);
@@ -1126,27 +1126,29 @@ const WheelEdit = () => {
             {isSuperAdmin && (
               <div className="space-y-2">
                 <Label htmlFor="companyId">Entreprise</Label>
-                <select
-                  id="companyId"
-                  name="companyId"
+                <Select
                   value={selectedCompanyId}
-                  onChange={handleCompanyChange}
-                  className={`w-full p-2 border rounded-md ${formErrors['companyId'] ? 'border-red-500' : 'border-gray-300'}`}
+                  onValueChange={(value) => handleCompanyChange(value)}
                 >
-                  <option value="">Sélectionner une entreprise</option>
-                  {companies.map(company => (
-                    <option key={company.id} value={company.id}>
-                      {company.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="companyId">
+                    <SelectValue placeholder="Sélectionner une entreprise" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sélectionner une entreprise</SelectItem>
+                    {companies.map(company => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {formErrors['companyId'] && <p className="text-sm text-red-500">{formErrors['companyId']}</p>}
               </div>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="name">Nom de la roue</Label>
-              <input
+              <Input
                 id="name"
                 name="name"
                 value={wheel.name}
@@ -1356,7 +1358,7 @@ const WheelEdit = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="space-y-2">
                     <Label htmlFor={`slot-${index}-label`}>Libellé</Label>
-                        <input
+                        <Input
                       id={`slot-${index}-label`}
                           value={slot.label ?? ''}
                           onChange={(e) => handleSlotChange(index, 'label', e.target.value)}
@@ -1370,7 +1372,7 @@ const WheelEdit = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor={`slot-${index}-code`}>Code du lot</Label>
-                        <input
+                        <Input
                       id={`slot-${index}-code`}
                           value={slot.prizeCode ?? ''}
                           onChange={(e) => handleSlotChange(index, 'prizeCode', e.target.value)}
@@ -1384,13 +1386,13 @@ const WheelEdit = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor={`slot-${index}-weight`}>Probabilité (%)</Label>
-                        <input
+                        <Input
                       id={`slot-${index}-weight`}
                           type="number"
                           min="0"
                       max="100"
                           step="1"
-                          value={slot.weight === 0 ? '' : slot.weight}
+                          value={slot.weight === 0 ? '' : slot.weight.toString()} 
                           onChange={(e) => {
                             const value = e.target.value;
                             // Allow empty value while typing
