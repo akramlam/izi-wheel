@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useToast } from '../hooks/use-toast';
@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ImageUpload } from '../components/ui/ImageUpload';
 import { AuthContext } from '../contexts/AuthContext';
+import Wheel from '../components/wheel/Wheel';
+import type { WheelConfig } from '../components/wheel/types';
 
 // Predefined colors for slots
 const PRESET_COLORS = [
@@ -1149,11 +1151,10 @@ const WheelEdit = () => {
             <div className="space-y-2">
               <Label htmlFor="name">Nom de la roue</Label>
               <Input
-                id="name"
                 name="name"
+                id="name"
                 value={wheel.name}
                 onChange={handleChange}
-                className={`w-full p-2 border rounded-md ${formErrors['name'] ? 'border-red-500' : 'border-gray-300'}`}
                 placeholder="Nom de la roue"
               />
               {formErrors['name'] && <p className="text-sm text-red-500">{formErrors['name']}</p>}
@@ -1188,92 +1189,41 @@ const WheelEdit = () => {
           </CardContent>
         </Card>
 
-        {/* Preview card */}
+        {/* Preview card - render the same Wheel component used in gameplay for parity */}
         <Card>
           <CardHeader>
             <CardTitle>Aperçu</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center items-center p-4">
-            <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-              {/* SVG wheel representation */}
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                {/* Segments */}
-                {wheel.slots.map((slot, index) => {
-                  const segmentCount = wheel.slots.length;
-                  const segmentAngle = 360 / segmentCount;
-                  const startAngle = segmentAngle * index;
-                  const endAngle = startAngle + segmentAngle;
-                  
-                  // Convert angles to radians for calculations
-                  const startRad = (startAngle - 90) * (Math.PI / 180);
-                  const endRad = (endAngle - 90) * (Math.PI / 180);
-                  
-                  // Calculate points for the segment path
-                  const x1 = 50;
-                  const y1 = 50;
-                  const x2 = 50 + 50 * Math.cos(startRad);
-                  const y2 = 50 + 50 * Math.sin(startRad);
-                  const x3 = 50 + 50 * Math.cos(endRad);
-                  const y3 = 50 + 50 * Math.sin(endRad);
-                  
-                  // Create SVG path for the segment
-                  const largeArcFlag = segmentAngle > 180 ? 1 : 0;
-                  
-                  // Special case for single segment - draw a complete circle
-                  const pathData = segmentCount === 1 
-                    ? "M50,50 m0,-45 a45,45 0 1,0 0.1,0 a45,45 0 1,0 -0.1,0 Z"
-                    : `M${x1},${y1} L${x2},${y2} A50,50 0 ${largeArcFlag},1 ${x3},${y3} Z`;
-                  
-                  return (
-                    <path
-                      key={index}
-                      d={pathData}
-                      fill={slot.color || PRESET_COLORS[index % PRESET_COLORS.length]}
-                      stroke="#ffffff"
-                      strokeWidth="0.5"
-                    />
-                  );
-                })}
-                
-                {/* Text labels */}
-                {wheel.slots.map((slot, index) => {
-                  const segmentCount = wheel.slots.length;
-                  const segmentAngle = 360 / segmentCount;
-                  const middleAngle = (segmentAngle * index) + (segmentAngle / 2) - 90; // -90 to start from top
-                  const middleRad = middleAngle * (Math.PI / 180);
-                  
-                  // Position text at 70% of radius from center
-                  const textRadius = 35;
-                  const textX = 50 + textRadius * Math.cos(middleRad);
-                  const textY = 50 + textRadius * Math.sin(middleRad);
-                  
-                  // Calculate rotation for text to be readable
-                  let textRotation = middleAngle + 90;
-                  if (textRotation > 90 && textRotation < 270) {
-                    textRotation += 180; // Flip text if it would be upside down
-                  }
-                  
-                  return (
-                    <text
-                      key={`text-${index}`}
-                      x={textX}
-                      y={textY}
-                      fill="#ffffff"
-                      fontSize="3"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      transform={`rotate(${textRotation} ${textX} ${textY})`}
-                      style={{ textShadow: '0 0 2px rgba(0,0,0,0.8)' }}
-                    >
-                      {slot.label || `Lot ${index + 1}`}
-                    </text>
-                  );
-                })}
-                
-                {/* Center circle */}
-                <circle cx="50" cy="50" r="4" fill="white" stroke="#cccccc" strokeWidth="1" />
-              </svg>
+            <div className="w-full flex items-center justify-center">
+              <Wheel
+                config={{
+                  segments: (wheel.slots && wheel.slots.length > 0
+                    ? wheel.slots
+                    : [
+                        { label: 'Lot 1', color: PRESET_COLORS[0], isWinning: true },
+                        { label: 'Lot 2', color: PRESET_COLORS[1], isWinning: false },
+                        { label: 'Lot 3', color: PRESET_COLORS[2], isWinning: false },
+                      ]
+                  ).map((s) => ({
+                    label: s.label,
+                    color: s.color,
+                    isWinning: wheel.type === 'ALL_WIN' ? true : (s as Slot).weight > 0,
+                  })),
+                  spinDurationMin: 3,
+                  spinDurationMax: 6,
+                  hapticFeedback: false,
+                  colors: {
+                    primaryGradient: '#a25afd',
+                    secondaryGradient: '#6366f1',
+                  },
+                  sounds: { tick: false, win: false },
+                } as WheelConfig}
+                isSpinning={false}
+                prizeIndex={0}
+                onSpin={() => {}}
+                showSpinButton={false}
+              />
             </div>
           </CardContent>
         </Card>
