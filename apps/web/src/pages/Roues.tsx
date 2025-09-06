@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/Table"
 import { Button } from "../components/ui/button"
 import Badge from "../components/ui/Badge"
-import { Search, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, ArrowUpDown, X } from "lucide-react"
+import { Search, Edit, Trash2, QrCode, MoreHorizontal, Copy, ToggleLeft, ToggleRight, ArrowUpDown, X, Plus } from "lucide-react"
 import { ExternalLink } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "../hooks/use-toast"
@@ -588,6 +588,7 @@ const Roues: React.FC = () => {
             </div>
           </div>
         )}
+        <Button onClick={() => navigate('/roues/create')} className="h-8 w-24"><Plus className="h-4 w-4 mr-2" /> Nouvelle roue</Button>
       </div>
 
       {/* Company selector for super admin - Mobile responsive */}
