@@ -580,21 +580,17 @@ const Roues: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Roues</h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Créez et gérez vos campagnes de roue.</p>
         </div>
-        {/* Only show button if not super admin or if super admin has selected a company */}
-        {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-center sm:text-right">
+        {/* Right header block: stack usage and action vertically */}
+        <div className="flex flex-col items-end space-y-2">
+          {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-right">
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
-          </div>
-        )}
-        <div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+          )}
           <Button onClick={() => navigate('/roues/create')}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle roue
           </Button>
-        </div>
         </div>
       </div>
 
