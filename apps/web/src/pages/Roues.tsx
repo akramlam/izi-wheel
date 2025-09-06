@@ -588,7 +588,14 @@ const Roues: React.FC = () => {
             </div>
           </div>
         )}
-        <Button onClick={() => navigate('/roues/create')} className="h-8 w-24"><Plus className="h-4 w-4 mr-2" /> Nouvelle roue</Button>
+        <div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+          <Button onClick={() => navigate('/roues/create')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle roue
+          </Button>
+        </div>
+        </div>
       </div>
 
       {/* Company selector for super admin - Mobile responsive */}
