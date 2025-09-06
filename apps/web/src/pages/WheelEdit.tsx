@@ -1136,11 +1136,11 @@ const WheelEdit = () => {
                     <SelectValue placeholder="Sélectionner une entreprise" />
                   </SelectTrigger>
                   <SelectContent>
-                    {companies.map(company => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
                 {formErrors['companyId'] && <p className="text-sm text-red-500">{formErrors['companyId']}</p>}

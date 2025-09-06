@@ -218,11 +218,14 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       // Segments start at 0° at the top (due to polarToCartesian using angle-90)
       // We need to rotate the wheel so the target segment's center aligns with the pointer at the top.
       
-      // Calculate the center angle of the target segment
+      // Calculate the center angle of the target segment and bias slightly to avoid landing on borders
+      const epsilon = Math.min(2, segAngle * 0.08); // small nudge up to 2°
       const segmentCenterAngle = (prizeIndex * segAngle + segAngle / 2) % 360;
 
       // Align this segment center exactly to the top pointer
       let alignmentRotation = (360 - segmentCenterAngle + 360) % 360;
+      // Apply tiny bias so the pointer lands safely within the segment
+      alignmentRotation = (alignmentRotation + epsilon) % 360;
       
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
@@ -316,7 +319,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           console.log('🎬 Calling onSpin callback now...');
           onSpin();
           console.log('🎬 onSpin callback called successfully');
-        }, 100); // 🔥 REDUCED FROM 2500ms TO 100ms - Just enough time for pointer drop animation
+        }, 180); // small buffer to ensure visual stop before callback
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);

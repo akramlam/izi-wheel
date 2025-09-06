@@ -1023,7 +1023,7 @@ const PlayWheel = () => {
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
-    // 🔥 SIMPLIFIED TIMEOUT MECHANISM: Only one timeout that triggers the result
+    // 🔥 Timeout mechanism: show result only after the wheel should have finished
     // Clear any existing timeouts first
     if (window.fallbackTimeout) {
       clearTimeout(window.fallbackTimeout);
@@ -1034,8 +1034,8 @@ const PlayWheel = () => {
       window.immediateFallback = null;
     }
 
-    // Set a single, reliable timeout that will trigger the result
-    // This acts as both the expected completion time and the fallback
+    // Set a single, reliable timeout that triggers after the configured max spin duration (+buffer)
+    const fallbackMs = Math.ceil(((state.wheelConfig.spinDurationMax ?? 8) + 0.7) * 1000);
     const completionTimeout = setTimeout(() => {
       console.log('⚡ Timeout triggered - showing result');
       dispatch({ type: 'SET_MUST_SPIN', payload: false });
@@ -1048,7 +1048,7 @@ const PlayWheel = () => {
       } else {
         dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       }
-    }, 6000); // 🔥 REDUCED FROM 8000ms TO 6000ms - Faster fallback since wheel delays are now shorter
+    }, fallbackMs);
 
     // Store the timeout reference
     window.fallbackTimeout = completionTimeout;
