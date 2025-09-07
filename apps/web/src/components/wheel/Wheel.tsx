@@ -218,14 +218,25 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       // Segments start at 0° at the top (due to polarToCartesian using angle-90)
       // We need to rotate the wheel so the target segment's center aligns with the pointer at the top.
       
-      // Calculate the center angle of the target segment and bias slightly to avoid landing on borders
-      const epsilon = Math.min(2, segAngle * 0.08); // small nudge up to 2°
-      const segmentCenterAngle = (prizeIndex * segAngle + segAngle / 2) % 360;
-
-      // Align this segment center exactly to the top pointer
-      let alignmentRotation = (360 - segmentCenterAngle + 360) % 360;
-      // Apply tiny bias so the pointer lands safely within the segment
-      alignmentRotation = (alignmentRotation + epsilon) % 360;
+      // CRITICAL FIX: Visual segments are rendered starting from top (0°) going clockwise
+      // Segment 0 spans from 0° to segAngle°, segment 1 from segAngle° to 2*segAngle°, etc.
+      // The pointer is at the top (0°/360°)
+      
+      // To align segment N to the pointer:
+      // - Segment N's start angle is N * segAngle
+      // - Segment N's center is at N * segAngle + segAngle/2
+      // - We need to rotate the wheel COUNTER-CLOCKWISE to bring this to the top
+      
+      const segmentStartAngle = prizeIndex * segAngle;
+      const segmentCenterAngle = segmentStartAngle + segAngle / 2;
+      
+      // We rotate counter-clockwise (negative direction) to bring the segment to the top
+      // Since CSS rotation is clockwise positive, we need 360 - angle
+      let alignmentRotation = 360 - segmentCenterAngle;
+      
+      // Add a stronger bias to avoid landing exactly on borders (10% of segment angle)
+      const epsilon = segAngle * 0.1;
+      alignmentRotation = (alignmentRotation + epsilon + 360) % 360;
       
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
@@ -233,11 +244,14 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       console.log('🎯 Fixed rotation calculation (top-pointer alignment):', {
         prizeIndex,
         segAngle,
+        segmentStartAngle,
         segmentCenterAngle,
         pointerPosition: 0,
         alignmentRotation,
         totalRotations: rotations,
-        finalRotation: target
+        finalRotation: target,
+        segmentLabels: segments.map((s, i) => `${i}: ${s.label}`),
+        targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN'
       });
       
       // Set rotation and trigger animation
@@ -319,7 +333,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
           console.log('🎬 Calling onSpin callback now...');
           onSpin();
           console.log('🎬 onSpin callback called successfully');
-        }, 180); // small buffer to ensure visual stop before callback
+        }, 500); // Increased buffer to ensure wheel fully settles before callback
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);
