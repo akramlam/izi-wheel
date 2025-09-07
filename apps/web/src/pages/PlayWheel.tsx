@@ -523,9 +523,7 @@ const PlayWheel = () => {
 
   // Run alignment math tests in development
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
-      runWheelAlignmentTests();
-    }
+    runWheelAlignmentTests();
   }, []);
 
   // Directly compute effective parameters
