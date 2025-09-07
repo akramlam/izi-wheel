@@ -98,6 +98,46 @@ function getTextPosition(cx: number, cy: number, radius: number, angle: number) 
   };
 }
 
+/**
+ * Compute deterministic alignment rotation for wheel
+ * Returns the exact rotation degrees needed to align segment center with pointer
+ */
+function computeAlignmentRotation({
+  segmentCount,
+  prizeIndex,
+  pointerAngleDeg = 0,
+  biasDeg = 0
+}: {
+  segmentCount: number;
+  prizeIndex: number;
+  pointerAngleDeg?: number;
+  biasDeg?: number;
+}): number {
+  if (segmentCount <= 0 || prizeIndex < 0 || prizeIndex >= segmentCount) {
+    console.error('Invalid parameters for alignment rotation:', { segmentCount, prizeIndex });
+    return 0;
+  }
+
+  const segAngle = 360 / segmentCount;
+  
+  // Segment N's start angle is N * segAngle
+  // Segment N's center is at N * segAngle + segAngle/2
+  const segmentStartAngle = prizeIndex * segAngle;
+  const segmentCenterAngle = segmentStartAngle + segAngle / 2;
+  
+  // We need to rotate the wheel COUNTER-CLOCKWISE to bring this segment to the pointer
+  // Since CSS rotation is clockwise positive, we need 360 - angle
+  let alignmentRotation = 360 - segmentCenterAngle + pointerAngleDeg;
+  
+  // Add bias to avoid landing exactly on borders
+  alignmentRotation += biasDeg;
+  
+  // Normalize to 0-360 range
+  alignmentRotation = ((alignmentRotation % 360) + 360) % 360;
+  
+  return alignmentRotation;
+}
+
 // Helper function to handle long text in wheel segments
 function formatTextForWheel(text: string, maxCharsPerLine: number = 12, maxLines: number = 2): string[] {
   if (!text || text.length <= maxCharsPerLine) {
@@ -213,45 +253,30 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       // Calculate target rotation: Multiple full rotations + offset to prize
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
       
-      // FIXED: Correct calculation for stopping at the right segment
-      // Pointer is at the top.
-      // Segments start at 0° at the top (due to polarToCartesian using angle-90)
-      // We need to rotate the wheel so the target segment's center aligns with the pointer at the top.
-      
-      // CRITICAL FIX: Visual segments are rendered starting from top (0°) going clockwise
-      // Segment 0 spans from 0° to segAngle°, segment 1 from segAngle° to 2*segAngle°, etc.
-      // The pointer is at the top (0°/360°)
-      
-      // To align segment N to the pointer:
-      // - Segment N's start angle is N * segAngle
-      // - Segment N's center is at N * segAngle + segAngle/2
-      // - We need to rotate the wheel COUNTER-CLOCKWISE to bring this to the top
-      
-      const segmentStartAngle = prizeIndex * segAngle;
-      const segmentCenterAngle = segmentStartAngle + segAngle / 2;
-      
-      // We rotate counter-clockwise (negative direction) to bring the segment to the top
-      // Since CSS rotation is clockwise positive, we need 360 - angle
-      let alignmentRotation = 360 - segmentCenterAngle;
-      
-      // Add a stronger bias to avoid landing exactly on borders (10% of segment angle)
-      const epsilon = segAngle * 0.1;
-      alignmentRotation = (alignmentRotation + epsilon + 360) % 360;
+      // Use the deterministic alignment function
+      const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
+      const alignmentRotation = computeAlignmentRotation({
+        segmentCount: segments.length,
+        prizeIndex,
+        pointerAngleDeg: 0, // Pointer is at the top (0°)
+        biasDeg
+      });
       
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
       
-      console.log('🎯 Fixed rotation calculation (top-pointer alignment):', {
+      console.log('🎯 Deterministic rotation calculation:', {
         prizeIndex,
         segAngle,
-        segmentStartAngle,
-        segmentCenterAngle,
-        pointerPosition: 0,
+        segmentCount: segments.length,
+        pointerAngle: 0,
+        biasDeg,
         alignmentRotation,
         totalRotations: rotations,
         finalRotation: target,
         segmentLabels: segments.map((s, i) => `${i}: ${s.label}`),
-        targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN'
+        targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN',
+        targetSegmentId: segments[prizeIndex]?.id || 'NO_ID'
       });
       
       // Set rotation and trigger animation
@@ -327,6 +352,33 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         const resetTimeout = setTimeout(() => {
           console.log('🎬 Wheel animation completed, calling onSpin callback');
           console.log('🎬 About to call onSpin - isSpinning:', isSpinning, 'spinning:', spinning);
+          
+          // 🔥 RUNTIME VERIFICATION: Check final alignment
+          if (process.env.NODE_ENV !== 'production') {
+            const finalRotation = target % 360;
+            const segmentUnderPointer = Math.floor((360 - finalRotation + 360) % 360 / segAngle);
+            const expectedSegment = prizeIndex;
+            
+            console.log('🎯 ALIGNMENT VERIFICATION:', {
+              finalRotation,
+              segmentUnderPointer,
+              expectedSegment: prizeIndex,
+              isAligned: segmentUnderPointer === expectedSegment,
+              segmentAngle: segAngle,
+              totalSegments: segments.length
+            });
+            
+            if (segmentUnderPointer !== expectedSegment) {
+              console.error('❌ ALIGNMENT MISMATCH DETECTED!', {
+                pointerAt: segmentUnderPointer,
+                expected: expectedSegment,
+                difference: Math.abs(segmentUnderPointer - expectedSegment)
+              });
+            } else {
+              console.log('✅ Wheel alignment verified correct');
+            }
+          }
+          
           setSpinning(false);
           
           // ✅ Call onSpin callback to notify parent that wheel has finished

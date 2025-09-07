@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter=@iziwheel/web run build)",
+      "Bash(pnpm --filter=@iziwheel/web run lint)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -18,6 +18,7 @@ import type { WheelConfig } from '../components/wheel/types';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 import { Input } from '../components/ui/input';
 import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
+import { runWheelAlignmentTests } from '../components/wheel/Wheel.test';
 
 // TypeScript declaration for window property
 declare global {
@@ -520,6 +521,13 @@ const PlayWheel = () => {
   console.log('[DEBUG] PlayWheel render - Route params:', { companyId, wheelId });
   console.log('[DEBUG] Current URL:', window.location.href);
 
+  // Run alignment math tests in development
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') {
+      runWheelAlignmentTests();
+    }
+  }, []);
+
   // Directly compute effective parameters
   const getEffectiveParams = () => {
     // Special handling for the /play/company/:wheelId route pattern
@@ -679,8 +687,9 @@ const PlayWheel = () => {
           },
         ];
 
-        // Use default slots for display purposes
+        // Use default slots for display purposes - CRITICAL: Include id field
         const segments = defaultSlots.map((slot) => ({
+          id: slot.id,
           label: slot.label,
           color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
           isWinning: slot.isWinning,
@@ -726,13 +735,33 @@ const PlayWheel = () => {
           isWinning: slot.isWinning,
         }));
 
-        // 🔥 DEBUG: Log segment order for mismatch debugging
-        console.log('🎯 Frontend segment order:', segments.map((seg, index) => ({
+        // 🔥 RUNTIME GUARD: Log segment order and verify consistent sorting
+        const frontendSegmentOrder = segments.map((seg, index) => ({
           index,
           id: seg.id,
           label: seg.label,
           isWinning: seg.isWinning
-        })));
+        }));
+        
+        console.log('🎯 Frontend segment order:', frontendSegmentOrder);
+        
+        // Runtime assertion: Check that segments have all required fields
+        const missingIdSegments = segments.filter(seg => !seg.id);
+        if (missingIdSegments.length > 0) {
+          console.error('❌ CRITICAL: Segments missing ID field:', missingIdSegments);
+        }
+        
+        // Verify sorting order matches backend expectation
+        const backendExpectedOrder = wheelData.slots.map(slot => slot.id);
+        const frontendOrder = segments.map(seg => seg.id);
+        if (JSON.stringify(backendExpectedOrder) !== JSON.stringify(frontendOrder)) {
+          console.error('❌ SEGMENT ORDER MISMATCH:', {
+            backend: backendExpectedOrder,
+            frontend: frontendOrder
+          });
+        } else {
+          console.log('✅ Segment order matches backend');
+        }
 
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
           ...state.wheelConfig,
@@ -971,48 +1000,49 @@ const PlayWheel = () => {
   const handleSpinResultWithData = (data: any) => {
     console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
 
-    // Always derive the visual index from the current segments using slot.id first,
-    // then label; only fallback to backend prizeIndex if necessary.
+    // CRITICAL FIX: Always use slot.id as the primary source of truth
     let prizeIndexToUse = 0; // Default fallback
 
+    // First: Try to find the segment by slot.id (most reliable)
     if (data?.slot?.id) {
       const byId = state.wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
       if (byId !== -1) {
         prizeIndexToUse = byId;
-        console.log('✅ Using index resolved by slot.id:', prizeIndexToUse);
+        console.log('✅ Found segment by slot.id:', { slotId: data.slot.id, prizeIndex: prizeIndexToUse });
       } else {
-        const byLabel = state.wheelConfig.segments.findIndex((segment) => segment.label === data.slot.label);
-        if (byLabel !== -1) {
-          prizeIndexToUse = byLabel;
-          console.log('✅ Using index resolved by slot.label:', prizeIndexToUse);
-        } else if (typeof data.prizeIndex === 'number') {
+        console.error('❌ slot.id not found in segments!', {
+          slotId: data.slot.id,
+          segmentIds: state.wheelConfig.segments.map(s => s.id),
+          fallbackToBackendIndex: data.prizeIndex
+        });
+        // If slot.id mapping fails, use backend's prizeIndex directly
+        if (typeof data.prizeIndex === 'number') {
           prizeIndexToUse = data.prizeIndex;
-          console.log('⚠️ Fallback to backend prizeIndex (id/label not matched):', prizeIndexToUse);
-        } else {
-          console.log('⚠️ Could not resolve prize index; using 0');
-          prizeIndexToUse = 0;
+          console.log('⚠️ Using backend prizeIndex as fallback:', prizeIndexToUse);
         }
       }
-    } else if (typeof data?.prizeIndex === 'number') {
-      prizeIndexToUse = data.prizeIndex;
-      console.log('⚠️ No slot.id; using backend prizeIndex:', prizeIndexToUse);
+    } else {
+      console.error('❌ No slot.id in backend response!');
+      // If no slot.id, use backend's prizeIndex
+      if (typeof data.prizeIndex === 'number') {
+        prizeIndexToUse = data.prizeIndex;
+        console.log('⚠️ No slot.id; using backend prizeIndex:', prizeIndexToUse);
+      }
     }
 
-    // Clamp to valid bounds just in case
+    // Clamp to valid bounds
     const segCount = state.wheelConfig.segments.length;
     if (segCount > 0) {
-      if (prizeIndexToUse < 0 || prizeIndexToUse >= segCount) {
-        console.log('⚠️ prizeIndex out of bounds, clamping:', prizeIndexToUse, '->', Math.max(0, Math.min(segCount - 1, prizeIndexToUse)));
-      }
       prizeIndexToUse = Math.max(0, Math.min(segCount - 1, prizeIndexToUse));
     }
 
     console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
     
-    // 🔥 DEBUG: Log which segment this prizeIndex corresponds to
+    // Log which segment this prizeIndex corresponds to
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > prizeIndexToUse) {
       const targetSegment = state.wheelConfig.segments[prizeIndexToUse];
-      console.log('🎯 prizeIndex', prizeIndexToUse, 'corresponds to segment:', {
+      console.log('🎯 Target segment:', {
+        index: prizeIndexToUse,
         id: targetSegment.id,
         label: targetSegment.label,
         isWinning: targetSegment.isWinning
@@ -1350,18 +1380,19 @@ const PlayWheel = () => {
             isWinning: index === 0, // Make first slot winning
           }));
         } else {
-          // Create default slots
+          // Create default slots with IDs
           slots = [
-            { label: 'Prix 1', color: '#FF6384', weight: 34, isWinning: true, position: 0 },
-            { label: 'Prix 2', color: '#36A2EB', weight: 33, isWinning: false, position: 1 },
-            { label: 'Prix 3', color: '#FFCE56', weight: 33, isWinning: false, position: 2 },
+            { id: 'fallback-1', label: 'Prix 1', color: '#FF6384', weight: 34, isWinning: true, position: 0 },
+            { id: 'fallback-2', label: 'Prix 2', color: '#36A2EB', weight: 33, isWinning: false, position: 1 },
+            { id: 'fallback-3', label: 'Prix 3', color: '#FFCE56', weight: 33, isWinning: false, position: 2 },
           ];
         }
 
-        // Update wheel config
+        // Update wheel config - CRITICAL: Include id field
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
           ...state.wheelConfig,
           segments: slots.map((slot) => ({
+            id: slot.id,
             label: slot.label,
             color: slot.color,
             isWinning: slot.isWinning,
