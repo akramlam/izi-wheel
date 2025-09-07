@@ -6,6 +6,7 @@ import { ensureWheelHasSlots } from '../utils/db-init';
 import { sendPrizeEmail } from '../utils/mailer';
 import { logPlayActivity } from '../utils/activity-logger';
 import { getRealClientIP, logIPDebugInfo } from '../utils/ip';
+import { applyStableSorting as importedApplyStableSorting } from '../utils/slot-utils';
 
 /**
  * Get public wheel data
@@ -1059,16 +1060,5 @@ export { sendPrizeEmail };
  * Apply stable sorting to slots - matches frontend logic exactly
  * When positions are equal, uses slot ID as tiebreaker for consistent ordering
  */
-function applyStableSorting(slots: any[]) {
-  return [...slots].sort((a, b) => {
-    const posA = a.position !== undefined ? a.position : 999;
-    const posB = b.position !== undefined ? b.position : 999;
-    
-    // If positions are equal, use slot ID as stable tiebreaker
-    if (posA === posB) {
-      return a.id.localeCompare(b.id);
-    }
-    
-    return posA - posB;
-  });
-} 
+// Use the imported applyStableSorting function from slot-utils
+const applyStableSorting = importedApplyStableSorting; 
