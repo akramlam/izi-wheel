@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, Check, X, RefreshCw } from 'lucide-react';
 import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { PasswordInput } from '../components/ui/password-input';
 import Badge from '../components/ui/Badge';
 import { 
@@ -428,19 +429,21 @@ const SubAdminManager = () => {
               <label htmlFor="companySelector" className="mb-2 block text-sm font-medium text-gray-700 md:mb-0">
                 Sélectionner une entreprise pour gérer ses sous-administrateurs:
               </label>
-              <select
-                id="companySelector"
+              <Select
                 value={selectedCompanyId}
-                onChange={handleCompanyChange}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 md:w-auto"
+                onValueChange={(v) => handleCompanyChange(v as any)}
               >
-                <option value="">-- Sélectionner une entreprise --</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une entreprise" />
+                </SelectTrigger>
+                <SelectContent>
                 {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
+                  <SelectItem key={company.id} value={company.id}>
                     {company.name} {!company.isActive && "(Inactive)"}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         )}
