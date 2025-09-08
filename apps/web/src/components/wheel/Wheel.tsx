@@ -8,6 +8,7 @@ interface WheelProps {
   prizeIndex: number;
   onSpin: () => void;
   showSpinButton?: boolean;
+  onSpinStart?: (durationSeconds: number) => void;
 }
 
 // Constants for wheel dimensions - Made responsive and reduced size
@@ -184,7 +185,7 @@ function formatTextForWheel(text: string, maxCharsPerLine: number = 12, maxLines
 }
 
 // Main Wheel component
-const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false }) => {
+const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false, onSpinStart }) => {
   // State for animation and interaction
   const [rotation, setRotation] = useState(0);
   const [pointerDropped, setPointerDropped] = useState(false);
@@ -249,6 +250,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         (config.spinDurationMax - config.spinDurationMin) + 
         config.spinDurationMin;
       setSpinSeconds(duration);
+      if (typeof onSpinStart === 'function') {
+        try { onSpinStart(duration); } catch {}
+      }
       
       // Calculate target rotation: Multiple full rotations + offset to prize
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations

@@ -1070,24 +1070,7 @@ const PlayWheel = () => {
       window.immediateFallback = null;
     }
 
-    // Set a single, reliable timeout that triggers after the configured max spin duration (+buffer)
-    const fallbackMs = 20000; // Safe fallback: rely on wheel callback; only trigger if something goes very wrong
-    const completionTimeout = setTimeout(() => {
-      console.log('⚡ Safe fallback timeout triggered - showing result');
-      dispatch({ type: 'SET_MUST_SPIN', payload: false });
-      dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
-      
-      if (data?.play.result === 'WIN') {
-        dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
-        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'won' });
-        dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
-      } else {
-        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
-      }
-    }, fallbackMs);
-
-    // Store the timeout reference
-    window.fallbackTimeout = completionTimeout;
+    // Fallback is now scheduled when the wheel animation actually starts, using its true duration
   };
 
   // Debug effect to monitor mustSpin state changes
@@ -1918,6 +1901,23 @@ const PlayWheel = () => {
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
+                onSpinStart={(duration) => {
+                  // Schedule a precise fallback using the actual duration plus small buffer
+                  if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
+                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  window.fallbackTimeout = setTimeout(() => {
+                    console.log('⚡ Spin-duration-based fallback - showing result');
+                    dispatch({ type: 'SET_MUST_SPIN', payload: false });
+                    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
+                    if (state.spinResult?.play.result === 'WIN') {
+                      dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
+                      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'won' });
+                      dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
+                    } else {
+                      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+                    }
+                  }, ms) as any;
+                }}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>
@@ -1990,6 +1990,22 @@ const PlayWheel = () => {
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
+                onSpinStart={(duration) => {
+                  if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
+                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  window.fallbackTimeout = setTimeout(() => {
+                    console.log('⚡ Spin-duration-based fallback - showing result');
+                    dispatch({ type: 'SET_MUST_SPIN', payload: false });
+                    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
+                    if (state.spinResult?.play.result === 'WIN') {
+                      dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
+                      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'won' });
+                      dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
+                    } else {
+                      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+                    }
+                  }, ms) as any;
+                }}
                 showSpinButton={false}
               />
             </div>
