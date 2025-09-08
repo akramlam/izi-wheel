@@ -175,7 +175,9 @@ export const spinWheel = async (req: Request, res: Response) => {
   try {
     const { wheelId } = req.params;
     const ip = getRealClientIP(req);
-    console.log('IP:', ip);
+    if (!ip) {
+      throw createError('IP not found', 400);
+    }
     
     // Validate request body
     const validatedData = playSchema.parse(req.body);
@@ -208,9 +210,9 @@ export const spinWheel = async (req: Request, res: Response) => {
     }
     
     // Check rate limits
-    const dailyKey = getRateLimitKey(wheelId, ip, 'daily');
-    const weeklyKey = getRateLimitKey(wheelId, ip, 'weekly');
-    const monthlyKey = getRateLimitKey(wheelId, ip, 'monthly');
+    const dailyKey = getRateLimitKey(wheelId, ip || '', 'daily');
+    const weeklyKey = getRateLimitKey(wheelId, ip || '', 'weekly');
+    const monthlyKey = getRateLimitKey(wheelId, ip || '', 'monthly');
     
     const [dailyLimited, weeklyLimited, monthlyLimited] = await Promise.all([
       checkRateLimit(dailyKey, getRateLimitTTL('daily')),

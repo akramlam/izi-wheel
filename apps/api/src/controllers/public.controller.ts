@@ -334,7 +334,9 @@ export const spinWheel = async (req: Request, res: Response) => {
 
     // Get IP address for play limit checking
     const ip = getRealClientIP(req);
-    
+    if (!ip) {
+      return res.status(400).json({ error: 'IP not found' });
+    }
     // Debug: Log IP detection information
     console.log('🔍 IP Detection Debug:', {
       capturedIP: ip,
@@ -562,7 +564,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         result: isWin ? 'WIN' : 'LOSE',
         slotLabel: slot.label,
         pin: pin || undefined,
-        ipAddress: ip,
+        ipAddress: ip || undefined,
         userAgent: req.get('User-Agent') || undefined,
         leadInfo: lead
       });
