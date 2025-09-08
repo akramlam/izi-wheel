@@ -233,8 +233,7 @@ const SousAdministrateurs: React.FC = () => {
     }
   };
 
-  const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCompanyId = e.target.value;
+  const handleCompanyChange = (newCompanyId: string) => {
     setSelectedCompanyId(newCompanyId);
     
     // When company changes, update the list of sub-admins
