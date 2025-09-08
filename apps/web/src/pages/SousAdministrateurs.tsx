@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { DeleteConfirmationDialog } from '../components/ui/confirmation-dialog';
 // import { Input } from '../components/ui/input';
 import { PasswordInput } from '../components/ui/password-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 // Data types from SubAdminManager.tsx
 type SubAdmin = {
@@ -610,20 +611,21 @@ const SousAdministrateurs: React.FC = () => {
             <label htmlFor="companySelector" className="block text-sm font-medium text-gray-700 mb-2">
               Sélectionner une entreprise :
             </label>
-            <select
-              id="companySelector"
-              value={selectedCompanyId}
-              onChange={handleCompanyChange}
-              className="block w-full sm:w-auto rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              disabled={isLoading && companies.length === 0}
-            >
-              <option value="">-- Sélectionner une entreprise --</option>
-              {companies.map((company) => (
-                <option key={company.id} value={company.id}>
-                  {company.name} {!company.isActive && "(Inactive)"}
-                </option>
-              ))}
-            </select>
+            <Select
+                value={selectedCompanyId}
+                onValueChange={(v) => handleCompanyChange(v as any)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une entreprise" />
+                </SelectTrigger>
+                <SelectContent>
+                {companies.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name} {!company.isActive && "(Inactive)"}
+                  </SelectItem>
+                ))}
+                </SelectContent>
+              </Select>
              {isLoading && selectedCompanyId && <p className="text-sm text-gray-500 mt-2">Chargement des sous-administrateurs...</p>}
           </CardContent>
         </Card>
