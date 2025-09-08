@@ -6,7 +6,7 @@ import { Folder, DollarSign, Users, TrendingUp, TrendingDown, ChevronDown } from
 import { api } from '../lib/api'
 import { useToast } from '../hooks/use-toast'
 import { useAuth } from '../hooks/useAuth'
-import { Select, SelectItem } from "../components/ui/select"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select"
 import { showErrorToast } from '../utils/errorHandler'
 import {
   Chart as ChartJS,
@@ -430,12 +430,17 @@ const Statistiques: React.FC = () => {
                 value={selectedCompanyId}
                 onValueChange={(v) => setSelectedCompanyId(v)}
               >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une entreprise" />
+                </SelectTrigger>
+                <SelectContent>
                 <SelectItem value="">Sélectionner une entreprise</SelectItem>
                 {companies.map((company) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.name}
                   </SelectItem>
                 ))}
+                </SelectContent>
               </Select>
             </div>
 
