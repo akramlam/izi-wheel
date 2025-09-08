@@ -604,7 +604,7 @@ const Roues: React.FC = () => {
               </label>
               <Select
                 value={selectedCompanyId}
-                onValueChange={(v) => handleCompanyChange(v as any)}  >
+                onValueChange={(v) => setSelectedCompanyId(v)}  >
                 <SelectTrigger>
                   <SelectValue placeholder="Choisir une entreprise" />
                 </SelectTrigger>

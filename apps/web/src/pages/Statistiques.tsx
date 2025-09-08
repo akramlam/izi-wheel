@@ -439,6 +439,7 @@ const Statistiques: React.FC = () => {
                     {company.name}
                   </SelectItem>
                 ))}
+
                 </SelectContent>
               </Select>
             </div>
