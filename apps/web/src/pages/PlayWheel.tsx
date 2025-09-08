@@ -765,6 +765,9 @@ const PlayWheel = () => {
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
           ...state.wheelConfig,
           segments,
+          // Allow pointer calibration (0° at top by default);
+          // adjust here if production pointer sprite sits slightly off top.
+          pointerAngleDeg: 0,
           colors: {
             primaryGradient: BRAND.primaryGradient,
             secondaryGradient: BRAND.secondaryGradient,

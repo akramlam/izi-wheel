@@ -254,11 +254,12 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       const rotations = 5 + Math.random() * 3; // 5-8 full rotations
       
       // Use the deterministic alignment function
+      const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
         prizeIndex,
-        pointerAngleDeg: 0, // Pointer is at the top (0°)
+        pointerAngleDeg: pointerAngle, // Allow calibration if pointer not exactly at 0°
         biasDeg
       });
       
@@ -337,13 +338,13 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         
         // Safety correction: verify final alignment and micro-correct if needed
           const finalRotation = target % 360;
-          const segmentUnderPointer = Math.floor(((360 - finalRotation) % 360) / segAngle);
+          const segmentUnderPointer = Math.floor(((360 - (finalRotation - pointerAngle) + 360) % 360) / segAngle);
           const expectedSegment = prizeIndex;
           const biasDegDev = segAngle * 0.1;
           const wanted = computeAlignmentRotation({
             segmentCount: segments.length,
             prizeIndex: expectedSegment,
-            pointerAngleDeg: 0,
+            pointerAngleDeg: pointerAngle,
             biasDeg: biasDegDev
           });
           const finalNorm = ((finalRotation % 360) + 360) % 360;

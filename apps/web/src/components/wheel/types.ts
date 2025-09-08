@@ -9,6 +9,8 @@ export interface WheelSegment {
 export interface WheelConfig {
   segments: WheelSegment[];
   pointerIconUrl?: string;
+  // Degrees clockwise from top (0° at top). Allows pointer calibration if needed.
+  pointerAngleDeg?: number;
   spinDurationMin: number;
   spinDurationMax: number;
   colors?: {
