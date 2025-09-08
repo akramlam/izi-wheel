@@ -4,10 +4,19 @@ import { Request } from 'express';
  * Extract the real client IP address from the request
  * Handles various proxy headers and fallbacks
  */
-export const getRealClientIP = (req: Request): string => {
+
+const normalizeIp = (ip: string | undefined | null) => {
+  if (!ip) return null;
+  // strip IPv6-mapped IPv4 and zone ids
+  let v = ip.replace(/^::ffff:/, '');
+  if (v.includes('%')) v = v.split('%')[0];
+  return v;
+};
+
+export const getRealClientIP = (req: Request): string | null => {
   // With app.set('trust proxy', true), req.ip should contain the real client IP
   if (req.ip && req.ip !== '127.0.0.1' && req.ip !== '::1') {
-    return req.ip;
+    return normalizeIp(req.ip || req.socket.remoteAddress || null);
   }
 
   // Check various proxy headers as fallbacks

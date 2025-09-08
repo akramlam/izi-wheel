@@ -66,7 +66,7 @@ const port = process.env.PORT || 3001;
 
 // Trust proxy to get real client IP addresses
 // This is essential for IP-based rate limiting and tracking
-app.set('trust proxy', true);
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal', '127.0.0.1', '::1']);
 
 // Middleware
 app.use(cors({

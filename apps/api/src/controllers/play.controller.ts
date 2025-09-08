@@ -175,6 +175,7 @@ export const spinWheel = async (req: Request, res: Response) => {
   try {
     const { wheelId } = req.params;
     const ip = getRealClientIP(req);
+    console.log('IP:', ip);
     
     // Validate request body
     const validatedData = playSchema.parse(req.body);
