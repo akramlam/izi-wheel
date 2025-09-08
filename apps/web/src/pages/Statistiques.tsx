@@ -6,6 +6,7 @@ import { Folder, DollarSign, Users, TrendingUp, TrendingDown, ChevronDown } from
 import { api } from '../lib/api'
 import { useToast } from '../hooks/use-toast'
 import { useAuth } from '../hooks/useAuth'
+import { Select, SelectItem } from "../components/ui/select"
 import { showErrorToast } from '../utils/errorHandler'
 import {
   Chart as ChartJS,
@@ -425,18 +426,17 @@ const Statistiques: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Entreprise
               </label>
-              <select
+              <Select
                 value={selectedCompanyId}
-                onChange={(e) => setSelectedCompanyId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                onValueChange={(v) => setSelectedCompanyId(v)}
               >
-                <option value="">Sélectionner une entreprise</option>
+                <SelectItem value="">Sélectionner une entreprise</SelectItem>
                 {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
+                  <SelectItem key={company.id} value={company.id}>
                     {company.name}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+              </Select>
             </div>
 
             {/* Wheel Selector */}

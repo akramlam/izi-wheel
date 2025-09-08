@@ -602,18 +602,16 @@ const Roues: React.FC = () => {
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Sélectionner une entreprise
               </label>
-              <select
+              <Select
                 value={selectedCompanyId}
-                onChange={handleCompanyChange}
-                className="w-full rounded-md border border-gray-300 bg-white py-2 px-3 text-sm sm:text-base shadow-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-              >
-                <option value="">-- Choisir une entreprise --</option>
+                onValueChange={(v) => handleCompanyChange(v as any)}  >
+                <SelectItem value="">-- Choisir une entreprise --</SelectItem>
                 {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
+                  <SelectItem key={company.id} value={company.id}>
                     {company.name}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+              </Select>
             </div>
           </CardContent>
         </Card>
