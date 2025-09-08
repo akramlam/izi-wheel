@@ -473,14 +473,15 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
   const colors = { ...DEFAULT_COLORS, ...config.colors };
   
   return (
-    <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center touch-none select-none">
+    <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center touch-none select-none relative">
       {/* Animated background glow - Made responsive */}
       <div 
         className="absolute z-0 rounded-full bg-gradient-to-br from-indigo-400/30 via-pink-400/20 to-purple-400/30 blur-3xl animate-spin-slow opacity-70" 
         style={{ 
           animationDuration: '16s',
           width: `${wheelDisplaySize + 50}px`,
-          height: `${wheelDisplaySize + 50}px`
+          height: `${wheelDisplaySize + 50}px`,
+          pointerEvents: 'none'
         }} 
       />
       
