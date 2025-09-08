@@ -1068,9 +1068,9 @@ const PlayWheel = () => {
     }
 
     // Set a single, reliable timeout that triggers after the configured max spin duration (+buffer)
-    const fallbackMs = Math.ceil(((state.wheelConfig.spinDurationMax ?? 8) + 0.7) * 1000);
+    const fallbackMs = 20000; // Safe fallback: rely on wheel callback; only trigger if something goes very wrong
     const completionTimeout = setTimeout(() => {
-      console.log('⚡ Timeout triggered - showing result');
+      console.log('⚡ Safe fallback timeout triggered - showing result');
       dispatch({ type: 'SET_MUST_SPIN', payload: false });
       dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
       
