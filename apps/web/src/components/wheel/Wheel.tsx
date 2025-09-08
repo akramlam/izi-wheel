@@ -335,6 +335,40 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         // Drop pointer
         setPointerDropped(true);
         
+        // Safety correction: verify final alignment and micro-correct if needed
+          const finalRotation = target % 360;
+          const segmentUnderPointer = Math.floor(((360 - finalRotation) % 360) / segAngle);
+          const expectedSegment = prizeIndex;
+          const biasDegDev = segAngle * 0.1;
+          const wanted = computeAlignmentRotation({
+            segmentCount: segments.length,
+            prizeIndex: expectedSegment,
+            pointerAngleDeg: 0,
+            biasDeg: biasDegDev
+          });
+          const finalNorm = ((finalRotation % 360) + 360) % 360;
+          const wantedNorm = ((wanted % 360) + 360) % 360;
+          // Compute minimal signed delta in [-180, 180]
+          let delta = ((wantedNorm - finalNorm + 540) % 360) - 180;
+
+          console.log('🛠️ Post-spin verification:', {
+            finalRotation: finalNorm,
+            wantedRotation: wantedNorm,
+            delta,
+            segAngle,
+            segmentUnderPointer,
+            expectedSegment
+          });
+
+          if (segmentUnderPointer !== expectedSegment && Math.abs(delta) > 0.1) {
+            // Apply a tiny corrective rotation to snap precisely to the expected segment
+            // Shorten the transition for the micro-correction
+            setSpinSeconds(0.35);
+            setRotation((prev) => prev + delta);
+            console.warn('⚠️ Applied micro-correction to align pointer to expected segment');
+          }
+        
+
         // Play win/lose sound - Handle case where segments might be empty
         const winningSegment = segments.length > prizeIndex ? segments[prizeIndex] : null;
         if (winningSegment?.isWinning) {
