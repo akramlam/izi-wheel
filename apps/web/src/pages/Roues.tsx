@@ -354,9 +354,8 @@ const Roues: React.FC = () => {
     }
   };
   
-  // Handle company selection change
-  const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCompanyId = e.target.value;
+  // Handle company selection change (Radix Select returns the value directly)
+  const handleCompanyChange = (newCompanyId: string) => {
     setSelectedCompanyId(newCompanyId);
     localStorage.setItem('companyId', newCompanyId);
     
@@ -604,7 +603,7 @@ const Roues: React.FC = () => {
               </label>
               <Select
                 value={selectedCompanyId}
-                onValueChange={(v) => setSelectedCompanyId(v)}  >
+                onValueChange={(v) => handleCompanyChange(v as any)}  >
                 <SelectTrigger>
                   <SelectValue placeholder="Choisir une entreprise" />
                 </SelectTrigger>
