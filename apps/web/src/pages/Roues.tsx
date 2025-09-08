@@ -606,10 +606,9 @@ const Roues: React.FC = () => {
                 value={selectedCompanyId}
                 onValueChange={(v) => handleCompanyChange(v as any)}  >
                 <SelectTrigger>
-                  <SelectValue placeholder="-- Choisir une entreprise --" />
+                  <SelectValue placeholder="Choisir une entreprise" />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="">-- Choisir une entreprise --</SelectItem>
                 {companies.map((company) => (
                   <SelectItem key={company.id} value={company.id}>
                     {company.name}
