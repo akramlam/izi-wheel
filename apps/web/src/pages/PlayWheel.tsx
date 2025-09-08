@@ -556,6 +556,7 @@ const PlayWheel = () => {
   console.log('[DEBUG] Effective params:', effectiveParams);
 
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const [spinSegmentsSnapshot, setSpinSegmentsSnapshot] = useState<WheelConfig['segments'] | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
@@ -1049,6 +1050,10 @@ const PlayWheel = () => {
     
     dispatch({ type: 'SET_SPIN_RESULT', payload: data });
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
+    // Freeze current segments to avoid any reordering during animation
+    if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
+      setSpinSegmentsSnapshot([...state.wheelConfig.segments]);
+    }
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
     // 🔥 Timeout mechanism: show result only after the wheel should have finished
@@ -1120,6 +1125,8 @@ const PlayWheel = () => {
 
     // Reset the spinning state immediately
     dispatch({ type: 'SET_MUST_SPIN', payload: false });
+    // Clear snapshot once spin completes
+    setSpinSegmentsSnapshot(null);
 
     // Show result modal immediately since wheel has finished spinning
     dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
@@ -1904,7 +1911,7 @@ const PlayWheel = () => {
             {/* Responsive wheel container that adapts to screen size and fills available space */}
             <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
               <Wheel
-                config={state.wheelConfig}
+                config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
@@ -1976,7 +1983,7 @@ const PlayWheel = () => {
           <div className="wheel-content-area w-full flex flex-col items-center justify-center space-y-4 px-4">
             <div className="responsive-wheel-container wheel-container relative w-full max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw] xl:max-w-[800px] mx-auto flex items-center justify-center">
               <Wheel
-                config={state.wheelConfig}
+                config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
