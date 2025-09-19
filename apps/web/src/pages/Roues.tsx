@@ -581,7 +581,7 @@ const Roues: React.FC = () => {
         </div>
         {/* Right header block: stack usage and action vertically */}
         <div className="flex flex-col items-end space-y-2">
-          {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
+        {(!isSuperAdmin || (isSuperAdmin && selectedCompanyId)) && (
             <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 text-right">
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
@@ -589,8 +589,8 @@ const Roues: React.FC = () => {
           <Button onClick={() => navigate('/roues/create')}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle roue
-          </Button>
-        </div>
+            </Button>
+          </div>
       </div>
 
       {/* Company selector for super admin - Mobile responsive */}
@@ -624,17 +624,17 @@ const Roues: React.FC = () => {
       <Card className="mb-4 sm:mb-6">
         <CardContent className="p-3 sm:p-6">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
-            {/* Search */}
+              {/* Search */}
             <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
                 placeholder="Rechercher par nom..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
 
             {/* Type filter */}
             <div className="w-full md:w-48">
@@ -646,8 +646,8 @@ const Roues: React.FC = () => {
                   <SelectItem value="aleatoire">Gain aléatoire</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
+              </div>
+              
             {/* Status filter */}
             <div className="w-full md:w-48">
               <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v)}>
@@ -671,16 +671,16 @@ const Roues: React.FC = () => {
                   <SelectItem value="statut">Statut</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
+                </div>
+                
             {/* Direction + Reset */}
             <div className="flex w-full md:w-auto gap-2">
               <Button variant="outline" size="sm" className="w-24" onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}>
                 <ArrowUpDown className="h-4 w-4 mr-2" /> {sortOrder === 'asc' ? 'Asc' : 'Desc'}
-              </Button>
+                  </Button>
               <Button variant="outline" size="sm" onClick={() => { setFilterType('all'); setFilterStatus('all'); setSortBy('nom'); setSortOrder('asc'); setSearchTerm(''); }}>
                 <X className="h-4 w-4 mr-2" /> Réinitialiser
-              </Button>
+                        </Button>
             </div>
           </div>
         </CardContent>
@@ -886,20 +886,20 @@ const Roues: React.FC = () => {
 
       {/* Pagination - hidden until real paging is implemented */}
       {false && (
-        <div className="flex items-center justify-center space-x-2">
-          <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
-          {[1, 2, 3, 4, 5].map((page) => (
-            <button
-              key={page}
-              className={`px-3 py-2 text-sm rounded ${
-                page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
-        </div>
+      <div className="flex items-center justify-center space-x-2">
+        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Précédent</button>
+        {[1, 2, 3, 4, 5].map((page) => (
+          <button
+            key={page}
+            className={`px-3 py-2 text-sm rounded ${
+              page === 1 ? "bg-purple-600 text-white" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
+      </div>
       )}
 
       {/* Delete confirmation dialog */}

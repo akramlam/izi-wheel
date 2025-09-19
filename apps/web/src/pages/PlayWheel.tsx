@@ -19,6 +19,7 @@ import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm'
 import { Input } from '../components/ui/input';
 import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
 import { runWheelAlignmentTests } from '../components/wheel/Wheel.test';
+import { applyStableSorting } from '../utils/slot-utils';
 
 // TypeScript declaration for window property
 declare global {
@@ -704,19 +705,8 @@ const PlayWheel = () => {
         } });
       } else {
         // Ensure slots have position values with STABLE sorting
-        const sortedSlots = [...wheelData.slots].sort(
-          (a: WheelData['slots'][0], b: WheelData['slots'][0]) => {
-            const posA = a.position !== undefined ? a.position : 999;
-            const posB = b.position !== undefined ? b.position : 999;
-            
-            // If positions are equal, use slot ID as stable tiebreaker
-            if (posA === posB) {
-              return a.id.localeCompare(b.id);
-            }
-            
-            return posA - posB;
-          }
-        );
+        // Use the same sorting function as the backend to ensure consistency
+        const sortedSlots = applyStableSorting(wheelData.slots);
 
         // Check if any slot is marked as winning
         const hasWinningSlot = sortedSlots.some((slot) => slot.isWinning);
@@ -743,6 +733,15 @@ const PlayWheel = () => {
         }));
         
         console.log('🎯 Frontend segment order:', frontendSegmentOrder);
+        
+        // 🔥 CRITICAL DEBUG: Log segment order and verify consistency
+        console.log('🎯 SEGMENT ORDER VERIFICATION:', {
+          backendSlotIds: wheelData.slots.map(s => s.id),
+          frontendSegmentIds: segments.map(s => s.id),
+          backendPositions: wheelData.slots.map(s => s.position),
+          frontendPositions: sortedSlots.map(s => s.position),
+          areOrdersIdentical: JSON.stringify(wheelData.slots.map(s => s.id)) === JSON.stringify(segments.map(s => s.id))
+        });
         
         // Runtime assertion: Check that segments have all required fields
         const missingIdSegments = segments.filter(seg => !seg.id);
@@ -1050,6 +1049,18 @@ const PlayWheel = () => {
         isWinning: targetSegment.isWinning
       });
     }
+    
+    // 🔥 PRIZE INDEX DEBUG: Enhanced logging for mismatch detection
+    console.log('🎯 PRIZE INDEX DEBUG:', {
+      backendPrizeIndex: data.prizeIndex,
+      backendSlotId: data.slot.id,
+      backendSlotLabel: data.slot.label,
+      frontendSegmentIds: state.wheelConfig.segments.map(s => s.id),
+      frontendSegmentLabels: state.wheelConfig.segments.map(s => s.label),
+      resolvedIndex: prizeIndexToUse,
+      targetSegment: state.wheelConfig.segments[prizeIndexToUse]?.label,
+      isMismatch: data.slot.label !== state.wheelConfig.segments[prizeIndexToUse]?.label
+    });
     
     dispatch({ type: 'SET_SPIN_RESULT', payload: data });
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
