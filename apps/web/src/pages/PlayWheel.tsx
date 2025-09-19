@@ -1913,9 +1913,10 @@ const PlayWheel = () => {
                 prizeIndex={state.prizeIndex}
                 onSpin={handleWheelFinishedSpin}
                 onSpinStart={(duration) => {
-                  // Schedule a precise fallback using the actual duration plus small buffer
+                  // Schedule a precise fallback using the actual duration plus larger buffer
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
-                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  const ms = Math.ceil((duration + 2.0) * 1000); // Increased buffer to 2 seconds
+                  console.log(`🎯 Setting fallback timeout for ${ms}ms (duration: ${duration}s + 2s buffer)`);
                   window.fallbackTimeout = setTimeout(() => {
                     console.log('⚡ Spin-duration-based fallback - showing result');
                     dispatch({ type: 'SET_MUST_SPIN', payload: false });
@@ -2003,7 +2004,8 @@ const PlayWheel = () => {
                 onSpin={handleWheelFinishedSpin}
                 onSpinStart={(duration) => {
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
-                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  const ms = Math.ceil((duration + 2.0) * 1000); // Increased buffer to 2 seconds
+                  console.log(`🎯 Setting fallback timeout for ${ms}ms (duration: ${duration}s + 2s buffer)`);
                   window.fallbackTimeout = setTimeout(() => {
                     console.log('⚡ Spin-duration-based fallback - showing result');
                     dispatch({ type: 'SET_MUST_SPIN', payload: false });

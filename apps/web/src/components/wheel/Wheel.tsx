@@ -333,6 +333,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
       // Drop pointer at the end of spin animation
       const timeoutId = setTimeout(() => {
         console.log('🎬 Main animation timeout reached, duration was:', duration * 1000);
+        console.log('🎬 About to drop pointer and complete animation');
         
         // Clear tick interval
         if (tickInterval) clearInterval(tickInterval);
@@ -391,6 +392,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         const resetTimeout = setTimeout(() => {
           console.log('🎬 Wheel animation completed, calling onSpin callback');
           console.log('🎬 About to call onSpin - isSpinning:', isSpinning, 'spinning:', spinning);
+          console.log('🎬 Final rotation state:', { rotation, target, finalRotation: target % 360 });
           
           // 🔥 RUNTIME VERIFICATION: Check final alignment
           if (process.env.NODE_ENV !== 'production') {
