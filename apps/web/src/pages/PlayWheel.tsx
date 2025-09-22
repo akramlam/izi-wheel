@@ -77,6 +77,17 @@ type PlayResponse = {
     id: string;
     label: string;
   };
+  /**
+   * Frontend-resolved information to keep the UI in sync with the wheel animation.
+   * These fields are not guaranteed to exist in the backend response but allow
+   * us to normalise what we display to the player.
+   */
+  resolvedPrizeIndex?: number;
+  resolvedSegment?: {
+    id: string;
+    label: string;
+    isWinning?: boolean;
+  };
 };
 
 // State management with useReducer
@@ -564,6 +575,9 @@ const PlayWheel = () => {
   // Add a confetti ref to control it
   const confettiRef = useRef<any>(null);
 
+  // Helper to always reference the segment label that visually won on the wheel
+  const resolvedWinningLabel = state.spinResult?.resolvedSegment?.label ?? state.spinResult?.slot.label ?? '';
+
   // Fetch wheel data
   const {
     data: wheelData,
@@ -1039,17 +1053,18 @@ const PlayWheel = () => {
 
     console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
     
-    // Log which segment this prizeIndex corresponds to
+    // Log which segment this prizeIndex corresponds to and keep a reference for UI syncing
+    let resolvedSegment: WheelConfig['segments'][number] | null = null;
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > prizeIndexToUse) {
-      const targetSegment = state.wheelConfig.segments[prizeIndexToUse];
+      resolvedSegment = state.wheelConfig.segments[prizeIndexToUse];
       console.log('🎯 Target segment:', {
         index: prizeIndexToUse,
-        id: targetSegment.id,
-        label: targetSegment.label,
-        isWinning: targetSegment.isWinning
+        id: resolvedSegment.id,
+        label: resolvedSegment.label,
+        isWinning: resolvedSegment.isWinning
       });
     }
-    
+
     // 🔥 PRIZE INDEX DEBUG: Enhanced logging for mismatch detection
     console.log('🎯 PRIZE INDEX DEBUG:', {
       backendPrizeIndex: data.prizeIndex,
@@ -1058,11 +1073,28 @@ const PlayWheel = () => {
       frontendSegmentIds: state.wheelConfig.segments.map(s => s.id),
       frontendSegmentLabels: state.wheelConfig.segments.map(s => s.label),
       resolvedIndex: prizeIndexToUse,
-      targetSegment: state.wheelConfig.segments[prizeIndexToUse]?.label,
-      isMismatch: data.slot.label !== state.wheelConfig.segments[prizeIndexToUse]?.label
+      targetSegment: resolvedSegment?.label,
+      isMismatch: data.slot.label !== resolvedSegment?.label
     });
-    
-    dispatch({ type: 'SET_SPIN_RESULT', payload: data });
+
+    const normalizedResult: PlayResponse = {
+      ...data,
+      slot: {
+        ...data?.slot,
+        id: resolvedSegment?.id ?? data?.slot?.id ?? '',
+        label: resolvedSegment?.label ?? data?.slot?.label ?? '',
+      },
+      resolvedPrizeIndex: prizeIndexToUse,
+      resolvedSegment: resolvedSegment
+        ? {
+            id: resolvedSegment.id,
+            label: resolvedSegment.label,
+            isWinning: resolvedSegment.isWinning,
+          }
+        : undefined,
+    };
+
+    dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
     // Freeze current segments to avoid any reordering during animation
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
@@ -1181,7 +1213,7 @@ const PlayWheel = () => {
       email: data.email,
       phone: data.phone || '',
       playId: state.spinResult?.play.id || '',
-      prize: state.spinResult?.slot.label || '',
+      prize: resolvedWinningLabel || '',
       timestamp: new Date().toISOString(),
     } });
 
@@ -1313,7 +1345,7 @@ const PlayWheel = () => {
     // Otherwise, if there's a PIN, generate a QR code
     else if (state.spinResult.play.prize.pin) {
       const pin = state.spinResult.play.prize.pin;
-      const prizeInfo = `Prize: ${state.spinResult.slot.label}, PIN: ${pin}`;
+      const prizeInfo = `Prize: ${resolvedWinningLabel}, PIN: ${pin}`;
       const encodedPrizeInfo = encodeURIComponent(prizeInfo);
 
       // Use Google Charts API for QR code generation
@@ -1331,7 +1363,8 @@ const PlayWheel = () => {
       // Create a temporary link element
       const link = document.createElement('a');
       link.href = qrUrl;
-      link.download = `prix-${state.spinResult.slot.label.replace(/\s+/g, '-').toLowerCase()}.png`;
+      const downloadLabel = (resolvedWinningLabel || 'prize').replace(/\s+/g, '-').toLowerCase();
+      link.download = `prix-${downloadLabel}.png`;
 
       // Append to the body, click, and remove
       document.body.appendChild(link);
@@ -1724,7 +1757,7 @@ const PlayWheel = () => {
             {state.spinResult?.play.result === 'WIN' ? (
               <>
                 <p className="text-base sm:text-lg text-gray-700 mb-4">
-                  Vous avez gagné : <strong>{state.spinResult.slot.label}</strong>
+                  Vous avez gagné : <strong>{resolvedWinningLabel}</strong>
                 </p>
                 <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
                   <p className="text-sm sm:text-base text-blue-800 font-medium">
