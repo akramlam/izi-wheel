@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import type { WheelConfig } from './types';
+import type { WheelConfig, WheelSpinResult } from './types';
 import soundUtils from '../../lib/sound';
 
 interface WheelProps {
@@ -9,6 +9,7 @@ interface WheelProps {
   onSpin: () => void;
   showSpinButton?: boolean;
   onSpinStart?: (durationSeconds: number) => void;
+  onSpinComplete?: (result: WheelSpinResult) => void;
 }
 
 // Constants for wheel dimensions - Made responsive and reduced size
@@ -185,7 +186,15 @@ function formatTextForWheel(text: string, maxCharsPerLine: number = 12, maxLines
 }
 
 // Main Wheel component
-const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, showSpinButton = false, onSpinStart }) => {
+const Wheel: React.FC<WheelProps> = ({
+  config,
+  isSpinning,
+  prizeIndex,
+  onSpin,
+  showSpinButton = false,
+  onSpinStart,
+  onSpinComplete,
+}) => {
   // State for animation and interaction
   const [rotation, setRotation] = useState(0);
   const [pointerDropped, setPointerDropped] = useState(false);
@@ -266,9 +275,11 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         pointerAngleDeg: pointerAngle, // Allow calibration if pointer not exactly at 0°
         biasDeg
       });
-      
+
       // Add multiple full rotations for visual effect
       const target = 360 * rotations + alignmentRotation;
+
+      let correctionDelta = 0;
       
       console.log('🎯 Deterministic rotation calculation:', {
         prizeIndex,
@@ -372,8 +383,9 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
             setSpinSeconds(0.35);
             setRotation((prev) => prev + delta);
             console.warn('⚠️ Applied micro-correction to align pointer to expected segment');
+            correctionDelta = delta;
           }
-        
+
 
         // Play win/lose sound - Handle case where segments might be empty
         const winningSegment = segments.length > prizeIndex ? segments[prizeIndex] : null;
@@ -392,14 +404,28 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
         const resetTimeout = setTimeout(() => {
           console.log('🎬 Wheel animation completed, calling onSpin callback');
           console.log('🎬 About to call onSpin - isSpinning:', isSpinning, 'spinning:', spinning);
-          console.log('🎬 Final rotation state:', { rotation, target, finalRotation: target % 360 });
-          
+          const finalRotationRaw = target + correctionDelta;
+          const finalRotation = ((finalRotationRaw % 360) + 360) % 360;
+          console.log('🎬 Final rotation state:', { rotation, target, correctionDelta, finalRotation });
+
+          const pointerAngleDeg = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
+          const rawPointerIndex = segments.length > 0
+            ? Math.floor(((360 - (finalRotation - pointerAngleDeg) + 360) % 360) / segAngle)
+            : 0;
+          const clampedPointerIndex = Math.min(Math.max(rawPointerIndex, 0), Math.max(segments.length - 1, 0));
+          const clampedExpectedIndex = Math.min(Math.max(prizeIndex, 0), Math.max(segments.length - 1, 0));
+
+          const summary: WheelSpinResult = {
+            pointerIndex: clampedPointerIndex,
+            expectedIndex: clampedExpectedIndex,
+            isAligned: clampedPointerIndex === clampedExpectedIndex,
+          };
+
           // 🔥 RUNTIME VERIFICATION: Check final alignment
           if (process.env.NODE_ENV !== 'production') {
-            const finalRotation = target % 360;
             const segmentUnderPointer = Math.floor((360 - finalRotation + 360) % 360 / segAngle);
             const expectedSegment = prizeIndex;
-            
+
             console.log('🎯 ALIGNMENT VERIFICATION:', {
               finalRotation,
               segmentUnderPointer,
@@ -408,7 +434,7 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
               segmentAngle: segAngle,
               totalSegments: segments.length
             });
-            
+
             if (segmentUnderPointer !== expectedSegment) {
               console.error('❌ ALIGNMENT MISMATCH DETECTED!', {
                 pointerAt: segmentUnderPointer,
@@ -419,12 +445,19 @@ const Wheel: React.FC<WheelProps> = ({ config, isSpinning, prizeIndex, onSpin, s
               console.log('✅ Wheel alignment verified correct');
             }
           }
-          
+
           setSpinning(false);
-          
+
           // ✅ Call onSpin callback to notify parent that wheel has finished
           console.log('🎬 Calling onSpin callback now...');
           onSpin();
+          if (typeof onSpinComplete === 'function') {
+            try {
+              onSpinComplete(summary);
+            } catch (error) {
+              console.error('Error in onSpinComplete handler:', error);
+            }
+          }
           console.log('🎬 onSpin callback called successfully');
         }, 500); // Increased buffer to ensure wheel fully settles before callback
         
