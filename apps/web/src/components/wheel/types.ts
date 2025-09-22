@@ -9,6 +9,25 @@ export interface WheelSegment {
    * This helps map API responses back to the exact frontend segment.
    */
   position?: number;
+
+}
+
+export interface WheelSpinResult {
+  /**
+   * Zero-based index of the segment detected under the physical pointer when
+   * the animation finished. Always clamped to the available segment range.
+   */
+  pointerIndex: number;
+  /**
+   * Zero-based index that the consumer requested for the spin. Allows the
+   * caller to detect and react to any discrepancies.
+   */
+  expectedIndex: number;
+  /**
+   * Indicates whether the detected pointer index already matched the expected
+   * index without needing any consumer-side correction.
+   */
+  isAligned: boolean;
 }
 
 export interface WheelConfig {

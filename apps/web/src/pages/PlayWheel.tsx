@@ -14,7 +14,7 @@ import { toast } from '../hooks/use-toast';
 import { AlertCircle, Loader2, RefreshCw, Users, Mail, Phone, Calendar, User } from 'lucide-react';
 import { TimedConfetti } from '../components/magicui/timedConfetti';
 import Wheel from '../components/wheel/Wheel';
-import type { WheelConfig } from '../components/wheel/types';
+import type { WheelConfig, WheelSpinResult } from '../components/wheel/types';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 import { Input } from '../components/ui/input';
 import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
@@ -89,6 +89,7 @@ type PlayResponse = {
     label: string;
     isWinning?: boolean;
     position?: number;
+
   };
   /**
    * Frontend-resolved information to keep the UI in sync with the wheel animation.
@@ -100,6 +101,7 @@ type PlayResponse = {
     id: string;
     label: string;
     isWinning?: boolean;
+
   };
 };
 
@@ -581,6 +583,7 @@ const PlayWheel = () => {
   console.log('[DEBUG] Effective params:', effectiveParams);
 
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const noop = useCallback(() => {}, []);
   const [spinSegmentsSnapshot, setSpinSegmentsSnapshot] = useState<WheelConfig['segments'] | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
@@ -1119,32 +1122,6 @@ const PlayWheel = () => {
         ? resolvedSegment.position
         : normalizedSlotPosition ?? undefined;
 
-    console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
-    
-    // Log which segment this prizeIndex corresponds to and keep a reference for UI syncing
-    let resolvedSegment: WheelConfig['segments'][number] | null = null;
-    if (state.wheelConfig.segments && state.wheelConfig.segments.length > prizeIndexToUse) {
-      resolvedSegment = state.wheelConfig.segments[prizeIndexToUse];
-      console.log('🎯 Target segment:', {
-        index: prizeIndexToUse,
-        id: resolvedSegment.id,
-        label: resolvedSegment.label,
-        isWinning: resolvedSegment.isWinning
-      });
-    }
-
-    // 🔥 PRIZE INDEX DEBUG: Enhanced logging for mismatch detection
-    console.log('🎯 PRIZE INDEX DEBUG:', {
-      backendPrizeIndex: data.prizeIndex,
-      backendSlotId: data.slot.id,
-      backendSlotLabel: data.slot.label,
-      frontendSegmentIds: state.wheelConfig.segments.map(s => s.id),
-      frontendSegmentLabels: state.wheelConfig.segments.map(s => s.label),
-      resolvedIndex: prizeIndexToUse,
-      targetSegment: resolvedSegment?.label,
-      isMismatch: data.slot.label !== resolvedSegment?.label
-    });
-
 
     const normalizedResult: PlayResponse = {
       ...data,
@@ -1163,6 +1140,7 @@ const PlayWheel = () => {
             isWinning: resolvedSegment.isWinning,
             position: resolvedSegment.position,
 
+
         id: resolvedSegment?.id ?? data?.slot?.id ?? '',
         label: resolvedSegment?.label ?? data?.slot?.label ?? '',
       },
@@ -1173,11 +1151,16 @@ const PlayWheel = () => {
             label: resolvedSegment.label,
             isWinning: resolvedSegment.isWinning,
 
+
           }
         : undefined,
     };
 
-    dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+//     dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
+    if (safeSegmentsLength > 0) {
+
 
     dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
     if (safeSegmentsLength > 0) {
@@ -1187,6 +1170,7 @@ const PlayWheel = () => {
     // Freeze current segments to avoid any reordering during animation
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
       setSpinSegmentsSnapshot([...state.wheelConfig.segments]);
+
 
     }
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
@@ -1227,8 +1211,84 @@ const PlayWheel = () => {
   }, []);
 
   // Handle wheel finishing spin - called by wheel component when animation completes
-  const handleWheelFinishedSpin = () => {
-    console.log('✅ WHEEL CALLBACK: Wheel finished spinning');
+  const handleWheelFinishedSpin = (summary?: WheelSpinResult) => {
+    console.log('✅ WHEEL CALLBACK: Wheel finished spinning', summary);
+
+    const activeSegments = spinSegmentsSnapshot ?? state.wheelConfig.segments ?? [];
+    const clampPointerIndex = (index: number): number => {
+      if (!activeSegments || activeSegments.length === 0 || !Number.isFinite(index)) {
+        return 0;
+      }
+      return Math.max(0, Math.min(activeSegments.length - 1, Math.trunc(index)));
+    };
+
+    const resolvedPointerIndex = clampPointerIndex(
+      typeof summary?.pointerIndex === 'number' ? summary.pointerIndex : state.prizeIndex
+    );
+
+    const normalizeId = (value: unknown): string => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      try {
+        return String(value);
+      } catch {
+        return '';
+      }
+    };
+
+    if (resolvedPointerIndex !== state.prizeIndex) {
+      console.warn('⚠️ Pointer index differed from requested prize index. Correcting UI state.', {
+        pointerIndex: resolvedPointerIndex,
+        requestedPrizeIndex: state.prizeIndex,
+      });
+      dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPointerIndex });
+    }
+
+    if (state.spinResult) {
+      const pointerSegment =
+        activeSegments && activeSegments.length > 0 ? activeSegments[resolvedPointerIndex] : undefined;
+      const derivedId = normalizeId(pointerSegment?.id ?? state.spinResult.slot?.id ?? '');
+      const updatedResult: PlayResponse = {
+        ...state.spinResult,
+        resolvedPrizeIndex: resolvedPointerIndex,
+        slot: {
+          ...state.spinResult.slot,
+          id: derivedId,
+          label: pointerSegment?.label ?? state.spinResult.slot.label,
+          position:
+            typeof pointerSegment?.position === 'number'
+              ? pointerSegment.position
+              : state.spinResult.slot.position,
+        },
+        resolvedSegment: pointerSegment
+          ? {
+              id: derivedId,
+              label: pointerSegment.label ?? state.spinResult.slot.label,
+              isWinning: pointerSegment.isWinning,
+              position: pointerSegment.position,
+            }
+          : state.spinResult.resolvedSegment
+            ? {
+                ...state.spinResult.resolvedSegment,
+                id: state.spinResult.resolvedSegment.id || derivedId,
+              }
+            : undefined,
+      };
+
+      const hasResultChanged =
+        state.spinResult.resolvedPrizeIndex !== updatedResult.resolvedPrizeIndex ||
+        state.spinResult.slot.label !== updatedResult.slot.label ||
+        state.spinResult.slot.id !== updatedResult.slot.id;
+
+      if (hasResultChanged) {
+        console.log('✅ Synchronising spin result metadata with pointer detection', {
+          resolvedPointerIndex,
+          segmentLabel: updatedResult.resolvedSegment?.label,
+        });
+        dispatch({ type: 'SET_SPIN_RESULT', payload: updatedResult });
+      }
+    }
 
     // 🔥 CRITICAL FIX: Clear the fallback timeout since the wheel callback worked properly
     if (window.fallbackTimeout) {
@@ -1267,6 +1327,9 @@ const PlayWheel = () => {
       dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       console.log('✅ Set up losing result flow');
     }
+
+    // Trigger QR code download attempt
+    attemptQrCodeDownload();
   };
 
   // Handle result modal close and transition to next flow step
@@ -2029,7 +2092,7 @@ const PlayWheel = () => {
                 config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
-                onSpin={handleWheelFinishedSpin}
+                onSpin={noop}
                 onSpinStart={(duration) => {
                   // Schedule a precise fallback using the actual duration plus larger buffer
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
@@ -2048,6 +2111,7 @@ const PlayWheel = () => {
                     }
                   }, ms) as any;
                 }}
+                onSpinComplete={handleWheelFinishedSpin}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>
@@ -2119,7 +2183,7 @@ const PlayWheel = () => {
                 config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
-                onSpin={handleWheelFinishedSpin}
+                onSpin={noop}
                 onSpinStart={(duration) => {
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
                   const ms = Math.ceil((duration + 2.0) * 1000); // Increased buffer to 2 seconds
@@ -2137,6 +2201,7 @@ const PlayWheel = () => {
                     }
                   }, ms) as any;
                 }}
+                onSpinComplete={handleWheelFinishedSpin}
                 showSpinButton={false}
               />
             </div>
