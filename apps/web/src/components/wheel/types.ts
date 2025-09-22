@@ -4,6 +4,11 @@ export interface WheelSegment {
   color: string;
   iconUrl?: string;
   isWinning?: boolean;
+  /**
+   * Optional original position index coming from the backend configuration.
+   * This helps map API responses back to the exact frontend segment.
+   */
+  position?: number;
 }
 
 export interface WheelConfig {
