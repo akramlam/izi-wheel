@@ -76,6 +76,19 @@ type PlayResponse = {
   slot: {
     id: string;
     label: string;
+    position?: number;
+  };
+  /**
+   * Frontend-resolved information to keep the UI in sync with the wheel animation.
+   * These fields are not guaranteed to exist in the backend response but allow
+   * us to normalise what we display to the player.
+   */
+  resolvedPrizeIndex?: number;
+  resolvedSegment?: {
+    id: string;
+    label: string;
+    isWinning?: boolean;
+    position?: number;
   };
   /**
    * Frontend-resolved information to keep the UI in sync with the wheel animation.
@@ -702,11 +715,12 @@ const PlayWheel = () => {
         ];
 
         // Use default slots for display purposes - CRITICAL: Include id field
-        const segments = defaultSlots.map((slot) => ({
-          id: slot.id,
+        const segments = defaultSlots.map((slot, index) => ({
+          id: String(slot.id),
           label: slot.label,
           color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
           isWinning: slot.isWinning,
+          position: typeof slot.position === 'number' ? slot.position : index,
         }));
 
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
@@ -731,12 +745,16 @@ const PlayWheel = () => {
         }
 
         // Set wheel colors and prepare segments configuration
-        const segments = sortedSlots.map((slot) => ({
-          id: slot.id,
-          label: slot.label,
-          color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
-          isWinning: slot.isWinning,
-        }));
+        const segments = sortedSlots.map((slot, index) => {
+          const normalizedId = slot.id != null ? String(slot.id) : `slot-${index}`;
+          return {
+            id: normalizedId,
+            label: slot.label,
+            color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
+            isWinning: slot.isWinning,
+            position: typeof slot.position === 'number' ? slot.position : index,
+          };
+        });
 
         // 🔥 RUNTIME GUARD: Log segment order and verify consistent sorting
         const frontendSegmentOrder = segments.map((seg, index) => ({
@@ -1015,41 +1033,91 @@ const PlayWheel = () => {
   const handleSpinResultWithData = (data: any) => {
     console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
 
-    // CRITICAL FIX: Always use slot.id as the primary source of truth
-    let prizeIndexToUse = 0; // Default fallback
+    const segments = state.wheelConfig.segments ?? [];
+    const safeSegmentsLength = segments.length;
 
-    // First: Try to find the segment by slot.id (most reliable)
-    if (data?.slot?.id) {
-      const byId = state.wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
-      if (byId !== -1) {
-        prizeIndexToUse = byId;
-        console.log('✅ Found segment by slot.id:', { slotId: data.slot.id, prizeIndex: prizeIndexToUse });
-      } else {
-        console.error('❌ slot.id not found in segments!', {
-          slotId: data.slot.id,
-          segmentIds: state.wheelConfig.segments.map(s => s.id),
-          fallbackToBackendIndex: data.prizeIndex
-        });
-        // If slot.id mapping fails, use backend's prizeIndex directly
-        if (typeof data.prizeIndex === 'number') {
-          prizeIndexToUse = data.prizeIndex;
-          console.log('⚠️ Using backend prizeIndex as fallback:', prizeIndexToUse);
+    const normalizeId = (value: unknown): string | null => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      try {
+        return String(value);
+      } catch {
+        return null;
+      }
+    };
+
+    const normalizedSlotId = normalizeId(data?.slot?.id);
+    const normalizedSlotLabel = typeof data?.slot?.label === 'string'
+      ? data.slot.label.trim().toLowerCase()
+      : null;
+    const normalizedSlotPosition = typeof data?.slot?.position === 'number'
+      ? data.slot.position
+      : null;
+
+    const clampIndex = (index: number): number => {
+      if (!Number.isFinite(index) || safeSegmentsLength === 0) {
+        return 0;
+      }
+      return Math.max(0, Math.min(safeSegmentsLength - 1, Math.trunc(index)));
+    };
+
+    const findSegmentIndex = (): number => {
+      if (safeSegmentsLength === 0) {
+        return 0;
+      }
+
+      if (normalizedSlotId) {
+        const byId = segments.findIndex((segment) => normalizeId(segment.id) === normalizedSlotId);
+        if (byId !== -1) {
+          return byId;
         }
       }
-    } else {
-      console.error('❌ No slot.id in backend response!');
-      // If no slot.id, use backend's prizeIndex
-      if (typeof data.prizeIndex === 'number') {
-        prizeIndexToUse = data.prizeIndex;
-        console.log('⚠️ No slot.id; using backend prizeIndex:', prizeIndexToUse);
-      }
-    }
 
-    // Clamp to valid bounds
-    const segCount = state.wheelConfig.segments.length;
-    if (segCount > 0) {
-      prizeIndexToUse = Math.max(0, Math.min(segCount - 1, prizeIndexToUse));
-    }
+      if (normalizedSlotPosition !== null) {
+        const byPosition = segments.findIndex((segment) => typeof segment.position === 'number' && segment.position === normalizedSlotPosition);
+        if (byPosition !== -1) {
+          return byPosition;
+        }
+      }
+
+      if (normalizedSlotLabel) {
+        const byLabel = segments.findIndex((segment) => segment.label?.trim().toLowerCase() === normalizedSlotLabel);
+        if (byLabel !== -1) {
+          return byLabel;
+        }
+      }
+
+
+      if (typeof data?.prizeIndex === 'number') {
+        const backendIndex = clampIndex(data.prizeIndex);
+        if (backendIndex >= 0 && backendIndex < safeSegmentsLength) {
+          return backendIndex;
+        }
+      }
+
+      return 0;
+    };
+
+    const resolvedPrizeIndex = clampIndex(findSegmentIndex());
+    const resolvedSegment = safeSegmentsLength > 0 ? segments[resolvedPrizeIndex] ?? null : null;
+
+    console.log('🎯 Prize resolution summary:', {
+      backendPrizeIndex: data?.prizeIndex,
+      backendSlotId: data?.slot?.id,
+      backendSlotLabel: data?.slot?.label,
+      backendSlotPosition: data?.slot?.position,
+      resolvedPrizeIndex,
+      resolvedSegmentId: resolvedSegment?.id,
+      resolvedSegmentLabel: resolvedSegment?.label,
+    });
+
+    const normalizedSlotIdForResult = normalizeId(resolvedSegment?.id) ?? normalizedSlotId ?? '';
+    const normalizedSlotLabelForResult = resolvedSegment?.label ?? (typeof data?.slot?.label === 'string' ? data.slot.label : '');
+    const normalizedSlotPositionForResult =
+      typeof resolvedSegment?.position === 'number'
+        ? resolvedSegment.position
+        : normalizedSlotPosition ?? undefined;
 
     console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
     
@@ -1077,10 +1145,24 @@ const PlayWheel = () => {
       isMismatch: data.slot.label !== resolvedSegment?.label
     });
 
+
     const normalizedResult: PlayResponse = {
       ...data,
       slot: {
         ...data?.slot,
+
+        id: normalizedSlotIdForResult,
+        label: normalizedSlotLabelForResult,
+        position: normalizedSlotPositionForResult,
+      },
+      resolvedPrizeIndex,
+      resolvedSegment: resolvedSegment
+        ? {
+            id: normalizeId(resolvedSegment.id) ?? normalizedSlotIdForResult,
+            label: resolvedSegment.label,
+            isWinning: resolvedSegment.isWinning,
+            position: resolvedSegment.position,
+
         id: resolvedSegment?.id ?? data?.slot?.id ?? '',
         label: resolvedSegment?.label ?? data?.slot?.label ?? '',
       },
@@ -1090,20 +1172,25 @@ const PlayWheel = () => {
             id: resolvedSegment.id,
             label: resolvedSegment.label,
             isWinning: resolvedSegment.isWinning,
+
           }
         : undefined,
     };
 
     dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
+    if (safeSegmentsLength > 0) {
+      setSpinSegmentsSnapshot([...segments]);
+
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
     // Freeze current segments to avoid any reordering during animation
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
       setSpinSegmentsSnapshot([...state.wheelConfig.segments]);
+
     }
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
-    // 🔥 Timeout mechanism: show result only after the wheel should have finished
-    // Clear any existing timeouts first
     if (window.fallbackTimeout) {
       clearTimeout(window.fallbackTimeout);
       window.fallbackTimeout = null;
@@ -1112,8 +1199,6 @@ const PlayWheel = () => {
       clearTimeout(window.immediateFallback);
       window.immediateFallback = null;
     }
-
-    // Fallback is now scheduled when the wheel animation actually starts, using its true duration
   };
 
   // Debug effect to monitor mustSpin state changes
