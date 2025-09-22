@@ -9,6 +9,7 @@ export interface WheelSegment {
    * This helps map API responses back to the exact frontend segment.
    */
   position?: number;
+
 }
 
 export interface WheelSpinResult {

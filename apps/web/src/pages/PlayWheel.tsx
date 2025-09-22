@@ -89,6 +89,19 @@ type PlayResponse = {
     label: string;
     isWinning?: boolean;
     position?: number;
+
+  };
+  /**
+   * Frontend-resolved information to keep the UI in sync with the wheel animation.
+   * These fields are not guaranteed to exist in the backend response but allow
+   * us to normalise what we display to the player.
+   */
+  resolvedPrizeIndex?: number;
+  resolvedSegment?: {
+    id: string;
+    label: string;
+    isWinning?: boolean;
+
   };
 };
 
@@ -1078,6 +1091,7 @@ const PlayWheel = () => {
         }
       }
 
+
       if (typeof data?.prizeIndex === 'number') {
         const backendIndex = clampIndex(data.prizeIndex);
         if (backendIndex >= 0 && backendIndex < safeSegmentsLength) {
@@ -1108,10 +1122,12 @@ const PlayWheel = () => {
         ? resolvedSegment.position
         : normalizedSlotPosition ?? undefined;
 
+
     const normalizedResult: PlayResponse = {
       ...data,
       slot: {
         ...data?.slot,
+
         id: normalizedSlotIdForResult,
         label: normalizedSlotLabelForResult,
         position: normalizedSlotPositionForResult,
@@ -1123,14 +1139,39 @@ const PlayWheel = () => {
             label: resolvedSegment.label,
             isWinning: resolvedSegment.isWinning,
             position: resolvedSegment.position,
+
+
+        id: resolvedSegment?.id ?? data?.slot?.id ?? '',
+        label: resolvedSegment?.label ?? data?.slot?.label ?? '',
+      },
+      resolvedPrizeIndex: prizeIndexToUse,
+      resolvedSegment: resolvedSegment
+        ? {
+            id: resolvedSegment.id,
+            label: resolvedSegment.label,
+            isWinning: resolvedSegment.isWinning,
+
+
           }
         : undefined,
     };
 
-    dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+//     dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
+    if (safeSegmentsLength > 0) {
+
+
     dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
     if (safeSegmentsLength > 0) {
       setSpinSegmentsSnapshot([...segments]);
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
+    // Freeze current segments to avoid any reordering during animation
+    if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
+      setSpinSegmentsSnapshot([...state.wheelConfig.segments]);
+
+
     }
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
