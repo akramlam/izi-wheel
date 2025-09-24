@@ -14,7 +14,8 @@
       "Bash(pnpm --filter=@iziwheel/api run lint)",
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -321,57 +321,53 @@ export const api = {
     });
   },
   
-  // Public wheel endpoints
+  // Public wheel endpoints - CLEAN VERSION
   getPublicWheel: async (companyId: string, wheelId: string) => {
-    console.log(`getPublicWheel called with companyId: ${companyId}, wheelId: ${wheelId}`);
+    console.log(`[API] getPublicWheel: ${companyId}/${wheelId}`);
 
     if (!wheelId) {
       throw new Error('Wheel ID is required');
     }
 
-    // Special case for 'company' in the URL path
+    // Use the correct backend endpoint based on your routes
     if (companyId === 'company') {
-      console.log('Using company wheel endpoint: /public/company/' + wheelId);
+      console.log('[API] Using /public/company/' + wheelId);
       return apiClient.get(`/public/company/${wheelId}`);
     }
 
-    // Validate the companyId - if it's a UUID, use company-specific endpoint
-    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
-
-    if (isValidUuid) {
-      console.log(`Making request to /public/companies/${companyId}/wheels/${wheelId}`);
+    // For UUID company IDs
+    const isUuid = /^[0-9a-f-]{36}$/i.test(companyId);
+    if (isUuid) {
+      console.log(`[API] Using /public/companies/${companyId}/wheels/${wheelId}`);
       return apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
     }
 
-    // Fallback to direct wheel endpoint
-    console.log('Using fallback wheel endpoint: /public/wheels/' + wheelId);
+    // Fallback
+    console.log('[API] Using fallback /public/wheels/' + wheelId);
     return apiClient.get(`/public/wheels/${wheelId}`);
   },
   
   spinWheel: async (companyId: string, wheelId: string, data: { lead: Record<string, string> }) => {
-    console.log(`spinWheel called with companyId: ${companyId}, wheelId: ${wheelId}`);
+    console.log(`[API] spinWheel: ${companyId}/${wheelId}`);
 
-    // Provide empty lead data as fallback
+    // Ensure data is valid
     if (!data || !data.lead) {
       data = { lead: {} };
     }
 
-    // Special case for 'company' in the URL path
+    // Use correct backend endpoint
     if (companyId === 'company') {
-      console.log('Using company spin endpoint: /public/company/' + wheelId + '/spin');
+      console.log('[API] Using /public/company/' + wheelId + '/spin');
       return apiClient.post(`/public/company/${wheelId}/spin`, data);
     }
 
-    // Validate the companyId - if it's a UUID, use company-specific endpoint
-    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
-
-    if (isValidUuid) {
-      console.log(`Making spin request to /public/companies/${companyId}/wheels/${wheelId}/spin`);
+    const isUuid = /^[0-9a-f-]{36}$/i.test(companyId);
+    if (isUuid) {
+      console.log(`[API] Using /public/companies/${companyId}/wheels/${wheelId}/spin`);
       return apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
     }
 
-    // Fallback to direct wheel spin endpoint
-    console.log('Using fallback spin endpoint: /public/wheels/' + wheelId + '/spin');
+    console.log('[API] Using fallback /public/wheels/' + wheelId + '/spin');
     return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
   },
   
