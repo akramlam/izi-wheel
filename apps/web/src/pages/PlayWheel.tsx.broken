@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useReducer } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, apiClient } from '../lib/api';
 import {
   Dialog,
   DialogContent,
@@ -11,104 +11,50 @@ import {
 } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, RefreshCw, Users, Mail, Phone, Calendar, User } from 'lucide-react';
 import { TimedConfetti } from '../components/magicui/timedConfetti';
 import Wheel from '../components/wheel/Wheel';
-<<<<<<< HEAD
-import type { WheelConfig } from '../components/wheel/types';
+import type { WheelConfig, WheelSpinResult } from '../components/wheel/types';
 import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
 import { Input } from '../components/ui/input';
-=======
-import type { WheelConfig, WheelSpinResult } from '../components/wheel/types';
-import PlayerForm, { PlayerFormData } from '../components/PlayerForm';
->>>>>>> dc20040828d2c73bb0655f26f4ebf02992236333
 import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
 import { runWheelAlignmentTests } from '../components/wheel/Wheel.test';
+import { applyStableSorting } from '../utils/slot-utils';
 
-// Import refactored components and utilities
-import { SocialRedirectDialog } from '../components/play-wheel/SocialRedirectDialog';
-import { ErrorDisplay } from '../components/play-wheel/ErrorDisplay';
-import { initialState, appReducer } from '../components/play-wheel/state';
-import { BRAND, CONFETTI_COLORS } from '../components/play-wheel/constants';
-import { resolvePrizeFromResponse, updateSpinResultWithPointer } from '../components/play-wheel/prizeResolution';
-import type {
-  WheelData,
-  PlayResponse
-} from '../components/play-wheel/types';
-
-const PlayWheel = () => {
-  const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
-
-  console.log('[DEBUG] PlayWheel render - Route params:', { companyId, wheelId });
-  console.log('[DEBUG] Current URL:', window.location.href);
-  
-  // Parse URL path to extract companyId and wheelId correctly
-  const urlPath = window.location.pathname;
-  const pathParts = urlPath.split('/').filter(part => part.length > 0);
-  console.log('[DEBUG] URL path parts:', pathParts);
-  
-  // Extract companyId and wheelId from URL path
-  let effectiveCompanyId = companyId;
-  let effectiveWheelId = wheelId;
-  
-  if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
-    // URL format: /play/company/{wheelId}
-    effectiveCompanyId = 'company';
-    effectiveWheelId = pathParts[2];
-    console.log('[DEBUG] Detected company route, wheelId:', effectiveWheelId);
-  } else if (pathParts.length >= 4 && pathParts[0] === 'play' && pathParts[1] === 'company') {
-    // URL format: /play/company/{companyId}/{wheelId}
-    effectiveCompanyId = pathParts[2];
-    effectiveWheelId = pathParts[3];
-    console.log('[DEBUG] Detected company route with companyId:', effectiveCompanyId, 'wheelId:', effectiveWheelId);
+// TypeScript declaration for window property
+declare global {
+  interface Window {
+    fallbackTimeout?: NodeJS.Timeout | null;
+    immediateFallback?: NodeJS.Timeout | null;
   }
-  
-  console.log('[DEBUG] Effective params:', { effectiveCompanyId, effectiveWheelId });
+}
 
-  // Run alignment math tests in development
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      runWheelAlignmentTests();
-    }
-  }, []);
+// Define improved types
+interface FormSchema {
+  fields?: FormField[];
+  [key: string]: any;
+}
 
-  // Component state using reducer
-  const [state, dispatch] = useReducer(appReducer, initialState);
+interface WheelSlot {
+  id: string;
+  label: string;
+  color: string;
+  weight: number;
+  isWinning: boolean;
+  position?: number;
+}
 
-  // Wheel data query
-  const { data: wheelData, isLoading, error } = useQuery<{ wheel: WheelData }>({
-    queryKey: ['publicWheel', effectiveCompanyId, effectiveWheelId],
-    queryFn: async () => {
-      console.log(`[DEBUG] Making API call with: {effectiveCompanyId: '${effectiveCompanyId}', effectiveWheelId: '${effectiveWheelId}'}`);
-      
-      if (effectiveCompanyId === 'company') {
-        console.log(`[DEBUG] Making company API call to: https://api.izikado.fr/public/company/${effectiveWheelId}`);
-        const response = await api.getPublicWheel('company', effectiveWheelId!);
-        return response.data;
-      } else {
-        console.log(`[DEBUG] Making company API call to: https://api.izikado.fr/public/company/${effectiveWheelId}`);
-        const response = await api.getPublicWheel(effectiveCompanyId!, effectiveWheelId!);
-        return response.data;
-      }
-    },
-    enabled: !!effectiveWheelId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: (failureCount, error: any) => {
-      console.error(`Query attempt ${failureCount + 1} failed:`, error);
-      return failureCount < 3;
-    },
-  });
+interface Prize {
+  pin: string;
+  qrLink: string;
+}
 
-  // Play wheel mutation
-  const playWheelMutation = useMutation<PlayResponse, Error, { leadInfo?: any }>({
-    mutationFn: async ({ leadInfo }) => {
-      console.log(`[DEBUG] Playing wheel with effectiveCompanyId: ${effectiveCompanyId}, effectiveWheelId: ${effectiveWheelId}`);
-      const response = await api.spinWheel(effectiveCompanyId!, effectiveWheelId!, { lead: leadInfo || {} });
-      return response.data;
-    },
-  });
+interface PlayData {
+  id: string;
+  result: 'WIN' | 'LOSE';
+  prize?: Prize;
+}
 
-<<<<<<< HEAD
 type WheelData = {
   id: string;
   name: string;
@@ -130,6 +76,32 @@ type PlayResponse = {
   slot: {
     id: string;
     label: string;
+    position?: number;
+  };
+  /**
+   * Frontend-resolved information to keep the UI in sync with the wheel animation.
+   * These fields are not guaranteed to exist in the backend response but allow
+   * us to normalise what we display to the player.
+   */
+  resolvedPrizeIndex?: number;
+  resolvedSegment?: {
+    id: string;
+    label: string;
+    isWinning?: boolean;
+    position?: number;
+
+  };
+  /**
+   * Frontend-resolved information to keep the UI in sync with the wheel animation.
+   * These fields are not guaranteed to exist in the backend response but allow
+   * us to normalise what we display to the player.
+   */
+  resolvedPrizeIndex?: number;
+  resolvedSegment?: {
+    id: string;
+    label: string;
+    isWinning?: boolean;
+
   };
 };
 
@@ -188,32 +160,77 @@ const initialState: AppState = {
     segments: [],
     spinDurationMin: 5,
     spinDurationMax: 8,
-=======
-  // Wheel configuration
-  const wheelConfig: WheelConfig | null = wheelData?.wheel ? {
-    segments: applyStableSorting(wheelData.wheel.slots).map(slot => ({
-      id: slot.id,
-      label: slot.label,
-      color: slot.color,
-      isWinning: slot.isWinning,
-      position: slot.position ?? undefined,
-    })),
-    spinDurationMin: 3,
-    spinDurationMax: 7,
-    hapticFeedback: true,
->>>>>>> dc20040828d2c73bb0655f26f4ebf02992236333
     sounds: {
       tick: true,
       win: true,
     },
-    pointerAngleDeg: 0,
-  } : null;
+    hapticFeedback: true,
+  },
+  showConfetti: false,
+  showSocialRedirect: false,
+  hasCompletedSocialAction: false,
+  isLoading: false,
+  showClaimForm: false,
+  currentStep: 'initial',
+  claimFormData: {},
+  showThankyouMessage: false,
+  userFlowState: 'initial',
+  showRulesModal: false,
+};
 
-  // Handle spin complete
-  const handleSpinComplete = useCallback((result: WheelSpinResult) => {
-    const segments = wheelConfig?.segments || [];
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case 'SET_FORM_DATA':
+      return { ...state, formData: action.payload };
+    case 'SET_MUST_SPIN':
+      return { ...state, mustSpin: action.payload };
+    case 'SET_PRIZE_INDEX':
+      return { ...state, prizeIndex: action.payload };
+    case 'SET_SHOW_RESULT_MODAL':
+      return { ...state, showResultModal: action.payload };
+    case 'SET_SPIN_RESULT':
+      return { ...state, spinResult: action.payload };
+    case 'SET_FORM_FIELDS':
+      return { ...state, formFields: action.payload };
+    case 'SET_WHEEL_CONFIG':
+      return { ...state, wheelConfig: action.payload };
+    case 'SET_SHOW_CONFETTI':
+      return { ...state, showConfetti: action.payload };
+    case 'SET_SHOW_SOCIAL_REDIRECT':
+      return { ...state, showSocialRedirect: action.payload };
+    case 'SET_HAS_COMPLETED_SOCIAL_ACTION':
+      return { ...state, hasCompletedSocialAction: action.payload };
+    case 'SET_IS_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_SHOW_CLAIM_FORM':
+      return { ...state, showClaimForm: action.payload };
+    case 'SET_CURRENT_STEP':
+      return { ...state, currentStep: action.payload };
+    case 'SET_CLAIM_FORM_DATA':
+      return { ...state, claimFormData: action.payload };
+    case 'SET_SHOW_THANKYOU_MESSAGE':
+      return { ...state, showThankyouMessage: action.payload };
+    case 'SET_USER_FLOW_STATE':
+      return { ...state, userFlowState: action.payload };
+    case 'SET_SHOW_RULES_MODAL':
+      return { ...state, showRulesModal: action.payload };
+    case 'RESET_WHEEL_STATE':
+      return {
+        ...state,
+        mustSpin: false,
+        spinResult: null,
+        showConfetti: false,
+        showResultModal: false,
+        showClaimForm: false,
+        showThankyouMessage: false,
+        currentStep: 'spinWheel',
+        userFlowState: 'completedSocial',
+      };
+    default:
+      return state;
+  }
+}
 
-<<<<<<< HEAD
 // Mapping input types to icons
 const inputIcons: Record<string, React.ReactNode> = {
   name: <User className="h-4 w-4 text-gray-400" />,
@@ -566,12 +583,16 @@ const PlayWheel = () => {
   console.log('[DEBUG] Effective params:', effectiveParams);
 
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const noop = useCallback(() => {}, []);
   const [spinSegmentsSnapshot, setSpinSegmentsSnapshot] = useState<WheelConfig['segments'] | null>(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const retryCount = useRef<number>(0);
 
   // Add a confetti ref to control it
   const confettiRef = useRef<any>(null);
+
+  // Helper to always reference the segment label that visually won on the wheel
+  const resolvedWinningLabel = state.spinResult?.resolvedSegment?.label ?? state.spinResult?.slot.label ?? '';
 
   // Fetch wheel data
   const {
@@ -697,11 +718,12 @@ const PlayWheel = () => {
         ];
 
         // Use default slots for display purposes - CRITICAL: Include id field
-        const segments = defaultSlots.map((slot) => ({
-          id: slot.id,
+        const segments = defaultSlots.map((slot, index) => ({
+          id: String(slot.id),
           label: slot.label,
           color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
           isWinning: slot.isWinning,
+          position: typeof slot.position === 'number' ? slot.position : index,
         }));
 
         dispatch({ type: 'SET_WHEEL_CONFIG', payload: {
@@ -714,19 +736,8 @@ const PlayWheel = () => {
         } });
       } else {
         // Ensure slots have position values with STABLE sorting
-        const sortedSlots = [...wheelData.slots].sort(
-          (a: WheelData['slots'][0], b: WheelData['slots'][0]) => {
-            const posA = a.position !== undefined ? a.position : 999;
-            const posB = b.position !== undefined ? b.position : 999;
-            
-            // If positions are equal, use slot ID as stable tiebreaker
-            if (posA === posB) {
-              return a.id.localeCompare(b.id);
-            }
-            
-            return posA - posB;
-          }
-        );
+        // Use the same sorting function as the backend to ensure consistency
+        const sortedSlots = applyStableSorting(wheelData.slots);
 
         // Check if any slot is marked as winning
         const hasWinningSlot = sortedSlots.some((slot) => slot.isWinning);
@@ -737,12 +748,16 @@ const PlayWheel = () => {
         }
 
         // Set wheel colors and prepare segments configuration
-        const segments = sortedSlots.map((slot) => ({
-          id: slot.id,
-          label: slot.label,
-          color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
-          isWinning: slot.isWinning,
-        }));
+        const segments = sortedSlots.map((slot, index) => {
+          const normalizedId = slot.id != null ? String(slot.id) : `slot-${index}`;
+          return {
+            id: normalizedId,
+            label: slot.label,
+            color: slot.color || (slot.isWinning ? '#28a745' : '#dc3545'),
+            isWinning: slot.isWinning,
+            position: typeof slot.position === 'number' ? slot.position : index,
+          };
+        });
 
         // 🔥 RUNTIME GUARD: Log segment order and verify consistent sorting
         const frontendSegmentOrder = segments.map((seg, index) => ({
@@ -753,6 +768,15 @@ const PlayWheel = () => {
         }));
         
         console.log('🎯 Frontend segment order:', frontendSegmentOrder);
+        
+        // 🔥 CRITICAL DEBUG: Log segment order and verify consistency
+        console.log('🎯 SEGMENT ORDER VERIFICATION:', {
+          backendSlotIds: wheelData.slots.map(s => s.id),
+          frontendSegmentIds: segments.map(s => s.id),
+          backendPositions: wheelData.slots.map(s => s.position),
+          frontendPositions: sortedSlots.map(s => s.position),
+          areOrdersIdentical: JSON.stringify(wheelData.slots.map(s => s.id)) === JSON.stringify(segments.map(s => s.id))
+        });
         
         // Runtime assertion: Check that segments have all required fields
         const missingIdSegments = segments.filter(seg => !seg.id);
@@ -1012,65 +1036,145 @@ const PlayWheel = () => {
   const handleSpinResultWithData = (data: any) => {
     console.log('🎯 PlayWheel: Backend response data:', JSON.parse(JSON.stringify(data)));
 
-    // CRITICAL FIX: Always use slot.id as the primary source of truth
-    let prizeIndexToUse = 0; // Default fallback
+    const segments = state.wheelConfig.segments ?? [];
+    const safeSegmentsLength = segments.length;
 
-    // First: Try to find the segment by slot.id (most reliable)
-    if (data?.slot?.id) {
-      const byId = state.wheelConfig.segments.findIndex((segment) => segment.id === data.slot.id);
-      if (byId !== -1) {
-        prizeIndexToUse = byId;
-        console.log('✅ Found segment by slot.id:', { slotId: data.slot.id, prizeIndex: prizeIndexToUse });
-      } else {
-        console.error('❌ slot.id not found in segments!', {
-          slotId: data.slot.id,
-          segmentIds: state.wheelConfig.segments.map(s => s.id),
-          fallbackToBackendIndex: data.prizeIndex
-        });
-        // If slot.id mapping fails, use backend's prizeIndex directly
-        if (typeof data.prizeIndex === 'number') {
-          prizeIndexToUse = data.prizeIndex;
-          console.log('⚠️ Using backend prizeIndex as fallback:', prizeIndexToUse);
+    const normalizeId = (value: unknown): string | null => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      try {
+        return String(value);
+      } catch {
+        return null;
+      }
+    };
+
+    const normalizedSlotId = normalizeId(data?.slot?.id);
+    const normalizedSlotLabel = typeof data?.slot?.label === 'string'
+      ? data.slot.label.trim().toLowerCase()
+      : null;
+    const normalizedSlotPosition = typeof data?.slot?.position === 'number'
+      ? data.slot.position
+      : null;
+
+    const clampIndex = (index: number): number => {
+      if (!Number.isFinite(index) || safeSegmentsLength === 0) {
+        return 0;
+      }
+      return Math.max(0, Math.min(safeSegmentsLength - 1, Math.trunc(index)));
+    };
+
+    const findSegmentIndex = (): number => {
+      if (safeSegmentsLength === 0) {
+        return 0;
+      }
+
+      if (normalizedSlotId) {
+        const byId = segments.findIndex((segment) => normalizeId(segment.id) === normalizedSlotId);
+        if (byId !== -1) {
+          return byId;
         }
       }
-    } else {
-      console.error('❌ No slot.id in backend response!');
-      // If no slot.id, use backend's prizeIndex
-      if (typeof data.prizeIndex === 'number') {
-        prizeIndexToUse = data.prizeIndex;
-        console.log('⚠️ No slot.id; using backend prizeIndex:', prizeIndexToUse);
+
+      if (normalizedSlotPosition !== null) {
+        const byPosition = segments.findIndex((segment) => typeof segment.position === 'number' && segment.position === normalizedSlotPosition);
+        if (byPosition !== -1) {
+          return byPosition;
+        }
       }
-    }
 
-    // Clamp to valid bounds
-    const segCount = state.wheelConfig.segments.length;
-    if (segCount > 0) {
-      prizeIndexToUse = Math.max(0, Math.min(segCount - 1, prizeIndexToUse));
-    }
+      if (normalizedSlotLabel) {
+        const byLabel = segments.findIndex((segment) => segment.label?.trim().toLowerCase() === normalizedSlotLabel);
+        if (byLabel !== -1) {
+          return byLabel;
+        }
+      }
 
-    console.log('🎯 Final prizeIndex to use:', prizeIndexToUse);
-    
-    // Log which segment this prizeIndex corresponds to
-    if (state.wheelConfig.segments && state.wheelConfig.segments.length > prizeIndexToUse) {
-      const targetSegment = state.wheelConfig.segments[prizeIndexToUse];
-      console.log('🎯 Target segment:', {
-        index: prizeIndexToUse,
-        id: targetSegment.id,
-        label: targetSegment.label,
-        isWinning: targetSegment.isWinning
-      });
-    }
-    
-    dispatch({ type: 'SET_SPIN_RESULT', payload: data });
+
+      if (typeof data?.prizeIndex === 'number') {
+        const backendIndex = clampIndex(data.prizeIndex);
+        if (backendIndex >= 0 && backendIndex < safeSegmentsLength) {
+          return backendIndex;
+        }
+      }
+
+      return 0;
+    };
+
+    const resolvedPrizeIndex = clampIndex(findSegmentIndex());
+    const resolvedSegment = safeSegmentsLength > 0 ? segments[resolvedPrizeIndex] ?? null : null;
+
+    console.log('🎯 Prize resolution summary:', {
+      backendPrizeIndex: data?.prizeIndex,
+      backendSlotId: data?.slot?.id,
+      backendSlotLabel: data?.slot?.label,
+      backendSlotPosition: data?.slot?.position,
+      resolvedPrizeIndex,
+      resolvedSegmentId: resolvedSegment?.id,
+      resolvedSegmentLabel: resolvedSegment?.label,
+    });
+
+    const normalizedSlotIdForResult = normalizeId(resolvedSegment?.id) ?? normalizedSlotId ?? '';
+    const normalizedSlotLabelForResult = resolvedSegment?.label ?? (typeof data?.slot?.label === 'string' ? data.slot.label : '');
+    const normalizedSlotPositionForResult =
+      typeof resolvedSegment?.position === 'number'
+        ? resolvedSegment.position
+        : normalizedSlotPosition ?? undefined;
+
+
+    const normalizedResult: PlayResponse = {
+      ...data,
+      slot: {
+        ...data?.slot,
+
+        id: normalizedSlotIdForResult,
+        label: normalizedSlotLabelForResult,
+        position: normalizedSlotPositionForResult,
+      },
+      resolvedPrizeIndex,
+      resolvedSegment: resolvedSegment
+        ? {
+            id: normalizeId(resolvedSegment.id) ?? normalizedSlotIdForResult,
+            label: resolvedSegment.label,
+            isWinning: resolvedSegment.isWinning,
+            position: resolvedSegment.position,
+
+
+        id: resolvedSegment?.id ?? data?.slot?.id ?? '',
+        label: resolvedSegment?.label ?? data?.slot?.label ?? '',
+      },
+      resolvedPrizeIndex: prizeIndexToUse,
+      resolvedSegment: resolvedSegment
+        ? {
+            id: resolvedSegment.id,
+            label: resolvedSegment.label,
+            isWinning: resolvedSegment.isWinning,
+
+
+          }
+        : undefined,
+    };
+
+//     dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
+    if (safeSegmentsLength > 0) {
+
+
+    dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
+    if (safeSegmentsLength > 0) {
+      setSpinSegmentsSnapshot([...segments]);
+
     dispatch({ type: 'SET_PRIZE_INDEX', payload: prizeIndexToUse });
     // Freeze current segments to avoid any reordering during animation
     if (state.wheelConfig.segments && state.wheelConfig.segments.length > 0) {
       setSpinSegmentsSnapshot([...state.wheelConfig.segments]);
+
+
     }
     dispatch({ type: 'SET_MUST_SPIN', payload: true });
 
-    // 🔥 Timeout mechanism: show result only after the wheel should have finished
-    // Clear any existing timeouts first
     if (window.fallbackTimeout) {
       clearTimeout(window.fallbackTimeout);
       window.fallbackTimeout = null;
@@ -1079,8 +1183,6 @@ const PlayWheel = () => {
       clearTimeout(window.immediateFallback);
       window.immediateFallback = null;
     }
-
-    // Fallback is now scheduled when the wheel animation actually starts, using its true duration
   };
 
   // Debug effect to monitor mustSpin state changes
@@ -1109,8 +1211,84 @@ const PlayWheel = () => {
   }, []);
 
   // Handle wheel finishing spin - called by wheel component when animation completes
-  const handleWheelFinishedSpin = () => {
-    console.log('✅ WHEEL CALLBACK: Wheel finished spinning');
+  const handleWheelFinishedSpin = (summary?: WheelSpinResult) => {
+    console.log('✅ WHEEL CALLBACK: Wheel finished spinning', summary);
+
+    const activeSegments = spinSegmentsSnapshot ?? state.wheelConfig.segments ?? [];
+    const clampPointerIndex = (index: number): number => {
+      if (!activeSegments || activeSegments.length === 0 || !Number.isFinite(index)) {
+        return 0;
+      }
+      return Math.max(0, Math.min(activeSegments.length - 1, Math.trunc(index)));
+    };
+
+    const resolvedPointerIndex = clampPointerIndex(
+      typeof summary?.pointerIndex === 'number' ? summary.pointerIndex : state.prizeIndex
+    );
+
+    const normalizeId = (value: unknown): string => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+      try {
+        return String(value);
+      } catch {
+        return '';
+      }
+    };
+
+    if (resolvedPointerIndex !== state.prizeIndex) {
+      console.warn('⚠️ Pointer index differed from requested prize index. Correcting UI state.', {
+        pointerIndex: resolvedPointerIndex,
+        requestedPrizeIndex: state.prizeIndex,
+      });
+      dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPointerIndex });
+    }
+
+    if (state.spinResult) {
+      const pointerSegment =
+        activeSegments && activeSegments.length > 0 ? activeSegments[resolvedPointerIndex] : undefined;
+      const derivedId = normalizeId(pointerSegment?.id ?? state.spinResult.slot?.id ?? '');
+      const updatedResult: PlayResponse = {
+        ...state.spinResult,
+        resolvedPrizeIndex: resolvedPointerIndex,
+        slot: {
+          ...state.spinResult.slot,
+          id: derivedId,
+          label: pointerSegment?.label ?? state.spinResult.slot.label,
+          position:
+            typeof pointerSegment?.position === 'number'
+              ? pointerSegment.position
+              : state.spinResult.slot.position,
+        },
+        resolvedSegment: pointerSegment
+          ? {
+              id: derivedId,
+              label: pointerSegment.label ?? state.spinResult.slot.label,
+              isWinning: pointerSegment.isWinning,
+              position: pointerSegment.position,
+            }
+          : state.spinResult.resolvedSegment
+            ? {
+                ...state.spinResult.resolvedSegment,
+                id: state.spinResult.resolvedSegment.id || derivedId,
+              }
+            : undefined,
+      };
+
+      const hasResultChanged =
+        state.spinResult.resolvedPrizeIndex !== updatedResult.resolvedPrizeIndex ||
+        state.spinResult.slot.label !== updatedResult.slot.label ||
+        state.spinResult.slot.id !== updatedResult.slot.id;
+
+      if (hasResultChanged) {
+        console.log('✅ Synchronising spin result metadata with pointer detection', {
+          resolvedPointerIndex,
+          segmentLabel: updatedResult.resolvedSegment?.label,
+        });
+        dispatch({ type: 'SET_SPIN_RESULT', payload: updatedResult });
+      }
+    }
 
     // 🔥 CRITICAL FIX: Clear the fallback timeout since the wheel callback worked properly
     if (window.fallbackTimeout) {
@@ -1149,6 +1327,9 @@ const PlayWheel = () => {
       dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
       console.log('✅ Set up losing result flow');
     }
+
+    // Trigger QR code download attempt
+    attemptQrCodeDownload();
   };
 
   // Handle result modal close and transition to next flow step
@@ -1180,7 +1361,7 @@ const PlayWheel = () => {
       email: data.email,
       phone: data.phone || '',
       playId: state.spinResult?.play.id || '',
-      prize: state.spinResult?.slot.label || '',
+      prize: resolvedWinningLabel || '',
       timestamp: new Date().toISOString(),
     } });
 
@@ -1223,80 +1404,11 @@ const PlayWheel = () => {
           return; // Don't proceed if API call failed
         }
       } catch (error) {
-=======
-    if (!state.spinResult) {
-      console.warn('⚠️ No spin result available during wheel completion');
-      return;
-    }
-
-    console.log('🎯 Wheel spin completed:', {
-      wheelResultIndex: result.winningIndex,
-      segmentCount: segments.length,
-      backendResult: state.spinResult
-    });
-
-    // Use the new prize resolution utility to sync with pointer position
-    const updatedResult = updateSpinResultWithPointer(
-      state.spinResult,
-      result.winningIndex,
-      segments
-    );
-
-    // Update state with synchronized result
-    dispatch({ type: 'SET_SPIN_RESULT', payload: updatedResult });
-    dispatch({ type: 'SET_PRIZE_INDEX', payload: result.winningIndex });
-    dispatch({ type: 'SET_MUST_SPIN', payload: false });
-    dispatch({ type: 'SET_SHOW_CONFETTI', payload: true });
-    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
-  }, [wheelConfig?.segments, state.spinResult]);
-
-  // Handle wheel finished spinning
-  const handleWheelFinishedSpin = useCallback(() => {
-    console.log('✅ WHEEL CALLBACK: Wheel finished spinning');
-    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
-  }, []);
-
-  // Handle play wheel
-  const handlePlayWheel = useCallback(async (leadInfo?: any) => {
-    if (!wheelConfig) {
-      console.error('❌ Cannot play wheel: wheel config not available');
-      return;
-    }
-
-    dispatch({ type: 'SET_IS_LOADING', payload: true });
-
-    try {
-      console.log('🎯 Starting wheel play...');
-      const data = await playWheelMutation.mutateAsync({ leadInfo });
-
-      console.log('🎯 Play wheel response:', data);
-
-      // Resolve prize using the new utility
-      const { resolvedPrizeIndex, normalizedResult } = resolvePrizeFromResponse({
-        data,
-        segments: wheelConfig.segments
-      });
-
-      console.log('🎯 Prize resolved:', { resolvedPrizeIndex, result: data.play.result });
-
-      // Set spin result and start wheel animation
-      dispatch({ type: 'SET_SPIN_RESULT', payload: normalizedResult });
-      dispatch({ type: 'SET_PRIZE_INDEX', payload: resolvedPrizeIndex });
-      dispatch({ type: 'SET_MUST_SPIN', payload: true });
-
-    } catch (error) {
-      console.error('❌ Play wheel error:', error);
-
-      if (error instanceof Error && error.message.includes('Play limit exceeded')) {
->>>>>>> dc20040828d2c73bb0655f26f4ebf02992236333
         toast({
-          title: 'Limite atteinte',
-          description: 'Vous avez atteint la limite de jeu pour cette roue.',
+          title: 'Erreur de connexion',
+          description: 'Impossible de contacter le serveur. Veuillez vérifier votre connexion.',
           variant: 'destructive',
         });
-<<<<<<< HEAD
         return; // Don't proceed if API call failed
       }
 
@@ -1381,7 +1493,7 @@ const PlayWheel = () => {
     // Otherwise, if there's a PIN, generate a QR code
     else if (state.spinResult.play.prize.pin) {
       const pin = state.spinResult.play.prize.pin;
-      const prizeInfo = `Prize: ${state.spinResult.slot.label}, PIN: ${pin}`;
+      const prizeInfo = `Prize: ${resolvedWinningLabel}, PIN: ${pin}`;
       const encodedPrizeInfo = encodeURIComponent(prizeInfo);
 
       // Use Google Charts API for QR code generation
@@ -1399,7 +1511,8 @@ const PlayWheel = () => {
       // Create a temporary link element
       const link = document.createElement('a');
       link.href = qrUrl;
-      link.download = `prix-${state.spinResult.slot.label.replace(/\s+/g, '-').toLowerCase()}.png`;
+      const downloadLabel = (resolvedWinningLabel || 'prize').replace(/\s+/g, '-').toLowerCase();
+      link.download = `prix-${downloadLabel}.png`;
 
       // Append to the body, click, and remove
       document.body.appendChild(link);
@@ -1502,264 +1615,297 @@ const PlayWheel = () => {
         });
       })
       .catch((error) => {
-=======
-      } else {
->>>>>>> dc20040828d2c73bb0655f26f4ebf02992236333
         toast({
           title: 'Erreur',
-          description: 'Impossible de jouer à la roue. Veuillez réessayer.',
+          description: 'Impossible de recharger les données. Veuillez réessayer.',
           variant: 'destructive',
         });
-      }
-    } finally {
-      dispatch({ type: 'SET_IS_LOADING', payload: false });
-    }
-  }, [wheelConfig, playWheelMutation]);
+      });
+  };
 
-  // Handle social action completion
-  const handleSocialActionComplete = useCallback(() => {
-    dispatch({ type: 'SET_HAS_COMPLETED_SOCIAL_ACTION', payload: true });
-    dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: false });
-    dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
-  }, []);
+  // Retry loading QR code if it fails initially
+  const handleQRLoadError = (attempt: number) => {
+    // ... existing code ...
+    console.log('[DEBUG] handleQRLoadError triggered, attempt:', attempt);
+    
+  };
 
-  // Handle claim form submission
-  const handleClaimFormSubmit = useCallback(async (formData: PlayerFormData) => {
-    dispatch({ type: 'SET_CLAIM_FORM_DATA', payload: formData });
-    dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: false });
-    dispatch({ type: 'SET_SHOW_THANKYOU_MESSAGE', payload: true });
-    dispatch({ type: 'SET_CURRENT_STEP', payload: 'claimForm' });
-
-    // Show success message
-    toast({
-      title: 'Succès !',
-      description: 'Vos informations ont été enregistrées avec succès.',
-    });
-  }, []);
-
-  // Effect for social redirect and initial step setup
+  // Initialize user flow state on wheel load
   useEffect(() => {
-    if (wheelData?.wheel) {
-      if (wheelData.wheel.socialNetwork && !state.hasCompletedSocialAction) {
-        dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
-        dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
-      } else {
-        // No social network required, go directly to spin wheel
-        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
-        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
-      }
+    console.log('[DEBUG] wheelData useEffect triggered, wheelData:', !!wheelData);
+    if (wheelData && wheelData.socialNetwork && wheelData.socialNetwork !== 'NONE') {
+      console.log('[DEBUG] Setting userFlowState to initial (social required)');
+      // Don't show social popup immediately - let user click spin first
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'initial' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' }); // Show the wheel, but require social action before spinning
+    } else if (wheelData) {
+      console.log('[DEBUG] Setting userFlowState to completedSocial (no social required)');
+      dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+      dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' }); // Show the wheel and allow spinning
     }
-  }, [wheelData?.wheel, state.hasCompletedSocialAction]);
+  }, [wheelData]);
 
-  // Loading state
-  if (isLoading) {
+  console.log('[DEBUG] Render state check:', {
+    isLoadingWheel,
+    hasWheelError: !!wheelError,
+    hasWheelData: !!wheelData,
+  });
+
+  if (isLoadingWheel) {
+    console.log('[DEBUG] Showing loading screen - isLoadingWheel is true');
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">IZI Kado</h1>
+        <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+        <p className="mt-4 text-lg text-gray-700">Loading the wheel...</p>
       </div>
     );
   }
 
-  // Error state
-  if (error) {
-    return <ErrorDisplay error={error} />;
+  if (wheelError) {
+    console.log('[DEBUG] Showing error screen - wheelError:', wheelError);
+    return <ErrorDisplay error={wheelError} />;
   }
 
-  // No wheel data
-  if (!wheelData?.wheel) {
+  if (!wheelData) {
+    console.log('[DEBUG] Showing no data screen - wheelData is null/undefined');
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Roue non trouvée</h2>
-          <p className="text-gray-500">Cette roue n'existe pas ou n'est plus disponible.</p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">Oops!</h1>
+        <div className="p-6 bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-xl max-w-md w-full">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Something went wrong</h2>
+          <p className="text-gray-600 mb-6">
+            We couldn't load the wheel. Please try again later or contact support.
+          </p>
+          <Button
+            onClick={() => window.location.reload()}
+            className="w-full bg-gradient-to-r from-indigo-500 to-pink-500"
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     );
   }
 
-  const { wheel } = wheelData;
-  const resolvedWinningLabel = state.spinResult?.resolvedSegment?.label ?? state.spinResult?.slot.label ?? '';
-  
-  // Debug logging
-  console.log('[DEBUG] Current state:', {
+  if (!wheelData.slots || wheelData.slots.length === 0) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100 p-6">
+        <h1 className="text-3xl font-bold text-indigo-700 mb-8">No Wheel Configuration</h1>
+        <div className="p-6 bg-white bg-opacity-90 backdrop-blur-md rounded-xl shadow-xl max-w-md w-full">
+          <p className="text-gray-600 mb-6">
+            The wheel is not properly configured. Please contact the administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[DEBUG] Rendering main wheel component with data:', {
+    hasWheelData: !!wheelData,
+    slotsCount: wheelData?.slots?.length || 0,
     currentStep: state.currentStep,
     userFlowState: state.userFlowState,
-    hasCompletedSocialAction: state.hasCompletedSocialAction,
-    socialNetwork: wheel.socialNetwork,
-    mustSpin: state.mustSpin,
-    isLoading: state.isLoading
+    socialNetwork: wheelData?.socialNetwork,
+    bannerImage: wheelData?.bannerImage,
+    backgroundImage: wheelData?.backgroundImage,
   });
 
   return (
     <div
-      className="min-h-screen w-full relative flex flex-col"
+      className="wheel-page-container play-wheel-page min-h-screen w-full overflow-x-hidden flex flex-col bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-100"
       style={{
-        background: wheel.backgroundImage
-          ? `url(${wheel.backgroundImage}) center/cover no-repeat`
-          : BRAND.backgroundGradient
+        backgroundImage: wheelData?.backgroundImage
+          ? `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url(${wheelData.backgroundImage})`
+          : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        // 🎯 SCROLLBAR EARTHQUAKE FIX - Prevent layout shifts
+        overflowY: 'auto',
+        scrollbarGutter: 'stable',
+        minHeight: '100vh',
+        position: 'relative',
       }}
     >
-      {/* Banner */}
-      {wheel.bannerImage && (
-        <div className="w-full h-32 md:h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+      {/* Banner Image */}
+      {wheelData?.bannerImage && (
+        <div className="w-full relative z-10">
           <img
-            src={wheel.bannerImage}
+            src={wheelData.bannerImage}
             alt="Banner"
-            className="w-full h-full object-cover"
+            className="w-full h-24 sm:h-32 md:h-40 lg:h-48 object-cover shadow-lg"
+            style={{
+              transform: 'none',
+              willChange: 'auto',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+            }}
             onError={(e) => {
-              console.log('[DEBUG] Banner image failed to load:', wheel.bannerImage);
+              console.log('[DEBUG] Banner image failed to load:', wheelData.bannerImage);
+              // Hide the image if it fails to load
               e.currentTarget.style.display = 'none';
+            }}
+            onLoad={() => {
+              console.log('[DEBUG] Banner image loaded successfully:', wheelData.bannerImage);
             }}
           />
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 min-h-screen">
-        <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center">
-          {/* Title */}
-          <div className="mb-8 w-full">
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-800 mb-4">
-              {wheel.mainTitle || wheel.name || 'Roue de la Fortune'}
-            </h1>
-
-            {/* Game rules */}
-            {wheel.gameRules && (
-              <div className="max-w-2xl mx-auto">
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  {wheel.gameRules}
-                </p>
-                <Button
-                  variant="link"
-                  onClick={() => dispatch({ type: 'SET_SHOW_RULES_MODAL', payload: true })}
-                  className="mt-2 text-indigo-600 hover:text-indigo-800"
-                >
-                  Voir les règles complètes
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Wheel */}
-          <div className="mb-8 flex justify-center">
-            {wheelConfig && (
-              <Wheel
-                config={wheelConfig}
-                isSpinning={state.mustSpin}
-                prizeIndex={state.prizeIndex}
-                onSpin={handleWheelFinishedSpin}
-              />
-            )}
-          </div>
-
-          {/* Action buttons */}
-          <div className="space-y-4 flex flex-col items-center">
-            {(state.currentStep === 'spinWheel' || (!state.mustSpin && !state.isLoading)) && (
-              <Button
-                onClick={() => handlePlayWheel()}
-                disabled={state.isLoading || state.mustSpin}
-                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
-              >
-                {state.isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Chargement...
-                  </>
-                ) : (
-                  'Tourner la roue'
-                )}
-              </Button>
-            )}
-          </div>
-
-          {/* Footer text */}
-          {wheel.footerText && (
-            <div className="mt-12 max-w-2xl mx-auto">
-              <p
-                className="text-sm text-gray-500 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: detectAndLinkPhoneNumbers(wheel.footerText)
-                }}
-              />
-            </div>
-          )}
+      {/* Logo - Mobile responsive */}
+      {wheelData && (
+        <div className="w-full flex justify-center px-2 py-2 sm:py-4">
+          <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-indigo-600 max-w-full break-words px-2 drop-shadow-lg">
+            {wheelData.mainTitle && wheelData.mainTitle.trim() !== ''
+              ? wheelData.mainTitle
+              : 'IZI Kado'}
+          </h1>
         </div>
-      </div>
+      )}
 
-      {/* Modals and dialogs */}
+      {/* Social network debug info (only in dev mode) */}
+      {import.meta.env.DEV && wheelData?.socialNetwork && (
+        <div className="fixed top-2 right-2 sm:top-4 sm:right-4 bg-blue-800 text-white p-2 rounded-md text-xs max-w-[200px] opacity-75 z-50">
+          <div className="font-mono">Social: {wheelData.socialNetwork}</div>
+        </div>
+      )}
+
+      {/* Confetti (only shown on win) */}
+      {/* {showConfetti && (
+        <TimedConfetti
+          key="confetti-active"
+          isActive={true}
+          duration={8000}
+          options={{
+            particleCount: 160,
+            angle: 90,
+            spread: 120,
+            colors: CONFETTI_COLORS,
+            shapes: ['star', 'circle', 'square'],
+          }}
+        />
+      )} */}
+
+      {/* {showConfetti && (
+        <TimedConfetti
+          // key="confetti-active"
+          isActive={true}
+          duration={8000}
+          options={{
+            particleCount: 160,
+            angle: 90,
+            spread: 120,
+            origin: { x: 0.5, y: 0.3 },
+            gravity: 1,
+            decay: 0.9,
+            ticks: 200,
+            colors: CONFETTI_COLORS,
+            shapes: ['star', 'circle', 'square'],
+          }}  
+        />
+      )} */}
+
+      {/* Social redirect dialog */}
       <SocialRedirectDialog
         open={state.showSocialRedirect}
-        onClose={handleSocialActionComplete}
-        network={wheel.socialNetwork}
-        redirectUrl={wheel.redirectUrl}
-        redirectText={wheel.redirectText}
+        onClose={handleSocialRedirectClose}
+        network={wheelData?.socialNetwork}
+        redirectUrl={wheelData?.redirectUrl}
+        redirectText={wheelData?.redirectText}
       />
 
-      {/* Result modal */}
-      <Dialog open={state.showResultModal} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
+      {/* Claim Form Dialog */}
+      <Dialog open={state.showClaimForm} onOpenChange={() => dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: false })}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl font-bold">
-              {state.spinResult?.play.result === 'WIN' ? 'Félicitations ! 🎉' : 'Pas de chance cette fois !'}
+            <DialogTitle className="text-lg sm:text-xl font-bold text-center">
+              Récupérer votre prix
             </DialogTitle>
-            <DialogDescription className="text-center text-lg mt-4">
-              {state.spinResult?.play.result === 'WIN'
-                ? `Vous avez gagné : ${resolvedWinningLabel}`
-                : 'Tentez votre chance une autre fois !'
-              }
+            <DialogDescription className="text-sm sm:text-base text-center">
+              Veuillez remplir vos informations pour récupérer votre prix.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 p-6">
-            {state.spinResult?.play.result === 'WIN' && state.spinResult.play.prize && (
-              <div className="text-center space-y-4">
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="font-semibold text-green-800">Votre code PIN :</p>
-                  <p className="text-2xl font-mono font-bold text-green-900 mt-2">
-                    {state.spinResult.play.prize.pin}
-                  </p>
+          <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
+            {state.formFields.map((field) => (
+              <div key={field.name} className="space-y-1 sm:space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                </label>
+                <div className="relative">
+                  {inputIcons[field.type]}
+                  <input
+                    type={field.type}
+                    value={state.claimFormData[field.name] || ''}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // For phone field, only allow digits and limit to 10 characters
+                      if (field.name === 'phone') {
+                        value = value.replace(/\D/g, '').slice(0, 10);
+                      }
+                      dispatch({ type: 'SET_CLAIM_FORM_DATA', payload: {
+                        ...state.claimFormData,
+                        [field.name]: value,
+                      } });
+                    }}
+                    className="w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
+                    placeholder={`Votre ${field.label.toLowerCase()}`}
+                    required={field.required}
+                    {...(field.name === 'phone' ? {
+                      maxLength: 10,
+                      inputMode: 'numeric' as const,
+                      pattern: '[0-9]*'
+                    } : {})}
+                  />
                 </div>
-
-                <Button
-                  onClick={() => dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: true })}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500"
-                >
-                  Réclamer mon prix
-                </Button>
               </div>
-            )}
+            ))}
+          </div>
 
+          <div className="flex justify-center gap-2 sm:gap-3 pt-2 sm:pt-4">
             <Button
-              variant="outline"
               onClick={() => {
-                dispatch({ type: 'RESET_WHEEL_STATE' });
-                dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: false });
+                // Convert claimFormData to PlayerFormData format
+                const playerData: PlayerFormData = {
+                  name: state.claimFormData.name || '',
+                  email: state.claimFormData.email || '',
+                  phone: state.claimFormData.phone,
+                };
+                handleClaimFormSubmit(playerData);
               }}
-              className="w-full"
+              disabled={state.isLoading}
+              className="flex-1 text-sm sm:text-base"
             >
-              Rejouer
+              {state.isLoading ? 'Récupération en cours...' : 'Récupérer mon prix'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Claim form modal */}
-      <Dialog open={state.showClaimForm} onOpenChange={() => dispatch({ type: 'SET_SHOW_CLAIM_FORM', payload: false })}>
-        <DialogContent className="sm:max-w-md">
+      {/* Prize Result Modal - Mobile responsive */}
+      <Dialog open={state.showResultModal} onOpenChange={(open) => {
+        // Only allow closing if it's a losing result
+        if (!open && state.spinResult?.play.result === 'WIN') {
+          // Prevent closing for winning results - user must claim prize
+          return;
+        }
+        dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: open });
+      }}>
+        <DialogContent 
+          className="w-[calc(100vw-2rem)] max-w-lg mx-auto"
+        >
           <DialogHeader>
-            <DialogTitle>Réclamez votre prix</DialogTitle>
-            <DialogDescription>
-              Veuillez remplir les informations suivantes pour réclamer votre prix.
-            </DialogDescription>
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-center">
+              {state.spinResult?.play.result === 'WIN' ? '🎉 Félicitations !' : '😔 Dommage !'}
+            </DialogTitle>
           </DialogHeader>
 
-<<<<<<< HEAD
           <div className="py-4 sm:py-6 text-center space-y-3 sm:space-y-4">
             {state.spinResult?.play.result === 'WIN' ? (
               <>
                 <p className="text-base sm:text-lg text-gray-700 mb-4">
-                  Vous avez gagné : <strong>{state.spinResult.slot.label}</strong>
+                  Vous avez gagné : <strong>{resolvedWinningLabel}</strong>
                 </p>
                 <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
                   <p className="text-sm sm:text-base text-blue-800 font-medium">
@@ -1946,11 +2092,12 @@ const PlayWheel = () => {
                 config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
-                onSpin={handleWheelFinishedSpin}
+                onSpin={noop}
                 onSpinStart={(duration) => {
-                  // Schedule a precise fallback using the actual duration plus small buffer
+                  // Schedule a precise fallback using the actual duration plus larger buffer
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
-                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  const ms = Math.ceil((duration + 2.0) * 1000); // Increased buffer to 2 seconds
+                  console.log(`🎯 Setting fallback timeout for ${ms}ms (duration: ${duration}s + 2s buffer)`);
                   window.fallbackTimeout = setTimeout(() => {
                     console.log('⚡ Spin-duration-based fallback - showing result');
                     dispatch({ type: 'SET_MUST_SPIN', payload: false });
@@ -1964,6 +2111,7 @@ const PlayWheel = () => {
                     }
                   }, ms) as any;
                 }}
+                onSpinComplete={handleWheelFinishedSpin}
                 showSpinButton={false} // The main button is now handled below
               />
             </div>
@@ -2035,10 +2183,11 @@ const PlayWheel = () => {
                 config={spinSegmentsSnapshot ? { ...state.wheelConfig, segments: spinSegmentsSnapshot } : state.wheelConfig}
                 isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
-                onSpin={handleWheelFinishedSpin}
+                onSpin={noop}
                 onSpinStart={(duration) => {
                   if (window.fallbackTimeout) clearTimeout(window.fallbackTimeout);
-                  const ms = Math.ceil((duration + 1.0) * 1000);
+                  const ms = Math.ceil((duration + 2.0) * 1000); // Increased buffer to 2 seconds
+                  console.log(`🎯 Setting fallback timeout for ${ms}ms (duration: ${duration}s + 2s buffer)`);
                   window.fallbackTimeout = setTimeout(() => {
                     console.log('⚡ Spin-duration-based fallback - showing result');
                     dispatch({ type: 'SET_MUST_SPIN', payload: false });
@@ -2052,6 +2201,7 @@ const PlayWheel = () => {
                     }
                   }, ms) as any;
                 }}
+                onSpinComplete={handleWheelFinishedSpin}
                 showSpinButton={false}
               />
             </div>
@@ -2097,51 +2247,16 @@ const PlayWheel = () => {
             <span className="max-w-full">{detectAndLinkPhoneNumbers(wheelData.footerText)}</span>
           ) : (
             <span>© {new Date().getFullYear()} IZI Kado</span>
-=======
-          {wheel.formSchema?.fields && (
-            <PlayerForm
-              fields={wheel.formSchema.fields}
-              onSubmit={handleClaimFormSubmit}
-              isLoading={false}
-            />
->>>>>>> dc20040828d2c73bb0655f26f4ebf02992236333
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Rules modal */}
-      <Dialog open={state.showRulesModal} onOpenChange={(open) => dispatch({ type: 'SET_SHOW_RULES_MODAL', payload: open })}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Règles du jeu</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {wheel.gameRules}
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confetti */}
-      {state.showConfetti && (
-        <TimedConfetti
-          particleCount={100}
-          colors={CONFETTI_COLORS}
-          duration={3000}
-          onComplete={() => dispatch({ type: 'SET_SHOW_CONFETTI', payload: false })}
-        />
-      )}
-
-      {/* Debug info in development */}
-      {import.meta.env.DEV && (
-        <div className="fixed bottom-4 left-4 bg-black bg-opacity-50 text-white p-2 rounded text-xs">
-          <div>Step: {state.currentStep}</div>
-          <div>Prize Index: {state.prizeIndex}</div>
-          <div>Must Spin: {state.mustSpin ? 'Yes' : 'No'}</div>
-          <div id="social-debug-info"></div>
         </div>
-      )}
+        <button
+          className="underline text-indigo-600 hover:text-pink-500 transition-colors whitespace-nowrap flex-shrink-0"
+          onClick={() => dispatch({ type: 'SET_SHOW_RULES_MODAL', payload: true })}
+          type="button"
+        >
+          Règles du jeu
+        </button>
+      </footer>
     </div>
   );
 };

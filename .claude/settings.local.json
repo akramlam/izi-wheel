@@ -2,7 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(pnpm --filter=@iziwheel/web run build)",
-      "Bash(pnpm --filter=@iziwheel/web run lint)"
+      "Bash(pnpm --filter=@iziwheel/web run lint)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(pnpm --filter=@iziwheel/api run build)",
+      "Bash(node test-runner.js)",
+      "Bash(pnpm --filter=@iziwheel/api run lint)",
+      "Bash(npx tsc:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
