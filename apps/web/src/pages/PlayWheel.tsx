@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef, useReducer } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useCallback, useReducer } from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { api, apiClient } from '../lib/api';
+import { api } from '../lib/api';
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,11 @@ import {
 } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
 import { toast } from '../hooks/use-toast';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { TimedConfetti } from '../components/magicui/timedConfetti';
 import Wheel from '../components/wheel/Wheel';
 import type { WheelConfig, WheelSpinResult } from '../components/wheel/types';
-import PlayerForm, { FormField, PlayerFormData } from '../components/PlayerForm';
-import { Input } from '../components/ui/input';
+import PlayerForm, { PlayerFormData } from '../components/PlayerForm';
 import { detectAndLinkPhoneNumbers } from '../utils/phoneUtils';
 import { runWheelAlignmentTests } from '../components/wheel/Wheel.test';
 import { applyStableSorting } from '../utils/slot-utils';
@@ -25,23 +24,41 @@ import { applyStableSorting } from '../utils/slot-utils';
 import { SocialRedirectDialog } from '../components/play-wheel/SocialRedirectDialog';
 import { ErrorDisplay } from '../components/play-wheel/ErrorDisplay';
 import { initialState, appReducer } from '../components/play-wheel/state';
-import { BRAND, CONFETTI_COLORS, inputIcons } from '../components/play-wheel/constants';
+import { BRAND, CONFETTI_COLORS } from '../components/play-wheel/constants';
 import { resolvePrizeFromResponse, updateSpinResultWithPointer } from '../components/play-wheel/prizeResolution';
 import type {
   WheelData,
-  PlayResponse,
-  AppState,
-  AppAction,
-  WheelSlot,
-  FormSchema
+  PlayResponse
 } from '../components/play-wheel/types';
 
 const PlayWheel = () => {
   const { companyId, wheelId } = useParams<{ companyId: string; wheelId: string }>();
-  const navigate = useNavigate();
 
   console.log('[DEBUG] PlayWheel render - Route params:', { companyId, wheelId });
   console.log('[DEBUG] Current URL:', window.location.href);
+  
+  // Parse URL path to extract companyId and wheelId correctly
+  const urlPath = window.location.pathname;
+  const pathParts = urlPath.split('/').filter(part => part.length > 0);
+  console.log('[DEBUG] URL path parts:', pathParts);
+  
+  // Extract companyId and wheelId from URL path
+  let effectiveCompanyId = companyId;
+  let effectiveWheelId = wheelId;
+  
+  if (pathParts.length >= 3 && pathParts[0] === 'play' && pathParts[1] === 'company') {
+    // URL format: /play/company/{wheelId}
+    effectiveCompanyId = 'company';
+    effectiveWheelId = pathParts[2];
+    console.log('[DEBUG] Detected company route, wheelId:', effectiveWheelId);
+  } else if (pathParts.length >= 4 && pathParts[0] === 'play' && pathParts[1] === 'company') {
+    // URL format: /play/company/{companyId}/{wheelId}
+    effectiveCompanyId = pathParts[2];
+    effectiveWheelId = pathParts[3];
+    console.log('[DEBUG] Detected company route with companyId:', effectiveCompanyId, 'wheelId:', effectiveWheelId);
+  }
+  
+  console.log('[DEBUG] Effective params:', { effectiveCompanyId, effectiveWheelId });
 
   // Run alignment math tests in development
   useEffect(() => {
@@ -55,14 +72,21 @@ const PlayWheel = () => {
 
   // Wheel data query
   const { data: wheelData, isLoading, error } = useQuery<{ wheel: WheelData }>({
-    queryKey: ['publicWheel', companyId, wheelId],
-    queryFn: () => {
-      const effectiveCompanyId = companyId && companyId !== 'undefined' ? companyId : 'company';
-
-      console.log(`[DEBUG] Fetching wheel data for companyId: ${effectiveCompanyId}, wheelId: ${wheelId}`);
-      return api.getPublicWheel(effectiveCompanyId, wheelId);
+    queryKey: ['publicWheel', effectiveCompanyId, effectiveWheelId],
+    queryFn: async () => {
+      console.log(`[DEBUG] Making API call with: {effectiveCompanyId: '${effectiveCompanyId}', effectiveWheelId: '${effectiveWheelId}'}`);
+      
+      if (effectiveCompanyId === 'company') {
+        console.log(`[DEBUG] Making company API call to: https://api.izikado.fr/public/company/${effectiveWheelId}`);
+        const response = await api.getPublicWheel('company', effectiveWheelId!);
+        return response.data;
+      } else {
+        console.log(`[DEBUG] Making company API call to: https://api.izikado.fr/public/company/${effectiveWheelId}`);
+        const response = await api.getPublicWheel(effectiveCompanyId!, effectiveWheelId!);
+        return response.data;
+      }
     },
-    enabled: !!wheelId,
+    enabled: !!effectiveWheelId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error: any) => {
       console.error(`Query attempt ${failureCount + 1} failed:`, error);
@@ -73,12 +97,9 @@ const PlayWheel = () => {
   // Play wheel mutation
   const playWheelMutation = useMutation<PlayResponse, Error, { leadInfo?: any }>({
     mutationFn: async ({ leadInfo }) => {
-      const url = companyId && companyId !== 'undefined'
-        ? `/public/${companyId}/wheels/${wheelId}/play`
-        : `/public/company/wheels/${wheelId}/play`;
-
-      console.log(`[DEBUG] Playing wheel at: ${url}`);
-      return api.post(url, { leadInfo });
+      console.log(`[DEBUG] Playing wheel with effectiveCompanyId: ${effectiveCompanyId}, effectiveWheelId: ${effectiveWheelId}`);
+      const response = await api.spinWheel(effectiveCompanyId!, effectiveWheelId!, { lead: leadInfo || {} });
+      return response.data;
     },
   });
 
@@ -91,6 +112,14 @@ const PlayWheel = () => {
       isWinning: slot.isWinning,
       position: slot.position ?? undefined,
     })),
+    spinDurationMin: 3,
+    spinDurationMax: 7,
+    hapticFeedback: true,
+    sounds: {
+      tick: true,
+      win: true,
+    },
+    pointerAngleDeg: 0,
   } : null;
 
   // Handle spin complete
@@ -123,6 +152,13 @@ const PlayWheel = () => {
     dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
     dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
   }, [wheelConfig?.segments, state.spinResult]);
+
+  // Handle wheel finished spinning
+  const handleWheelFinishedSpin = useCallback(() => {
+    console.log('✅ WHEEL CALLBACK: Wheel finished spinning');
+    dispatch({ type: 'SET_SHOW_RESULT_MODAL', payload: true });
+    dispatch({ type: 'SET_CURRENT_STEP', payload: 'showPrize' });
+  }, []);
 
   // Handle play wheel
   const handlePlayWheel = useCallback(async (leadInfo?: any) => {
@@ -283,9 +319,9 @@ const PlayWheel = () => {
             {wheelConfig && (
               <Wheel
                 config={wheelConfig}
-                mustSpin={state.mustSpin}
+                isSpinning={state.mustSpin}
                 prizeIndex={state.prizeIndex}
-                onSpinComplete={handleSpinComplete}
+                onSpin={handleWheelFinishedSpin}
               />
             )}
           </div>

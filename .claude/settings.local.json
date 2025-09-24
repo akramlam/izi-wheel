@@ -12,7 +12,8 @@
       "Bash(pnpm --filter=@iziwheel/api run build)",
       "Bash(node test-runner.js)",
       "Bash(pnpm --filter=@iziwheel/api run lint)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

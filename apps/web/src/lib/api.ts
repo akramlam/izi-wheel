@@ -338,7 +338,7 @@ export const api = {
         console.log('Using direct wheel access for "company" path parameter');
         try {
           // Use the direct wheel endpoint without company ID
-          const response = await apiClient.get(`/public/wheels/${wheelId}`);
+          const response = await apiClient.get(`/public/company/${wheelId}`);
           console.log('Response received from direct wheel endpoint:', response.status);
           return response;
         } catch (directError) {
@@ -454,12 +454,12 @@ export const api = {
         } else {
           // If no valid company ID in localStorage, use direct wheel endpoint
           console.warn('No valid company ID found in localStorage. Using direct wheel endpoint.');
-          return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
+          return apiClient.post(`/public/company/${wheelId}/spin`, data);
         }
       } catch (e) {
         console.error('Error handling company ID:', e);
         // Fallback to direct wheel endpoint
-        return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
+        return apiClient.post(`/public/company/${wheelId}/spin`, data);
       }
     }
     
@@ -475,7 +475,7 @@ export const api = {
     if (!isValidUuid) {
       // If companyId is invalid, use the direct wheel endpoint
       console.warn(`Invalid companyId: "${companyId}". Using direct wheel endpoint.`);
-      return apiClient.post(`/public/wheels/${wheelId}/spin`, data);
+      return apiClient.post(`/public/company/${wheelId}/spin`, data);
     }
     
     try {
