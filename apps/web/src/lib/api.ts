@@ -326,7 +326,7 @@ export const api = {
     try {
       // Add logging for debugging
       console.log(`getPublicWheel called with companyId: ${companyId}, wheelId: ${wheelId}`);
-      
+
       // Validate the inputs
       if (!wheelId) {
         console.error('No wheelId provided to getPublicWheel');
@@ -335,96 +335,38 @@ export const api = {
 
       // Special case for 'company' in the URL path
       if (companyId === 'company') {
-        console.log('Using direct wheel access for "company" path parameter');
-        try {
-          // Use the direct wheel endpoint without company ID
-          const response = await apiClient.get(`/public/company/${wheelId}`);
-          console.log('Response received from direct wheel endpoint:', response.status);
-          return response;
-        } catch (directError) {
-          console.error('Error using direct wheel access:', directError);
-          // Fall through to the standard approach
-        }
+        console.log('Using company wheel endpoint: /public/company/' + wheelId);
+        const response = await apiClient.get(`/public/company/${wheelId}`);
+        console.log('Response received from company endpoint:', response.status);
+        return response;
       }
 
-      // Validate the companyId - if it's not a UUID, use a fallback
+      // Validate the companyId - if it's a UUID, use company-specific endpoint
       const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
-      
-      if (!isValidUuid) {
-        // If the companyId is invalid, try to get a valid company ID
-        console.warn(`Invalid companyId format: "${companyId}". Attempting to get a valid company ID.`);
-        
-        try {
-          // Try to get a valid company ID from localStorage or the API
-          const validCompanyId = await getValidCompanyId();
-          
-          if (validCompanyId) {
-            console.log(`Using valid companyId: ${validCompanyId}`);
-            
-            try {
-              const response = await apiClient.get(`/public/companies/${validCompanyId}/wheels/${wheelId}`);
-              console.log('Response received using valid companyId:', response.status);
-              
-              if (!response.data || !response.data.wheel) {
-                console.error('No wheel data in response using valid companyId:', response);
-                throw new Error('No wheel data returned from API');
-              }
-              
-              return response;
-            } catch (companyError) {
-              console.error('Error using valid companyId:', companyError);
-              // Fall through to the fallback approach
-            }
-          }
-        } catch (e) {
-          console.error('Error getting valid companyId:', e);
+
+      if (isValidUuid) {
+        // Use the company-specific endpoint
+        console.log(`Making request to /public/companies/${companyId}/wheels/${wheelId}`);
+        const response = await apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
+
+        if (!response.data || !response.data.wheel) {
+          console.error('No wheel data in response from company endpoint:', response);
+          throw new Error('No wheel data returned from API');
         }
-        
-        // If we still don't have a valid company ID, just use the wheelId directly as a fallback
-        console.warn('Using fallback route - requesting wheel directly by ID');
-        
-        try {
-          const response = await apiClient.get(`/public/wheels/${wheelId}`);
-          console.log('Response received using fallback route:', response.status);
-          
-          if (!response.data || !response.data.wheel) {
-            console.error('No wheel data in response using fallback route:', response);
-            throw new Error('No wheel data returned from API');
-          }
-          
-          return response;
-        } catch (fallbackError) {
-          console.error('Error using fallback route:', fallbackError);
-          
-          // Try the original request anyway as a last resort
-          console.log(`Proceeding with original companyId as last resort: "${companyId}"`);
-          
-          try {
-            const response = await apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
-            console.log('Response received using original companyId:', response.status);
-            
-            if (!response.data || !response.data.wheel) {
-              console.error('No wheel data in response using original companyId:', response);
-              throw new Error('No wheel data returned from API');
-            }
-            
-            return response;
-          } catch (originalError) {
-            console.error('Error using original companyId:', originalError);
-            throw originalError;
-          }
-        }
+
+        console.log(`Successfully retrieved wheel data with ${response.data.wheel.slots?.length || 0} slots`);
+        return response;
       }
-      
-      // If the companyId is valid, use the standard endpoint
-      console.log(`Making standard request to /public/companies/${companyId}/wheels/${wheelId}`);
-      const response = await apiClient.get(`/public/companies/${companyId}/wheels/${wheelId}`);
-      
+
+      // Fallback to direct wheel endpoint
+      console.log('Using fallback wheel endpoint: /public/wheels/' + wheelId);
+      const response = await apiClient.get(`/public/wheels/${wheelId}`);
+
       if (!response.data || !response.data.wheel) {
-        console.error('No wheel data in response from standard endpoint:', response);
+        console.error('No wheel data in response from fallback endpoint:', response);
         throw new Error('No wheel data returned from API');
       }
-      
+
       console.log(`Successfully retrieved wheel data with ${response.data.wheel.slots?.length || 0} slots`);
       return response;
     } catch (error) {
@@ -434,75 +376,35 @@ export const api = {
   },
   
   spinWheel: async (companyId: string, wheelId: string, data: { lead: Record<string, string> }) => {
-    // Validate data before sending
-    if (!data || !data.lead || Object.keys(data.lead).length === 0) {
-      console.error('Invalid lead data for wheel spin:', data);
-      throw new Error('Invalid lead data for wheel spin');
-    }
-    
-    // Check if companyId is "company" (special case from URL)
-    if (companyId === 'company') {
-      console.warn('Using special "company" ID. Trying to get valid company ID from localStorage...');
-      
-      try {
-        // Try to get a valid company ID from localStorage
-        const storedCompanyId = localStorage.getItem('companyId');
-        
-        if (storedCompanyId && storedCompanyId !== 'null') {
-          console.log(`Using company ID from localStorage: ${storedCompanyId}`);
-          companyId = storedCompanyId;
-        } else {
-          // If no valid company ID in localStorage, use direct wheel endpoint
-          console.warn('No valid company ID found in localStorage. Using direct wheel endpoint.');
-          return apiClient.post(`/public/company/${wheelId}/spin`, data);
-        }
-      } catch (e) {
-        console.error('Error handling company ID:', e);
-        // Fallback to direct wheel endpoint
-        return apiClient.post(`/public/company/${wheelId}/spin`, data);
-      }
-    }
-    
-    // Log the request being made
-    console.log('Sending wheel spin request:', {
-      url: `/public/companies/${companyId}/wheels/${wheelId}/spin`,
-      data: data
-    });
-    
-    // Check if companyId is valid UUID (if not 'company' which we handled above)
-    const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
-    
-    if (!isValidUuid) {
-      // If companyId is invalid, use the direct wheel endpoint
-      console.warn(`Invalid companyId: "${companyId}". Using direct wheel endpoint.`);
-      return apiClient.post(`/public/company/${wheelId}/spin`, data);
-    }
-    
     try {
-      const response = await apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
-      
-      // Add a cache-busting parameter to QR code URL if it exists
-      if (response.data?.play?.prize?.qrLink) {
-        const qrLink = response.data.play.prize.qrLink;
-        
-        // Ensure the URL is absolute
-        let fullQrLink = qrLink;
-        if (!qrLink.startsWith('http://') && !qrLink.startsWith('https://')) {
-          const baseUrl = API_URL;
-          fullQrLink = `${baseUrl}${qrLink.startsWith('/') ? '' : '/'}${qrLink}`;
-        }
-        
-        // Add a cache-busting parameter
-        const cacheBuster = `t=${Date.now()}`;
-        response.data.play.prize.qrLink = fullQrLink.includes('?') 
-          ? `${fullQrLink}&${cacheBuster}` 
-          : `${fullQrLink}${cacheBuster}`;
-        
-        console.log('Processed QR link:', response.data.play.prize.qrLink);
-      } else if (response.data?.play?.result === 'WIN') {
-        console.warn('Winning result but no QR link provided in response');
+      console.log(`spinWheel called with companyId: ${companyId}, wheelId: ${wheelId}`);
+
+      // Validate data before sending
+      if (!data || !data.lead) {
+        data = { lead: {} }; // Provide empty lead data as fallback
       }
-      
+
+      // Special case for 'company' in the URL path
+      if (companyId === 'company') {
+        console.log('Using company spin endpoint: /public/company/' + wheelId + '/spin');
+        const response = await apiClient.post(`/public/company/${wheelId}/spin`, data);
+        console.log('Response received from company spin endpoint:', response.status);
+        return response;
+      }
+
+      // Validate the companyId - if it's a UUID, use company-specific endpoint
+      const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(companyId);
+
+      if (isValidUuid) {
+        // Use the company-specific spin endpoint
+        console.log(`Making spin request to /public/companies/${companyId}/wheels/${wheelId}/spin`);
+        const response = await apiClient.post(`/public/companies/${companyId}/wheels/${wheelId}/spin`, data);
+        return response;
+      }
+
+      // Fallback to direct wheel spin endpoint
+      console.log('Using fallback spin endpoint: /public/wheels/' + wheelId + '/spin');
+      const response = await apiClient.post(`/public/wheels/${wheelId}/spin`, data);
       return response;
     } catch (error) {
       console.error('Error in spinWheel:', error);
