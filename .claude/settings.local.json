@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(pnpm --filter=@iziwheel/web run build)",
-      "Bash(pnpm --filter=@iziwheel/web run lint)"
+      "Bash(pnpm --filter=@iziwheel/web run lint)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []
