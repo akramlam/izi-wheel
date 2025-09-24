@@ -231,13 +231,19 @@ const PlayWheel = () => {
     });
   }, []);
 
-  // Effect for social redirect
+  // Effect for social redirect and initial step setup
   useEffect(() => {
-    if (wheelData?.wheel?.socialNetwork && !state.hasCompletedSocialAction) {
-      dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
-      dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
+    if (wheelData?.wheel) {
+      if (wheelData.wheel.socialNetwork && !state.hasCompletedSocialAction) {
+        dispatch({ type: 'SET_SHOW_SOCIAL_REDIRECT', payload: true });
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'social' });
+      } else {
+        // No social network required, go directly to spin wheel
+        dispatch({ type: 'SET_CURRENT_STEP', payload: 'spinWheel' });
+        dispatch({ type: 'SET_USER_FLOW_STATE', payload: 'completedSocial' });
+      }
     }
-  }, [wheelData?.wheel?.socialNetwork, state.hasCompletedSocialAction]);
+  }, [wheelData?.wheel, state.hasCompletedSocialAction]);
 
   // Loading state
   if (isLoading) {
@@ -267,6 +273,16 @@ const PlayWheel = () => {
 
   const { wheel } = wheelData;
   const resolvedWinningLabel = state.spinResult?.resolvedSegment?.label ?? state.spinResult?.slot.label ?? '';
+  
+  // Debug logging
+  console.log('[DEBUG] Current state:', {
+    currentStep: state.currentStep,
+    userFlowState: state.userFlowState,
+    hasCompletedSocialAction: state.hasCompletedSocialAction,
+    socialNetwork: wheel.socialNetwork,
+    mustSpin: state.mustSpin,
+    isLoading: state.isLoading
+  });
 
   return (
     <div
@@ -284,17 +300,21 @@ const PlayWheel = () => {
             src={wheel.bannerImage}
             alt="Banner"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.log('[DEBUG] Banner image failed to load:', wheel.bannerImage);
+              e.currentTarget.style.display = 'none';
+            }}
           />
         </div>
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="w-full max-w-4xl mx-auto text-center">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 min-h-screen">
+        <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center">
           {/* Title */}
-          <div className="mb-8">
+          <div className="mb-8 w-full">
             <h1 className="text-3xl md:text-5xl font-bold text-gray-800 mb-4">
-              {wheel.mainTitle || wheel.name}
+              {wheel.mainTitle || wheel.name || 'Roue de la Fortune'}
             </h1>
 
             {/* Game rules */}
@@ -315,7 +335,7 @@ const PlayWheel = () => {
           </div>
 
           {/* Wheel */}
-          <div className="mb-8">
+          <div className="mb-8 flex justify-center">
             {wheelConfig && (
               <Wheel
                 config={wheelConfig}
@@ -327,8 +347,8 @@ const PlayWheel = () => {
           </div>
 
           {/* Action buttons */}
-          <div className="space-y-4">
-            {state.currentStep === 'spinWheel' && (
+          <div className="space-y-4 flex flex-col items-center">
+            {(state.currentStep === 'spinWheel' || (!state.mustSpin && !state.isLoading)) && (
               <Button
                 onClick={() => handlePlayWheel()}
                 disabled={state.isLoading || state.mustSpin}
