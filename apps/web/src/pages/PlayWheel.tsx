@@ -57,12 +57,10 @@ const PlayWheel = () => {
   const { data: wheelData, isLoading, error } = useQuery<{ wheel: WheelData }>({
     queryKey: ['publicWheel', companyId, wheelId],
     queryFn: () => {
-      const url = companyId && companyId !== 'undefined'
-        ? `/public/${companyId}/wheels/${wheelId}`
-        : `/public/company/wheels/${wheelId}`;
+      const effectiveCompanyId = companyId && companyId !== 'undefined' ? companyId : 'company';
 
-      console.log(`[DEBUG] Fetching wheel data from: ${url}`);
-      return api.get(url);
+      console.log(`[DEBUG] Fetching wheel data for companyId: ${effectiveCompanyId}, wheelId: ${wheelId}`);
+      return api.getPublicWheel(effectiveCompanyId, wheelId);
     },
     enabled: !!wheelId,
     staleTime: 5 * 60 * 1000, // 5 minutes
