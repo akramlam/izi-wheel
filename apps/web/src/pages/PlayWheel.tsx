@@ -82,7 +82,8 @@ const PlayWheel = () => {
     queryFn: async () => {
       console.log('Fetching wheel data...');
       const effectiveCompanyId = companyId || 'company';
-      return api.getPublicWheel(effectiveCompanyId, wheelId!);
+      const response = await api.getPublicWheel(effectiveCompanyId, wheelId!);
+      return response.data;
     },
     enabled: !!wheelId,
     retry: 2,
