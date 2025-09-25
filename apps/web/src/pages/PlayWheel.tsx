@@ -136,7 +136,8 @@ const PlayWheel = () => {
 
   // Handle spin complete
   const handleSpinComplete = useCallback((result: WheelSpinResult) => {
-    console.log('Wheel spin completed:', result);
+    console.log('🎯 Wheel spin completed:', result);
+    console.log('🎯 Available slots:', validSlots.map((slot, i) => `${i}: ${slot.label}`));
 
     if (!spinResult) {
       console.warn('No spin result available');
@@ -144,16 +145,30 @@ const PlayWheel = () => {
     }
 
     // The result.pointerIndex should match the expected prizeIndex
-    console.log('Spin result alignment:', {
+    console.log('🎯 Spin result alignment:', {
       pointerIndex: result.pointerIndex,
       expectedIndex: result.expectedIndex,
-      isAligned: result.isAligned
+      isAligned: result.isAligned,
+      actualSlotAtPointer: validSlots[result.pointerIndex]?.label,
+      expectedSlotAtPointer: validSlots[result.expectedIndex]?.label
     });
+
+    // Verify alignment
+    if (!result.isAligned) {
+      console.error('❌ WHEEL ALIGNMENT MISMATCH!', {
+        expected: result.expectedIndex,
+        actual: result.pointerIndex,
+        expectedSlot: validSlots[result.expectedIndex]?.label,
+        actualSlot: validSlots[result.pointerIndex]?.label
+      });
+    } else {
+      console.log('✅ Wheel alignment correct');
+    }
 
     setMustSpin(false);
     setShowConfetti(spinResult.play.result === 'WIN');
     setShowResultModal(true);
-  }, [spinResult]);
+  }, [spinResult, validSlots]);
 
   // Handle play wheel
   const handlePlayWheel = useCallback(async () => {

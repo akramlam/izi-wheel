@@ -269,10 +269,16 @@ const Wheel: React.FC<WheelProps> = ({
       // Use the deterministic alignment function
       const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
+
+      // POTENTIAL FIX: Try an offset correction to account for visual/calculation mismatch
+      // If segments are visually offset from calculation, adjust here
+      // Based on observation: wheel lands 1 segment clockwise from expected
+      const offsetCorrection = segAngle; // Try +1 segment offset (120 degrees for 3 segments)
+
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
         prizeIndex,
-        pointerAngleDeg: pointerAngle, // Allow calibration if pointer not exactly at 0°
+        pointerAngleDeg: pointerAngle + offsetCorrection,
         biasDeg
       });
 
@@ -292,7 +298,15 @@ const Wheel: React.FC<WheelProps> = ({
         finalRotation: target,
         segmentLabels: segments.map((s, i) => `${i}: ${s.label}`),
         targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN',
-        targetSegmentId: segments[prizeIndex]?.id || 'NO_ID'
+        targetSegmentId: segments[prizeIndex]?.id || 'NO_ID',
+        // Debug segment positions
+        segmentPositions: segments.map((s, i) => ({
+          index: i,
+          label: s.label,
+          startAngle: i * segAngle,
+          centerAngle: i * segAngle + segAngle / 2,
+          endAngle: (i + 1) * segAngle
+        }))
       });
       
       // Set rotation and trigger animation
