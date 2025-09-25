@@ -75,6 +75,7 @@ const PlayWheel = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   console.log('PlayWheel params:', { companyId, wheelId });
+  console.log('🎯 Modal states:', { showResultModal, mustSpin, isLoading });
 
   // Wheel data query
   const { data: wheelData, isLoading: wheelLoading, error } = useQuery<{ wheel: WheelData }>({
@@ -138,6 +139,7 @@ const PlayWheel = () => {
   const handleSpinComplete = useCallback((result: WheelSpinResult) => {
     console.log('🎯 Wheel spin completed:', result);
     console.log('🎯 Available slots:', validSlots.map((slot, i) => `${i}: ${slot.label}`));
+    console.log('🎯 Current spinResult:', spinResult);
 
     // The result.pointerIndex should match the expected prizeIndex
     console.log('🎯 Spin result alignment:', {
@@ -162,21 +164,14 @@ const PlayWheel = () => {
 
     setMustSpin(false);
 
-    // Show confetti and modal based on spin result if available
-    if (spinResult) {
-      setShowConfetti(spinResult.play.result === 'WIN');
-      setShowResultModal(true);
-    } else {
-      // If spinResult not available yet, wait a bit and try again
-      setTimeout(() => {
-        if (spinResult) {
-          setShowConfetti(spinResult.play.result === 'WIN');
-          setShowResultModal(true);
-        } else {
-          // Fallback - show modal anyway
-          setShowResultModal(true);
-        }
-      }, 500);
+    // Always show the modal regardless of spinResult timing
+    console.log('🎯 Setting showResultModal to true');
+    setShowResultModal(true);
+
+    // Show confetti if we have spin result and it's a win
+    if (spinResult?.play.result === 'WIN') {
+      console.log('🎉 Setting confetti to true');
+      setShowConfetti(true);
     }
   }, [spinResult, validSlots]);
 
@@ -395,6 +390,18 @@ const PlayWheel = () => {
                 )}
               </Button>
             )}
+
+            {/* Debug button - remove after testing */}
+            <Button
+              onClick={() => {
+                console.log('🎯 Manual modal trigger');
+                setShowResultModal(true);
+              }}
+              variant="secondary"
+              size="sm"
+            >
+              Test Modal
+            </Button>
           </div>
 
           {/* Footer text */}
