@@ -240,6 +240,7 @@ const PlayWheel = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Roue non trouvée</h2>
+          console.log('Wheel data:', wheelData);
           <p className="text-gray-500">Cette roue n'existe pas ou n'est plus disponible.</p>
         </div>
       </div>
