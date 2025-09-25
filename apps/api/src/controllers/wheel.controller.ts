@@ -386,7 +386,7 @@ export const createWheel = async (req: Request, res: Response) => {
         playLimit: playLimit || PlayLimit.ONCE_PER_DAY,
         bannerImage: bannerImage || "https://roue.izikado.fr/images/banner.png",
         backgroundImage: backgroundImage || "https://roue.izikado.fr/images/background.png",
-        gameRules: gameRules || "https://roue.izikado.fr/images/game-rules.png",
+        gameRules: gameRules || "",
         footerText: footerText || "",
         mainTitle: mainTitle || '',
       },

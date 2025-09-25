@@ -139,11 +139,6 @@ const PlayWheel = () => {
     console.log('🎯 Wheel spin completed:', result);
     console.log('🎯 Available slots:', validSlots.map((slot, i) => `${i}: ${slot.label}`));
 
-    if (!spinResult) {
-      console.warn('No spin result available');
-      return;
-    }
-
     // The result.pointerIndex should match the expected prizeIndex
     console.log('🎯 Spin result alignment:', {
       pointerIndex: result.pointerIndex,
@@ -166,8 +161,23 @@ const PlayWheel = () => {
     }
 
     setMustSpin(false);
-    setShowConfetti(spinResult.play.result === 'WIN');
-    setShowResultModal(true);
+
+    // Show confetti and modal based on spin result if available
+    if (spinResult) {
+      setShowConfetti(spinResult.play.result === 'WIN');
+      setShowResultModal(true);
+    } else {
+      // If spinResult not available yet, wait a bit and try again
+      setTimeout(() => {
+        if (spinResult) {
+          setShowConfetti(spinResult.play.result === 'WIN');
+          setShowResultModal(true);
+        } else {
+          // Fallback - show modal anyway
+          setShowResultModal(true);
+        }
+      }, 500);
+    }
   }, [spinResult, validSlots]);
 
   // Handle play wheel
@@ -322,8 +332,8 @@ const PlayWheel = () => {
             </div>
           )}
 
-          {/* Game rules - display prominently above wheel */}
-          {wheel.gameRules && (
+          {/* Game rules - display prominently above wheel (only if it's actual text, not a URL) */}
+          {wheel.gameRules && !wheel.gameRules.startsWith('http') && wheel.gameRules.trim().length > 0 && (
             <div className="mb-6 max-w-2xl mx-auto">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                 <p className="text-base md:text-lg text-white/95 leading-relaxed">
@@ -406,17 +416,20 @@ const PlayWheel = () => {
       {/* Social redirect is now handled inline above */}
 
       {/* Result modal */}
-      <Dialog open={showResultModal} onOpenChange={() => {}}>
+      <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl font-bold">
-              {spinResult?.play.result === 'WIN' ? 'Félicitations ! 🎉' : 'Pas de chance cette fois !'}
+              {spinResult?.play.result === 'WIN' ? 'Félicitations ! 🎉' : 'Résultat'}
             </DialogTitle>
             <DialogDescription className="text-center text-lg mt-4">
-              {spinResult?.play.result === 'WIN'
-                ? `Vous avez gagné : ${winningLabel}`
-                : 'Tentez votre chance une autre fois !'
-              }
+              {spinResult ? (
+                spinResult.play.result === 'WIN'
+                  ? `Vous avez gagné : ${winningLabel}`
+                  : 'Pas de chance cette fois !'
+              ) : (
+                'Résultat en cours de traitement...'
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -439,13 +452,22 @@ const PlayWheel = () => {
               </div>
             )}
 
-            <Button
-              variant="outline"
-              onClick={handleReplay}
-              className="w-full"
-            >
-              Rejouer
-            </Button>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleReplay}
+                className="flex-1"
+              >
+                Rejouer
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setShowResultModal(false)}
+                className="flex-1"
+              >
+                Fermer
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
