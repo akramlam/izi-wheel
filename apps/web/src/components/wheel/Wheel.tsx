@@ -467,10 +467,14 @@ const Wheel: React.FC<WheelProps> = ({
           onSpin();
           if (typeof onSpinComplete === 'function') {
             try {
+              console.log('🎬 About to call onSpinComplete with:', summary);
               onSpinComplete(summary);
+              console.log('🎬 onSpinComplete called successfully');
             } catch (error) {
               console.error('Error in onSpinComplete handler:', error);
             }
+          } else {
+            console.warn('🎬 onSpinComplete callback not provided or not a function');
           }
           console.log('🎬 onSpin callback called successfully');
         }, 500); // Increased buffer to ensure wheel fully settles before callback
