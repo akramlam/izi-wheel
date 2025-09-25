@@ -109,14 +109,29 @@ const PlayWheel = () => {
     return posA - posB;
   }) || [];
 
+  // Ensure we have at least some default slots to prevent empty wheel
+  const validSlots = sortedSlots.length > 0 ? sortedSlots : [
+    { id: 'default-1', label: 'Prix 1', color: '#FF6384', isWinning: true, position: 0 },
+    { id: 'default-2', label: 'Prix 2', color: '#36A2EB', isWinning: false, position: 1 },
+    { id: 'default-3', label: 'Prix 3', color: '#FFCE56', isWinning: false, position: 2 },
+  ];
+
   // Wheel configuration
   const wheelConfig: WheelConfig | null = wheelData?.wheel ? {
-    segments: sortedSlots.map(slot => ({
+    segments: validSlots.map(slot => ({
       id: slot.id,
       label: slot.label,
       color: slot.color,
       isWinning: slot.isWinning,
+      position: slot.position,
     })),
+    spinDurationMin: 3,
+    spinDurationMax: 6,
+    sounds: {
+      tick: true,
+      win: true,
+    },
+    hapticFeedback: true,
   } : null;
 
   // Handle spin complete
@@ -128,23 +143,17 @@ const PlayWheel = () => {
       return;
     }
 
-    // Find the winning slot by matching the backend result
-    let winningIndex = result.winningIndex;
+    // The result.pointerIndex should match the expected prizeIndex
+    console.log('Spin result alignment:', {
+      pointerIndex: result.pointerIndex,
+      expectedIndex: result.expectedIndex,
+      isAligned: result.isAligned
+    });
 
-    // If we have slot info from backend, try to match it
-    if (spinResult.slot?.id) {
-      const foundIndex = sortedSlots.findIndex(slot => slot.id === spinResult.slot.id);
-      if (foundIndex !== -1) {
-        winningIndex = foundIndex;
-        console.log('Matched backend slot to index:', foundIndex);
-      }
-    }
-
-    setPrizeIndex(winningIndex);
     setMustSpin(false);
     setShowConfetti(spinResult.play.result === 'WIN');
     setShowResultModal(true);
-  }, [spinResult, sortedSlots]);
+  }, [spinResult]);
 
   // Handle play wheel
   const handlePlayWheel = useCallback(async () => {
@@ -161,7 +170,7 @@ const PlayWheel = () => {
       // Find the prize index based on the winning slot
       let targetIndex = 0;
       if (result.slot?.id) {
-        const foundIndex = sortedSlots.findIndex(slot => slot.id === result.slot.id);
+        const foundIndex = validSlots.findIndex(slot => slot.id === result.slot.id);
         if (foundIndex !== -1) {
           targetIndex = foundIndex;
         }
@@ -178,10 +187,11 @@ const PlayWheel = () => {
         description: 'Impossible de jouer à la roue. Veuillez réessayer.',
         variant: 'destructive',
       });
+      setMustSpin(false);
     } finally {
       setIsLoading(false);
     }
-  }, [wheelConfig, playWheelMutation, sortedSlots, isLoading]);
+  }, [wheelConfig, playWheelMutation, validSlots, isLoading, toast]);
 
   // Social redirect effect
   useEffect(() => {
@@ -212,6 +222,7 @@ const PlayWheel = () => {
     setShowConfetti(false);
     setMustSpin(false);
     setPrizeIndex(0);
+    setIsLoading(false);
   };
 
   // Loading state
@@ -299,8 +310,9 @@ const PlayWheel = () => {
             {wheelConfig && (
               <Wheel
                 config={wheelConfig}
-                mustSpin={mustSpin}
+                isSpinning={mustSpin}
                 prizeIndex={prizeIndex}
+                onSpin={() => setMustSpin(false)}
                 onSpinComplete={handleSpinComplete}
               />
             )}
@@ -314,10 +326,10 @@ const PlayWheel = () => {
                 disabled={isLoading || mustSpin}
                 className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
               >
-                {isLoading ? (
+                {isLoading || mustSpin ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Chargement...
+                    {mustSpin ? 'En cours...' : 'Chargement...'}
                   </>
                 ) : (
                   'Tourner la roue'
