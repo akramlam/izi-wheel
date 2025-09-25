@@ -279,67 +279,101 @@ const PlayWheel = () => {
 
   return (
     <div
-      className="min-h-screen w-full relative flex flex-col"
+      className="min-h-screen w-full relative"
       style={{
         background: wheel.backgroundImage
-          ? `url(${wheel.backgroundImage}) center/cover no-repeat`
-          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+          ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${wheel.backgroundImage}) center/cover no-repeat`
+          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundAttachment: 'fixed'
       }}
     >
-      {/* Banner */}
-      {wheel.bannerImage && (
-        <div className="w-full h-32 md:h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
-          <img
-            src={wheel.bannerImage}
-            alt="Banner"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.log('Banner image failed to load');
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+      {/* Banner - show if bannerImage exists, otherwise show default banner area */}
+      {(wheel.bannerImage || wheel.mainTitle) && (
+        <div className="w-full h-24 md:h-32 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
+          {wheel.bannerImage ? (
+            <img
+              src={wheel.bannerImage}
+              alt="Banner"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log('Banner image failed to load, showing default');
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold text-white/90">
+                {wheel.mainTitle || wheel.name || 'Roue de la Fortune'}
+              </h2>
+            </div>
+          )}
         </div>
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
+      <div className="flex flex-col items-center justify-start py-8 px-4 md:px-8">
         <div className="w-full max-w-4xl mx-auto text-center">
-          {/* Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
-              {wheel.mainTitle || wheel.name || 'Roue de la Fortune'}
-            </h1>
+          {/* Main Title - only show if not already in banner */}
+          {!wheel.bannerImage && (wheel.mainTitle || wheel.name) && (
+            <div className="mb-6">
+              <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
+                {wheel.mainTitle || wheel.name}
+              </h1>
+            </div>
+          )}
 
-            {/* Game rules */}
-            {wheel.gameRules && (
-              <div className="max-w-2xl mx-auto">
-                <p className="text-lg text-white/90 leading-relaxed">
+          {/* Game rules - display prominently above wheel */}
+          {wheel.gameRules && (
+            <div className="mb-6 max-w-2xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <p className="text-base md:text-lg text-white/95 leading-relaxed">
                   {wheel.gameRules}
                 </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Wheel */}
-          <div className="mb-8">
-            {wheelConfig && (
-              <Wheel
-                config={wheelConfig}
-                isSpinning={mustSpin}
-                prizeIndex={prizeIndex}
-                onSpin={() => setMustSpin(false)}
-                onSpinComplete={handleSpinComplete}
-              />
-            )}
+          <div className="mb-6 flex justify-center">
+            <div className="w-full max-w-lg">
+              {wheelConfig && (
+                <Wheel
+                  config={wheelConfig}
+                  isSpinning={mustSpin}
+                  prizeIndex={prizeIndex}
+                  onSpin={() => setMustSpin(false)}
+                  onSpinComplete={handleSpinComplete}
+                />
+              )}
+            </div>
           </div>
 
           {/* Action buttons */}
           <div className="space-y-4">
-            {!showSocialRedirect && (
+            {showSocialRedirect ? (
+              <div className="text-center space-y-4">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                  <p className="text-white mb-3">
+                    {wheel.redirectText || 'Veuillez effectuer l\'action sociale pour continuer.'}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      if (wheel.redirectUrl) {
+                        window.open(wheel.redirectUrl, '_blank');
+                      }
+                      setTimeout(handleSocialComplete, 2000);
+                    }}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500"
+                  >
+                    Continuer
+                  </Button>
+                </div>
+              </div>
+            ) : (
               <Button
                 onClick={handlePlayWheel}
                 disabled={isLoading || mustSpin}
-                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600"
+                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-lg"
               >
                 {isLoading || mustSpin ? (
                   <>
@@ -355,42 +389,21 @@ const PlayWheel = () => {
 
           {/* Footer text */}
           {wheel.footerText && (
-            <div className="mt-12 max-w-2xl mx-auto">
-              <p
-                className="text-sm text-white/70 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: detectAndLinkPhoneNumbers(wheel.footerText)
-                }}
-              />
+            <div className="mt-8 max-w-2xl mx-auto">
+              <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+                <p
+                  className="text-sm md:text-base text-white/85 leading-relaxed text-center"
+                  dangerouslySetInnerHTML={{
+                    __html: detectAndLinkPhoneNumbers(wheel.footerText)
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Social redirect dialog */}
-      <Dialog open={showSocialRedirect} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Action requise</DialogTitle>
-            <DialogDescription>
-              {wheel.redirectText || 'Veuillez effectuer l\'action sociale pour continuer.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 p-6">
-            <Button
-              onClick={() => {
-                if (wheel.redirectUrl) {
-                  window.open(wheel.redirectUrl, '_blank');
-                }
-                setTimeout(handleSocialComplete, 2000);
-              }}
-              className="w-full"
-            >
-              Continuer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Social redirect is now handled inline above */}
 
       {/* Result modal */}
       <Dialog open={showResultModal} onOpenChange={() => {}}>
