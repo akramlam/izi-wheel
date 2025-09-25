@@ -326,11 +326,15 @@ export const spinWheel = async (req: Request, res: Response) => {
       });
     }
 
-    if (!lead || typeof lead !== 'object' || Object.keys(lead).length === 0) {
-      return res.status(400).json({ 
-        error: 'Lead information is required and must contain at least one field' 
+    // Lead can be empty for initial spins - validation happens during prize claim
+    if (lead && typeof lead !== 'object') {
+      return res.status(400).json({
+        error: 'Lead information must be an object'
       });
     }
+
+    // Ensure lead is at least an empty object
+    const leadData = lead || {};
 
     // Get IP address for play limit checking
     const ip = getRealClientIP(req);
@@ -547,7 +551,7 @@ export const spinWheel = async (req: Request, res: Response) => {
         wheelId,
         companyId: actualCompanyId,
         slotId: slot.id,
-        leadInfo: lead,
+        leadInfo: leadData,
         result: isWin ? 'WIN' : 'LOSE',
         pin: pin,
         qrLink: qrLink,
