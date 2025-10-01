@@ -283,15 +283,13 @@ export default function PlayWheel() {
       </div>
 
       {/* Result Modal */}
-      {console.log('🎨 Rendering modal check:', { showResultModal, hasSpinResult: !!spinResult })}
-      {showResultModal && spinResult ? (
+      {showResultModal && spinResult && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={(e) => {
           // Prevent closing when clicking inside modal
           if (e.target === e.currentTarget) {
             console.log('Clicked backdrop');
           }
         }}>
-          {console.log('🎨 MODAL IS RENDERING!')}
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-2xl font-bold text-center mb-4">
               {spinResult.play.result === 'WIN' ? '🎉 Congratulations!' : 'Result'}
