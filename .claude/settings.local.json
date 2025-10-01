@@ -16,7 +16,10 @@
       "Bash(git push:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(rm:*)",
+      "WebSearch",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []

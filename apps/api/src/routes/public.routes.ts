@@ -1,88 +1,72 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { 
+import { Router } from 'express';
+import {
   getPublicWheel,
   spinWheel,
-  getPrizeDetails,
-  redeemPrize,
   claimPrize,
-  debugPlayId,
-  debugWheelData,
-  sendPrizeEmail
+  redeemPrize,
+  getPlayDetails
 } from '../controllers/public.controller';
+import rateLimit from 'express-rate-limit';
 
-import {
-  getCompanyWheel,
-  spinCompanyWheel
-} from '../controllers/company-wheel.controller';
+const router = Router();
 
-const router: Router = Router();
-
-// Middleware for debugging requests (optional)
-const debugRequestMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
-  }
-  next();
-};
-
-// Public wheel endpoints
-router.use(debugRequestMiddleware);
-router.get('/companies/:companyId/wheels/:wheelId', getPublicWheel);
-router.post('/companies/:companyId/wheels/:wheelId/spin', spinWheel);
-
-// Special route for /company/:wheelId path pattern
-// For the 'company' path parameter, we'll use the dedicated controller
-router.get('/company/:wheelId', getCompanyWheel);
-router.post('/company/:wheelId/spin', spinCompanyWheel);
-
-// Fallback route for direct wheel access without company ID
-router.get('/wheels/:wheelId', getPublicWheel);
-// Fallback route for spinning wheels without company ID
-router.post('/wheels/:wheelId/spin', spinWheel);
-
-// Prize redemption endpoints
-router.get('/plays/:playId', getPrizeDetails);
-router.post('/plays/:playId/redeem', redeemPrize);
-router.post('/plays/:playId/claim', claimPrize);
-
-// Test email endpoint (development only)
-router.post('/test-email', async (req: Request, res: Response) => {
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(403).json({ error: 'Test endpoint not available in production' });
-  }
-  
-  try {
-    const { email, name } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-    
-    console.log('Testing email send to:', email);
-    await sendPrizeEmail(
-      email,
-      'Test Prize - ' + (name || 'Test User'),
-      '123456',
-      'test-play-id-12345',
-      'test-company-id'
-    );
-    
-    res.json({ 
-      success: true, 
-      message: `Test email sent to ${email}`,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Test email failed:', error);
-    res.status(500).json({ 
-      error: 'Failed to send test email', 
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+/**
+ * Rate limiter for spin endpoint (prevent spam)
+ * 10 requests per minute per IP
+ */
+const spinRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: { error: 'Too many spin requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-// Diagnostic endpoints
-router.get('/debug/plays/:playId', debugPlayId);
-router.get('/debug/wheels/:wheelId', debugWheelData);
+/**
+ * Rate limiter for redemption endpoint (prevent PIN brute force)
+ * 5 attempts per hour per IP
+ */
+const redeemRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { error: 'Too many redemption attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Only count failed attempts
+});
 
-export default router; 
+// ===== Public Wheel Routes =====
+
+/**
+ * GET /api/public/wheels/:wheelId
+ * Get public wheel configuration
+ */
+router.get('/wheels/:wheelId', getPublicWheel);
+
+/**
+ * POST /api/public/wheels/:wheelId/spin
+ * Spin the wheel and get result
+ */
+router.post('/wheels/:wheelId/spin', spinRateLimiter, spinWheel);
+
+// ===== Play/Prize Routes =====
+
+/**
+ * GET /api/public/plays/:playId
+ * Get play details for redemption page
+ */
+router.get('/plays/:playId', getPlayDetails);
+
+/**
+ * POST /api/public/plays/:playId/claim
+ * Claim a prize by submitting contact info
+ */
+router.post('/plays/:playId/claim', claimPrize);
+
+/**
+ * POST /api/public/plays/:playId/redeem
+ * Redeem a prize with PIN (merchant validation)
+ */
+router.post('/plays/:playId/redeem', redeemRateLimiter, redeemPrize);
+
+export default router;

@@ -1,10 +1,4 @@
 import { Request, Response } from 'express';
-import { 
-  getActivityStats, 
-  getRecentActivities, 
-  getUserActivityHistory,
-  getDetailedPlayHistory
-} from '../utils/activity-logger';
 import prisma from '../utils/db';
 
 /**

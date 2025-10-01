@@ -15,16 +15,14 @@ import CompanyAdminManager from './pages/CompanyAdminManager';
 import SousAdministrateurs from './pages/SousAdministrateurs';
 import RegisterSuper from './pages/register-super';
 import ChangePassword from './components/ChangePassword';
-import PlayWheel from './pages/PlayWheel';
-import RedeemPrize from './pages/RedeemPrize';
 import Profile from './pages/Profile';
 import AccountSettings from './pages/AccountSettings';
 import Register from './pages/Register';
 import Statistiques from './pages/Statistiques';
 import EmailTracking from './pages/EmailTracking';
 import ActivityTracking from './pages/ActivityTracking';
-import PrizeValidation from './pages/PrizeValidation';
-import PlayWheelV2 from './pages/PlayWheelV2';
+import PlayWheel from './pages/PlayWheel';
+import RedeemPrize from './pages/RedeemPrize';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -82,34 +80,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, all
   return children;
 };
 
-// Function to detect if we're on the public wheel domain
-const isPublicWheelDomain = () => {
-  return window.location.hostname === 'roue.izikado.fr';
-};
-
 function App() {
-  // If we're on roue.izikado.fr domain, only show the public wheel routes
-  if (isPublicWheelDomain()) {
-    return (
-      <Routes>
-        {/* Public wheel routes */}
-        <Route path="/" element={<Navigate to="/play" replace />} />
-        <Route path="/play" element={<PlayWheel />} />
-        {/* Specific route must come before parameterized route */}
-        <Route path="/play/company/:wheelId" element={<PlayWheel />} />
-        <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
-        <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
-        <Route path="/redeem/:playId" element={<RedeemPrize />} />
-        <Route path="/play-v2" element={<PlayWheelV2 />} />
-        <Route path="/play-v2/:companyId/:wheelId" element={<PlayWheelV2 />} />
-        
-        {/* Not found route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    );
-  }
-  
-  // Regular routes for dashboard.izikado.fr
   return (
     <Routes>
       {/* Public routes */}
@@ -119,12 +90,11 @@ function App() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register-super" element={<RegisterSuper />} />
       <Route path="/register" element={<Register />} />
-      
-      {/* Prize redemption route for admin validation */}
+
+      {/* Public play/redeem routes */}
+      <Route path="/play/:wheelId" element={<PlayWheel />} />
       <Route path="/redeem/:playId" element={<RedeemPrize />} />
-      
-      {/* REMOVED: Public wheel routes - these should ONLY be on roue.izikado.fr */}
-      
+
       <Route path="/change-password" element={
         <ProtectedRoute>
           <ChangePassword />
@@ -149,7 +119,6 @@ function App() {
         <Route path="statistiques" element={<Statistiques />} />
         <Route path="emails" element={<EmailTracking />} />
         <Route path="activity" element={<ActivityTracking />} />
-        <Route path="prizes" element={<PrizeValidation />} />
         <Route path="profile" element={<Profile />} />
         <Route path="account-settings" element={<AccountSettings />} />
         

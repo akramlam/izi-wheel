@@ -2,7 +2,7 @@ import { createClient, RedisClientType } from 'redis';
 
 // Create Redis client
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const redisClient: RedisClientType = createClient({ url: REDIS_URL });
+export const redisClient: RedisClientType = createClient({ url: REDIS_URL });
 
 // Connect to Redis
 redisClient.connect().catch((err) => {

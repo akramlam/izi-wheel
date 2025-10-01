@@ -9,7 +9,6 @@ import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 // Import routes
 import authRoutes from './routes/auth.routes';
 import companyRoutes from './routes/company.routes';
-import playRoutes from './routes/play.routes';
 import userRoutes from './routes/user.routes';
 import wheelRoutes from './routes/wheel.routes';
 import publicRoutes from './routes/public.routes';
@@ -123,14 +122,10 @@ app.get('/version', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/companies', companyRoutes);
 app.use('/users', userRoutes);
-app.use('/plays', playRoutes);
-app.use('/public', publicRoutes);
 app.use('/wheels', wheelRoutes);
+app.use('/public', publicRoutes);
 app.use('/emails', emailTrackingRoutes);
 app.use('/activity', activityTrackingRoutes);
-
-// Add direct access to wheels without requiring public/ prefix
-app.use('/public/wheels', publicRoutes);
 
 // 404 Error handler
 app.use(notFoundHandler);

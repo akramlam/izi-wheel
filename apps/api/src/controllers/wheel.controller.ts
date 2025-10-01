@@ -3,8 +3,8 @@ import { WheelMode, SocialNetwork, PlayLimit, Plan } from '@prisma/client';
 import prisma from '../utils/db';
 import { z } from 'zod';
 import { createError } from '../middlewares/error.middleware';
-import { generateQRCode } from '../utils/qrcode';
 import { uploadAsset } from '../utils/uploader';
+import { qrCodeGenerator } from '../services/prize/qrCodeGenerator';
 
 // Validation schema for creating/updating a wheel
 const wheelSchema = z.object({
@@ -397,7 +397,7 @@ export const createWheel = async (req: Request, res: Response) => {
     const wheelUrl = `${baseUrl}/play/company/${wheel.id}`;
     
     try {
-      const qrCodeLink = await generateQRCode(wheelUrl);
+      const qrCodeLink = await qrCodeGenerator.generate(wheel.id);
       
       // Update wheel with QR code link
       await prisma.wheel.update({

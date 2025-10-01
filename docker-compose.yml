@@ -31,18 +31,18 @@ services:
       timeout: 5s
       retries: 5
 
-  mailhog:
-    image: mailhog/mailhog
-    container_name: iziwheel-mailhog
-    ports:
-      - "1025:1025" # SMTP port
-      - "8025:8025" # Web UI port
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "1025"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # mailhog:
+  #   image: mailhog/mailhog
+  #   container_name: iziwheel-mailhog
+  #   ports:
+  #     - "1025:1025" # SMTP port
+  #     - "8025:8025" # Web UI port
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "nc", "-z", "localhost", "1025"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
 
 volumes:
   postgres_data:

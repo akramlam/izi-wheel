@@ -483,4 +483,41 @@ export const api = {
   getActivityExport: async (params: string, options?: any) => {
     return apiClient.get(`/activity/export?${params}`, options);
   },
+
+  // ===== Public Wheel/Play APIs (no auth required) =====
+
+  /**
+   * Get public wheel configuration
+   */
+  getPublicWheel: async (wheelId: string) => {
+    return apiClient.get(`/public/wheels/${wheelId}`);
+  },
+
+  /**
+   * Spin the wheel and get result
+   */
+  spinWheel: async (wheelId: string, leadInfo?: any) => {
+    return apiClient.post(`/public/wheels/${wheelId}/spin`, { leadInfo });
+  },
+
+  /**
+   * Get play details for redemption page
+   */
+  getPlayDetails: async (playId: string) => {
+    return apiClient.get(`/public/plays/${playId}`);
+  },
+
+  /**
+   * Claim a prize by submitting contact info
+   */
+  claimPrize: async (playId: string, data: { name: string; email: string; phone?: string; birthDate?: string }) => {
+    return apiClient.post(`/public/plays/${playId}/claim`, data);
+  },
+
+  /**
+   * Redeem a prize with PIN (merchant validation)
+   */
+  redeemPrize: async (playId: string, pin: string) => {
+    return apiClient.post(`/public/plays/${playId}/redeem`, { pin });
+  },
 }; 

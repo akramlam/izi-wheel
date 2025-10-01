@@ -1,19 +1,14 @@
 import { Router } from 'express';
 import * as wheelController from '../controllers/wheel.controller';
 import * as slotController from '../controllers/slot.controller';
-import * as playController from '../controllers/play.controller';
 import { authMiddleware, roleGuard, companyGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
-import playRoutes from './play.routes';
 import express from 'express';
 import prisma from '../utils/db';
 import multer from 'multer';
 
 // Add type annotation for router
 const router: Router = Router({ mergeParams: true });
-
-// Register public play routes first (these don't require authentication)
-router.use('/:wheelId/play', playRoutes);
 
 // Apply authentication middleware to all other wheel routes
 router.use(authMiddleware);
@@ -139,7 +134,7 @@ router.post(
 );
 
 // Play history route
-router.get('/:wheelId/play/history', roleGuard([Role.ADMIN, Role.SUPER]), playController.getPlayHistory);
+router.get('/:wheelId/play/history', roleGuard([Role.ADMIN, Role.SUPER]));
 
 // Create router
 const specialRouter = express.Router();

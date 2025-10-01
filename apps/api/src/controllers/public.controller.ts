@@ -1,303 +1,96 @@
 import { Request, Response } from 'express';
-import prisma, { checkPlayExists } from '../utils/db';
-import { generateQRCode } from '../utils/qrcode';
-import { generatePIN } from '../utils/pin';
-import { ensureWheelHasSlots } from '../utils/db-init';
-import { sendPrizeEmail } from '../utils/mailer';
-import { logPlayActivity } from '../utils/activity-logger';
-import { getRealClientIP, logIPDebugInfo } from '../utils/ip';
-import { applyStableSorting as importedApplyStableSorting } from '../utils/slot-utils';
+import prisma from '../utils/db';
+import { prizeSelector } from '../services/prize/prizeSelector';
+import { pinGenerator } from '../services/prize/pinGenerator';
+import { qrCodeGenerator } from '../services/prize/qrCodeGenerator';
+import { playLimiter } from '../services/rateLimit/playLimiter';
+import { sortSlots, findPrizeIndex } from '../utils/slotSorter';
+import { sendPrizeEmail } from '../utils/emailNotification';
 
 /**
- * Get public wheel data
+ * Get real client IP from request
+ */
+function getClientIP(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') {
+    return forwarded.split(',')[0].trim();
+  }
+  if (Array.isArray(forwarded)) {
+    return forwarded[0];
+  }
+  return req.socket.remoteAddress || '127.0.0.1';
+}
+
+/**
+ * GET /api/public/wheels/:wheelId
+ * Get public wheel data (no authentication required)
  */
 export const getPublicWheel = async (req: Request, res: Response) => {
   try {
-    const { companyId, wheelId } = req.params;
+    const { wheelId } = req.params;
 
-    // Validate wheel ID - this is always required
     if (!wheelId) {
-      return res.status(400).json({ 
-        error: 'Wheel ID is required' 
-      });
+      return res.status(400).json({ error: 'Wheel ID is required' });
     }
 
-    console.log(`Looking for wheel ${wheelId}${companyId ? ` and company ${companyId}` : ' without company ID'}`);
+    console.log(`📡 Fetching public wheel: ${wheelId}`);
 
-    // Special case: If companyId is 'company', treat it as a direct wheel lookup
-    if (companyId === 'company') {
-      console.log(`Special case: companyId is 'company', using direct wheel lookup for ${wheelId}`);
-      // Use the direct wheel lookup logic
-      const wheel = await prisma.wheel.findUnique({
-        where: {
-          id: wheelId,
-          isActive: true
-        },
-        include: {
-          company: true,
-          slots: {
-            where: { isActive: true },
-            orderBy: { position: 'asc' }
-          }
-        }
-      });
-
-      if (!wheel) {
-        console.log(`Wheel not found: ${wheelId}`);
-        return res.status(404).json({ error: 'Wheel not found' });
-      }
-
-      // Verify the wheel's company is active
-      if (!wheel.company || !wheel.company.isActive) {
-        return res.status(403).json({ error: 'Company is not active' });
-      }
-
-      // Return only necessary data for public view
-      return res.status(200).json({
-        wheel: {
-          id: wheel.id,
-          name: wheel.name,
-          formSchema: wheel.formSchema,
-          socialNetwork: wheel.socialNetwork,
-          redirectUrl: wheel.redirectUrl,
-          redirectText: wheel.redirectText,
-          playLimit: wheel.playLimit,
-          gameRules: wheel.gameRules,
-          footerText: wheel.footerText,
-          mainTitle: wheel.mainTitle,
-          bannerImage: wheel.bannerImage,
-          backgroundImage: wheel.backgroundImage,
-          slots: applyStableSorting(wheel.slots).map(slot => ({
-            id: slot.id,
-            label: slot.label,
-            color: slot.color,
-            weight: slot.weight,
-            isWinning: slot.isWinning,
-            position: slot.position
-          }))
-        }
-      });
-    }
-
-    // Check if we're using the fallback route (no companyId provided)
-    if (!companyId || companyId === 'undefined' || companyId === 'null') {
-      console.log(`No valid company ID provided, using direct wheel lookup`);
-      
-      // Find the wheel without requiring a specific company
-      const wheel = await prisma.wheel.findUnique({
-        where: {
-          id: wheelId,
-          isActive: true
-        },
-        include: {
-          company: true,
-          slots: {
-            where: { isActive: true },
-            orderBy: { position: 'asc' }
-          }
-        }
-      });
-
-      if (!wheel) {
-        console.log(`Wheel not found: ${wheelId}`);
-        return res.status(404).json({ error: 'Wheel not found' });
-      }
-
-      // Verify the wheel's company is active
-      if (!wheel.company || !wheel.company.isActive) {
-        return res.status(403).json({ error: 'Company is not active' });
-      }
-
-      // If wheel has no slots, create default ones
-      if (!wheel.slots || wheel.slots.length === 0) {
-        console.log(`Wheel ${wheelId} has no slots. Creating default slots...`);
-        await ensureWheelHasSlots(wheelId);
-        
-        // Fetch the wheel again with the new slots
-        const updatedWheel = await prisma.wheel.findUnique({
-          where: {
-            id: wheelId,
-            isActive: true
-          },
-          include: {
-            slots: {
-              where: { isActive: true },
-              orderBy: { position: 'asc' }
-            }
-          }
-        });
-        
-        if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
-          return res.status(500).json({ error: 'Failed to create default slots for wheel' });
-        }
-        
-        // Return updated wheel with the new slots
-        return res.status(200).json({
-          wheel: {
-            id: updatedWheel.id,
-            name: updatedWheel.name,
-            formSchema: updatedWheel.formSchema,
-            socialNetwork: updatedWheel.socialNetwork,
-            redirectUrl: updatedWheel.redirectUrl,
-            redirectText: updatedWheel.redirectText,
-            playLimit: updatedWheel.playLimit,
-            gameRules: updatedWheel.gameRules,
-            footerText: updatedWheel.footerText,
-            mainTitle: updatedWheel.mainTitle,
-            bannerImage: updatedWheel.bannerImage,
-            backgroundImage: updatedWheel.backgroundImage,
-            slots: applyStableSorting(updatedWheel.slots).map(slot => ({
-              id: slot.id,
-              label: slot.label,
-              color: slot.color,
-              weight: slot.weight,
-              isWinning: slot.isWinning,
-              position: slot.position
-            }))
-          }
-        });
-      }
-
-      // Return only necessary data for public view
-      return res.status(200).json({
-        wheel: {
-          id: wheel.id,
-          name: wheel.name,
-          formSchema: wheel.formSchema,
-          socialNetwork: wheel.socialNetwork,
-          redirectUrl: wheel.redirectUrl,
-          redirectText: wheel.redirectText,
-          playLimit: wheel.playLimit,
-          gameRules: wheel.gameRules,
-          footerText: wheel.footerText,
-          mainTitle: wheel.mainTitle,
-          bannerImage: wheel.bannerImage,
-          backgroundImage: wheel.backgroundImage,
-          slots: applyStableSorting(wheel.slots).map(slot => ({
-            id: slot.id,
-            label: slot.label,
-            color: slot.color,
-            weight: slot.weight,
-            isWinning: slot.isWinning,
-            position: slot.position
-          }))
-        }
-      });
-    }
-
-    // Standard flow with company ID validation
-    // First check if company exists at all
-    const companyCheck = await prisma.company.findUnique({
-      where: { id: companyId }
-    });
-
-    if (!companyCheck) {
-      console.log(`Company not found with ID: ${companyId}`);
-      return res.status(404).json({ error: 'Company not found' });
-    }
-
-    console.log(`Company found: ${companyCheck.name}, isActive: ${companyCheck.isActive}`);
-
-    // If company exists but is not active, return appropriate message
-    if (!companyCheck.isActive) {
-      return res.status(403).json({ error: 'Company is not active' });
-    }
-
-    // Find the wheel with its slots
+    // Find wheel with active slots
     const wheel = await prisma.wheel.findUnique({
       where: {
         id: wheelId,
-        companyId,
         isActive: true
       },
       include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            isActive: true
+          }
+        },
         slots: {
           where: { isActive: true },
-          orderBy: { position: 'asc' }
+          select: {
+            id: true,
+            label: true,
+            color: true,
+            position: true,
+            description: true
+            // NOTE: weight and isWinning are NOT exposed for security
+          }
         }
       }
     });
 
     if (!wheel) {
-      console.log(`Wheel not found: ${wheelId} for company ${companyId}`);
-      return res.status(404).json({ error: 'Wheel not found' });
+      return res.status(404).json({ error: 'Wheel not found or inactive' });
     }
 
-    // If wheel has no slots, create default ones
-    if (!wheel.slots || wheel.slots.length === 0) {
-      console.log(`Wheel ${wheelId} has no slots. Creating default slots...`);
-      await ensureWheelHasSlots(wheelId);
-      
-      // Fetch the wheel again with the new slots
-      const updatedWheel = await prisma.wheel.findUnique({
-        where: {
-          id: wheelId,
-          companyId,
-          isActive: true
-        },
-        include: {
-          slots: {
-            where: { isActive: true },
-            orderBy: { position: 'asc' }
-          }
-        }
-      });
-      
-      if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
-        return res.status(500).json({ error: 'Failed to create default slots for wheel' });
-      }
-      
-      // Return updated wheel with the new slots
-      return res.status(200).json({
-        wheel: {
-          id: updatedWheel.id,
-          name: updatedWheel.name,
-          formSchema: updatedWheel.formSchema,
-          socialNetwork: updatedWheel.socialNetwork,
-          redirectUrl: updatedWheel.redirectUrl,
-          redirectText: updatedWheel.redirectText,
-          playLimit: updatedWheel.playLimit,
-          gameRules: updatedWheel.gameRules,
-          footerText: updatedWheel.footerText,
-          mainTitle: updatedWheel.mainTitle,
-          bannerImage: updatedWheel.bannerImage,
-          backgroundImage: updatedWheel.backgroundImage,
-          slots: applyStableSorting(updatedWheel.slots).map(slot => ({
-            id: slot.id,
-            label: slot.label,
-            color: slot.color,
-            weight: slot.weight,
-            isWinning: slot.isWinning,
-            position: slot.position
-          }))
-        }
-      });
+    if (!wheel.company || !wheel.company.isActive) {
+      return res.status(403).json({ error: 'Company is not active' });
     }
 
-    // Return only necessary data for public view
+    // Sort slots consistently
+    const sortedSlots = sortSlots(wheel.slots);
+
     return res.status(200).json({
       wheel: {
         id: wheel.id,
         name: wheel.name,
+        mode: wheel.mode,
+        playLimit: wheel.playLimit,
+        mainTitle: wheel.mainTitle,
+        gameRules: wheel.gameRules,
+        footerText: wheel.footerText,
+        bannerImage: wheel.bannerImage,
+        backgroundImage: wheel.backgroundImage,
         formSchema: wheel.formSchema,
         socialNetwork: wheel.socialNetwork,
         redirectUrl: wheel.redirectUrl,
-        redirectText: wheel.redirectText,
-        playLimit: wheel.playLimit,
-        gameRules: wheel.gameRules,
-        footerText: wheel.footerText,
-        mainTitle: wheel.mainTitle,
-        bannerImage: wheel.bannerImage,
-        backgroundImage: wheel.backgroundImage,
-        slots: applyStableSorting(wheel.slots).map(slot => ({
-          id: slot.id,
-          label: slot.label,
-          color: slot.color,
-          weight: slot.weight,
-          isWinning: slot.isWinning,
-          position: slot.position
-        }))
-      }
+        redirectText: wheel.redirectText
+      },
+      slots: sortedSlots
     });
   } catch (error) {
     console.error('Error fetching public wheel:', error);
@@ -306,455 +99,152 @@ export const getPublicWheel = async (req: Request, res: Response) => {
 };
 
 /**
- * Spin the wheel and record the result
+ * POST /api/public/wheels/:wheelId/spin
+ * Spin the wheel and record play result
  */
 export const spinWheel = async (req: Request, res: Response) => {
   try {
-    const { companyId, wheelId } = req.params;
-    const { lead } = req.body;
+    const { wheelId } = req.params;
+    const { leadInfo } = req.body;
 
-    console.log('Received spin request:', {
-      companyId,
-      wheelId,
-      lead
-    });
-
-    // Validate wheel ID - this is always required
     if (!wheelId) {
-      return res.status(400).json({ 
-        error: 'Wheel ID is required' 
-      });
+      return res.status(400).json({ error: 'Wheel ID is required' });
     }
 
-    // Lead can be empty for initial spins - validation happens during prize claim
-    if (lead && typeof lead !== 'object') {
-      return res.status(400).json({
-        error: 'Lead information must be an object'
-      });
-    }
+    const clientIP = getClientIP(req);
+    console.log(`🎰 Spin request for wheel ${wheelId} from IP: ${clientIP}`);
 
-    // Ensure lead is at least an empty object
-    const leadData = lead || {};
-
-    // Get IP address for play limit checking
-    const ip = getRealClientIP(req);
-    if (!ip) {
-      return res.status(400).json({ error: 'IP not found' });
-    }
-    // Debug: Log IP detection information
-    console.log('🔍 IP Detection Debug:', {
-      capturedIP: ip,
-      reqIP: req.ip,
-      remoteAddress: req.socket.remoteAddress,
-      xForwardedFor: req.get('X-Forwarded-For'),
-      xRealIP: req.get('X-Real-IP'),
-      cfConnectingIP: req.get('CF-Connecting-IP'),
-      userAgent: req.get('User-Agent')?.substring(0, 100) + '...'
+    // Find wheel with slots
+    const wheel = await prisma.wheel.findUnique({
+      where: {
+        id: wheelId,
+        isActive: true
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            isActive: true
+          }
+        },
+        slots: {
+          where: { isActive: true }
+        }
+      }
     });
-
-    // Check if we're using the fallback route (no companyId provided)
-    let wheel;
-    let actualCompanyId = companyId;
-
-    if (!companyId || companyId === 'undefined' || companyId === 'null') {
-      console.log(`No valid company ID provided, using direct wheel lookup`);
-      
-      // Find the wheel without requiring a specific company
-      wheel = await prisma.wheel.findUnique({
-        where: {
-          id: wheelId,
-          isActive: true
-        },
-        include: {
-          company: true,
-          slots: {
-            where: { isActive: true },
-            orderBy: { position: 'asc' }
-          }
-        }
-      });
-
-      if (!wheel || !wheel.company) {
-        return res.status(404).json({ error: 'Wheel not found or has no associated company' });
-      }
-
-      // Use the actual company ID from the wheel
-      actualCompanyId = wheel.company.id;
-      
-      // Verify the wheel's company is active
-      if (!wheel.company.isActive) {
-        return res.status(403).json({ error: 'Company is not active' });
-      }
-    } else {
-      // Standard flow with company ID validation
-      // Find the wheel with its slots (include mode) - ORDER BY POSITION
-      wheel = await prisma.wheel.findUnique({
-        where: {
-          id: wheelId,
-          companyId: actualCompanyId,
-          isActive: true
-        },
-        include: {
-          slots: {
-            where: { isActive: true },
-            orderBy: { position: 'asc' }
-          }
-        }
-      });
-    }
 
     if (!wheel) {
-      return res.status(404).json({ error: 'Wheel not found' });
+      return res.status(404).json({ error: 'Wheel not found or inactive' });
+    }
+
+    if (!wheel.company || !wheel.company.isActive) {
+      return res.status(403).json({ error: 'Company is not active' });
     }
 
     if (!wheel.slots || wheel.slots.length === 0) {
-      console.error('Wheel has no active slots:', wheelId);
       return res.status(400).json({ error: 'Wheel has no active slots' });
     }
 
-    // Check play limits based on wheel.playLimit setting
-    if (wheel.playLimit && wheel.playLimit !== 'UNLIMITED') {
-      const now = new Date();
-      let timeRestriction = {};
-      
-      if (wheel.playLimit === 'ONCE_PER_DAY') {
-        // Check for plays from the same IP in the last 24 hours
-        const yesterday = new Date();
-        yesterday.setDate(now.getDate() - 1);
-        timeRestriction = {
-          createdAt: {
-            gte: yesterday
-          }
-        };
-      } else if (wheel.playLimit === 'ONCE_PER_MONTH') {
-        // Check for plays from the same IP in the last 30 days
-        const lastMonth = new Date();
-        lastMonth.setDate(now.getDate() - 30);
-        timeRestriction = {
-          createdAt: {
-            gte: lastMonth
-          }
-        };
-      }
-
-      // Check if this IP has already played within the time restriction
-      const existingPlay = await prisma.play.findFirst({
-        where: {
-          wheelId: wheelId,
-          ip: ip,
-          ...timeRestriction
-        }
+    // Check rate limits
+    const canPlay = await playLimiter.canPlay(wheelId, clientIP, wheel.playLimit);
+    if (!canPlay) {
+      const timeUntilNext = await playLimiter.getTimeUntilNextPlay(wheelId, clientIP, wheel.playLimit);
+      return res.status(429).json({
+        error: 'Play limit exceeded',
+        playLimit: wheel.playLimit,
+        timeUntilNextPlay: timeUntilNext
       });
-
-      if (existingPlay) {
-        const limitText = wheel.playLimit === 'ONCE_PER_DAY' ? 'once per day' : 'once per month';
-        return res.status(429).json({ 
-          error: `Play limit exceeded. This wheel can only be played ${limitText}.`,
-          code: 'PLAY_LIMIT_EXCEEDED',
-          playLimit: wheel.playLimit
-        });
-      }
     }
 
-    // Log the slots for debugging
-    console.log(`Found ${wheel.slots.length} active slots for wheel ${wheelId}`);
-    console.log(`🎯 Prize selection debug - Wheel ${wheelId}:`, {
-      totalSlots: wheel.slots.length,
-      slotsInPositionOrder: wheel.slots.map((s, index) => ({
-        dbIndex: index,
-        position: s.position,
-        id: s.id,
-        label: s.label,
-        isWinning: s.isWinning
-      }))
-    });
+    // Sort slots for consistent ordering
+    const sortedSlots = sortSlots(wheel.slots);
 
-    // CRITICAL: Apply stable sorting to match frontend behavior
-    // This ensures backend and frontend use identical slot ordering
-    const stableSortedSlots = applyStableSorting(wheel.slots);
-    
-    console.log(`🎯 After stable sorting:`, {
-      stableSortedSlots: stableSortedSlots.map((s, index) => ({
-        stableIndex: index,
-        position: s.position,
-        id: s.id,
-        label: s.label,
-        isWinning: s.isWinning
-      }))
-    });
+    // Select prize based on wheel mode
+    let selectedSlot;
+    let prizeIndex;
 
-    // --- NEW LOGIC FOR ALL_WIN MODE ---
-    let slot: { id: string; weight: number; isWinning: boolean; label: string; position?: number | null };
     if (wheel.mode === 'ALL_WIN') {
-      // Filter winning slots from stable sorted slots
-      let winningSlots = stableSortedSlots.filter(s => s.isWinning);
-      if (winningSlots.length === 0) {
-        // Auto-fix: set all slots to winning
-        await prisma.slot.updateMany({
-          where: { wheelId: wheel.id, isActive: true },
-          data: { isWinning: true }
-        });
-        // Reload slots WITH POSITION ORDER and apply stable sorting
-        const updatedWheel = await prisma.wheel.findUnique({
-          where: { id: wheel.id, isActive: true },
-          include: { 
-            slots: { 
-              where: { isActive: true },
-              orderBy: { position: 'asc' }
-            } 
-          }
-        });
-        if (!updatedWheel || !updatedWheel.slots || updatedWheel.slots.length === 0) {
-          return res.status(400).json({ error: 'No slots available for ALL_WIN wheel after auto-fix' });
-        }
-        winningSlots = applyStableSorting(updatedWheel.slots);
-        wheel = updatedWheel; // Update the wheel reference
-      }
-      // Select a random winning slot
-      slot = winningSlots[Math.floor(Math.random() * winningSlots.length)];
-      
-      console.log(`🎯 ALL_WIN mode - Selected slot:`, {
-        selectedSlotId: slot.id,
-        selectedSlotLabel: slot.label,
-        selectedSlotPosition: slot.position,
-        positionInStableSortedArray: stableSortedSlots.findIndex(s => s.id === slot.id)
-      });
+      const result = prizeSelector.selectWinningPrize(sortedSlots);
+      selectedSlot = result.slot;
+      prizeIndex = findPrizeIndex(sortedSlots, selectedSlot.id);
     } else {
-      // Select a slot based on weights using stable sorted slots
-      slot = selectSlotByWeight(stableSortedSlots);
-      
-      console.log(`🎯 Weight-based selection - Selected slot:`, {
-        selectedSlotId: slot.id,
-        selectedSlotLabel: slot.label,
-        selectedSlotPosition: slot.position,
-        positionInStableSortedArray: stableSortedSlots.findIndex(s => s.id === slot.id)
-      });
+      const result = prizeSelector.selectPrize(sortedSlots);
+      selectedSlot = result.slot;
+      prizeIndex = result.index;
     }
-    // --- END NEW LOGIC ---
-    
-    // Generate PIN for winning plays
-    let pin: string | undefined;
-    let qrLink: string | undefined;
 
-    // For ALL_WIN, always treat as win; for others, check slot.isWinning
-    const isWin = wheel.mode === 'ALL_WIN' ? true : slot.isWinning;
+    const isWin = selectedSlot.isWinning;
+
+    // Generate PIN and QR code for winning plays
+    let pin: string | null = null;
+    let qrCodeData: string | null = null;
+
     if (isWin) {
-      pin = generatePIN();
-      // Create a simple redemption URL (will be updated with actual playId after creation)
-      const baseUrl = 'https://roue.izikado.fr';
-      qrLink = `${baseUrl}/redeem/TEMP_ID`; // Temporary, will be updated below
+      pin = await pinGenerator.generateUnique();
     }
 
-    // Record the play in the database
+    // Create play record in transaction
     const play = await prisma.play.create({
       data: {
-        wheelId,
-        companyId: actualCompanyId,
-        slotId: slot.id,
-        leadInfo: leadData,
+        wheelId: wheel.id,
+        companyId: wheel.company.id,
+        slotId: selectedSlot.id,
         result: isWin ? 'WIN' : 'LOSE',
-        pin: pin,
-        qrLink: qrLink,
-        ip: ip
+        pin,
+        qrLink: null, // Will be updated below
+        ip: clientIP,
+        leadInfo: leadInfo || null,
+        redemptionStatus: isWin ? 'PENDING' : undefined
       }
     });
 
-    // Log the play activity for traceability
-    try {
-      await logPlayActivity({
-        playId: play.id,
-        wheelId: wheelId,
-        companyId: actualCompanyId,
-        result: isWin ? 'WIN' : 'LOSE',
-        slotLabel: slot.label,
-        pin: pin || undefined,
-        ipAddress: ip || undefined,
-        userAgent: req.get('User-Agent') || undefined,
-        leadInfo: lead
-      });
-    } catch (logError) {
-      console.error('Failed to log play activity:', logError);
-      // Don't fail the request if logging fails
-    }
-
-    // If this is a winning play, update the qrLink with the actual playId
-    if (isWin) {
+    // Generate QR code with playId
+    if (isWin && pin) {
       try {
-        const baseUrl = 'https://roue.izikado.fr';
-        const updatedQrLink = `${baseUrl}/redeem/${play.id}`;
-        
-        // Update the play with the correct redemption URL
+        qrCodeData = await qrCodeGenerator.generate(play.id);
+
+        // Update play with QR code
         await prisma.play.update({
           where: { id: play.id },
-          data: { qrLink: updatedQrLink }
+          data: { qrLink: qrCodeData }
         });
-        
-        // Use the updated URL for the response
-        qrLink = updatedQrLink;
-        
-        console.log(`Updated redemption URL for play ${play.id}: ${updatedQrLink}`);
-      } catch (updateError) {
-        console.error('Failed to update redemption URL with actual playId:', updateError);
-        // Keep the temporary URL
+      } catch (qrError) {
+        console.error('Failed to generate QR code:', qrError);
+        // Continue without QR code - PIN still works
       }
     }
 
-    console.log(`🎯 Final spin result:`, {
-      playId: play.id,
-      result: play.result,
-      selectedSlotId: slot.id,
-      selectedSlotLabel: slot.label,
-      selectedSlotPosition: slot.position,
-      frontendShouldShowIndex: stableSortedSlots.findIndex(s => s.id === slot.id)
-    });
+    console.log(`✅ Play created: ${play.id}, result: ${play.result}, prizeIndex: ${prizeIndex}`);
 
-    // CRITICAL FIX: Calculate the exact prizeIndex that frontend needs
-    const prizeIndex = stableSortedSlots.findIndex(s => s.id === slot.id);
-    
-    console.log(`🎯 WHEEL ALIGNMENT FIX: Returning prizeIndex ${prizeIndex} for slot "${slot.label}" (ID: ${slot.id})`);
-
-    // Return the result
     return res.status(200).json({
       play: {
         id: play.id,
         result: play.result,
-        ...(play.result === 'WIN' && {
-          prize: {
-            pin: play.pin,
-            qrLink: qrLink // Use the updated QR code
-          }
-        })
+        prize: isWin ? {
+          pin,
+          qrCodeData
+        } : null
       },
       slot: {
-        id: slot.id,
-        label: slot.label
+        id: selectedSlot.id,
+        label: selectedSlot.label
       },
-      prizeIndex: prizeIndex // CRITICAL: Add the exact index for wheel alignment
+      prizeIndex // CRITICAL: Frontend uses this for wheel alignment
     });
   } catch (error) {
     console.error('Error spinning wheel:', error);
+
+    if (error instanceof Error && error.message.includes('weights must sum')) {
+      return res.status(500).json({ error: 'Wheel configuration error: Invalid slot weights' });
+    }
+
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 /**
- * Get prize details for redemption
- */
-export const getPrizeDetails = async (req: Request, res: Response) => {
-  try {
-    const { playId } = req.params;
-
-    if (!playId) {
-      return res.status(400).json({ error: 'Play ID is required' });
-    }
-
-    // Validate UUID format using regex for basic validation
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(playId)) {
-      console.error(`Invalid UUID format for playId: ${playId}`);
-      return res.status(400).json({ error: 'Invalid play ID format', validationError: true });
-    }
-
-    // Check if play exists before attempting to fetch details
-    const playExists = await checkPlayExists(playId);
-    if (!playExists) {
-      return res.status(404).json({ 
-        error: 'Play not found', 
-        details: 'No play record found with the provided ID' 
-      });
-    }
-
-    // Find the play with full details
-    const play = await prisma.play.findUnique({
-      where: { id: playId },
-      include: {
-        slot: true
-      }
-    });
-
-    if (!play) {
-      console.error(`Play not found for ID: ${playId}`);
-      return res.status(404).json({ error: 'Play not found' });
-    }
-
-    // Only winning plays can be redeemed
-    if (play.result !== 'WIN') {
-      return res.status(400).json({ error: 'This play did not result in a prize' });
-    }
-
-    console.log(`Successfully fetched prize details for playId: ${playId}`);
-    return res.status(200).json({
-      id: play.id,
-      pin: play.pin,
-      status: play.redemptionStatus,
-      prize: {
-        label: play.slot.label,
-        description: play.slot.description
-      },
-      lead: play.leadInfo
-    });
-  } catch (error) {
-    console.error('Error fetching prize details:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-/**
- * Redeem a prize
- */
-export const redeemPrize = async (req: Request, res: Response) => {
-  try {
-    const { playId } = req.params;
-    const { pin } = req.body;
-
-    if (!playId || !pin) {
-      return res.status(400).json({ error: 'Play ID and PIN are required' });
-    }
-
-    // Find the play
-    const play = await prisma.play.findUnique({
-      where: { id: playId },
-      include: {
-        slot: true
-      }
-    });
-
-    if (!play) {
-      return res.status(404).json({ error: 'Play not found' });
-    }
-
-    // Verify PIN
-    if (play.pin !== pin) {
-      return res.status(400).json({ error: 'Invalid PIN' });
-    }
-
-    // Check if already redeemed
-    if (play.redemptionStatus === 'REDEEMED') {
-      return res.status(400).json({ error: 'Prize already redeemed' });
-    }
-
-    // Update redemption status
-    const updatedPlay = await prisma.play.update({
-      where: { id: playId },
-      data: { 
-        redemptionStatus: 'REDEEMED',
-        redeemedAt: new Date()
-      }
-    });
-
-    return res.status(200).json({
-      id: updatedPlay.id,
-      status: updatedPlay.redemptionStatus,
-      redeemedAt: updatedPlay.redeemedAt
-    });
-  } catch (error) {
-    console.error('Error redeeming prize:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-/**
- * Claim a prize by submitting contact information
+ * POST /api/public/plays/:playId/claim
+ * Claim a prize by submitting lead information
  */
 export const claimPrize = async (req: Request, res: Response) => {
   try {
@@ -769,7 +259,15 @@ export const claimPrize = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Name and email are required' });
     }
 
-    // Find the play
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    console.log(`🎁 Claim request for play ${playId}`);
+
+    // Find play
     const play = await prisma.play.findUnique({
       where: { id: playId },
       include: {
@@ -781,18 +279,16 @@ export const claimPrize = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Play not found' });
     }
 
-    // Only winning plays can be claimed
     if (play.result !== 'WIN') {
       return res.status(400).json({ error: 'This play did not result in a prize' });
     }
 
-    // Check if already redeemed
-    if (play.redemptionStatus === 'REDEEMED') {
-      return res.status(400).json({ error: 'Prize already redeemed' });
+    if (play.claimedAt) {
+      return res.status(400).json({ error: 'Prize already claimed' });
     }
 
-    // Update the play with lead information and keep as PENDING (ready for redemption)
-    const claimData = {
+    // Update play with lead info
+    const leadData = {
       name,
       email,
       phone: phone || undefined,
@@ -801,33 +297,33 @@ export const claimPrize = async (req: Request, res: Response) => {
 
     const updatedPlay = await prisma.play.update({
       where: { id: playId },
-      data: { 
-        leadInfo: claimData,
-        redemptionStatus: 'PENDING', // Keep as PENDING until actually redeemed
+      data: {
+        leadInfo: leadData,
         claimedAt: new Date()
       }
     });
 
-    // Send prize notification email
+    console.log(`✅ Prize claimed by ${email}`);
+
+    // Send email with PIN
     try {
-      await sendPrizeEmail(
-        email,
-        play.slot.label || 'Your Prize',
-        play.pin || '',
+      await sendPrizeEmail({
+        recipientEmail: email,
+        recipientName: name,
+        prizeName: play.slot.label,
+        pin: play.pin!,
         playId,
-        play.companyId
-      );
-      console.log(`Prize notification email sent to ${email} for play ${playId}`);
+        companyId: play.companyId
+      });
     } catch (emailError) {
       console.error('Failed to send prize email:', emailError);
-      // Don't fail the request if email fails - the prize is still claimed
+      // Don't fail the claim if email fails
     }
 
     return res.status(200).json({
-      id: updatedPlay.id,
-      status: updatedPlay.redemptionStatus,
-      claimedAt: updatedPlay.claimedAt,
-      message: 'Prize claimed successfully! You will receive an email with your PIN code for redemption.'
+      success: true,
+      message: 'Prize claimed successfully! Check your email for the PIN.',
+      claimedAt: updatedPlay.claimedAt
     });
   } catch (error) {
     console.error('Error claiming prize:', error);
@@ -836,235 +332,132 @@ export const claimPrize = async (req: Request, res: Response) => {
 };
 
 /**
- * Select a slot based on weight distribution
+ * POST /api/public/plays/:playId/redeem
+ * Redeem a prize (merchant validates PIN)
  */
-function selectSlotByWeight(slots: { id: string; weight: number; isWinning: boolean; label: string; position?: number }[]) {
-  // Calculate total weight
-  const totalWeight = slots.reduce((sum, slot) => sum + slot.weight, 0);
-  
-  // Generate a random number between 0 and totalWeight
-  const random = Math.random() * totalWeight;
-  
-  // Select the slot
-  let cumulativeWeight = 0;
-  for (const slot of slots) {
-    cumulativeWeight += slot.weight;
-    if (random <= cumulativeWeight) {
-      return slot;
-    }
-  }
-  
-  // Fallback to first slot (shouldn't happen)
-  return slots[0];
-}
-
-/**
- * Debug endpoint to validate playId
- */
-export const debugPlayId = async (req: Request, res: Response) => {
+export const redeemPrize = async (req: Request, res: Response) => {
   try {
     const { playId } = req.params;
-    
+    const { pin } = req.body;
+
     if (!playId) {
       return res.status(400).json({ error: 'Play ID is required' });
     }
-    
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const isValidUuid = uuidRegex.test(playId);
-    
-    // Check if play exists
-    const playExists = await checkPlayExists(playId);
-    
-    // Get more diagnostics if the play exists
-    let playDetails = null;
-    if (playExists) {
-      const play = await prisma.play.findUnique({
-        where: { id: playId },
-        select: {
-          id: true,
-          result: true,
-          redemptionStatus: true,
-          createdAt: true,
-          pin: true,
-          qrLink: true
-        }
-      });
-      
-      playDetails = play;
-    }
-    
-    // Return diagnostic information
-    return res.status(200).json({
-      diagnostics: {
-        playId,
-        isValidUuidFormat: isValidUuid,
-        existsInDatabase: playExists,
-        details: playDetails
-      }
-    });
-  } catch (error) {
-    console.error('Error in play ID debug endpoint:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
 
-/**
- * Get wheel data for the special /company/:wheelId route
- */
-export const getCompanyWheel = async (req: Request, res: Response) => {
-  try {
-    const { wheelId } = req.params;
-
-    console.log(`getCompanyWheel called with params:`, {
-      wheelId,
-      path: req.path,
-      originalUrl: req.originalUrl,
-      hostname: req.hostname,
-      ip: req.ip
-    });
-
-    // Validate wheel ID - this is always required
-    if (!wheelId) {
-      return res.status(400).json({
-        error: 'Wheel ID is required'
-      });
+    if (!pin) {
+      return res.status(400).json({ error: 'PIN is required' });
     }
 
-    console.log(`Looking for wheel ${wheelId} via company route`);
+    if (!pinGenerator.validate(pin)) {
+      return res.status(400).json({ error: 'Invalid PIN format' });
+    }
 
-    // Special handling for company routes where companyId might be "company"
-    const wheel = await prisma.wheel.findUnique({
-      where: { id: wheelId, isActive: true },
+    console.log(`🔓 Redeem request for play ${playId}`);
+
+    // Find play
+    const play = await prisma.play.findUnique({
+      where: { id: playId },
       include: {
-        company: true,
-        slots: {
-          where: { isActive: true },
-          orderBy: { position: 'asc' }
-        }
+        slot: true
       }
     });
 
-    if (!wheel) {
-      console.log(`Wheel not found: ${wheelId}`);
-      return res.status(404).json({ error: 'Wheel not found' });
+    if (!play) {
+      return res.status(404).json({ error: 'Play not found' });
     }
 
-    // Debug: Log the raw wheel data from database
-    console.log(`Raw wheel data from database:`, {
-      id: wheel.id,
-      name: wheel.name,
-      bannerImage: wheel.bannerImage,
-      backgroundImage: wheel.backgroundImage,
-      gameRules: wheel.gameRules,
-      footerText: wheel.footerText,
-      mainTitle: wheel.mainTitle,
-      hasCompany: !!wheel.company,
-      companyActive: wheel.company?.isActive,
-      slotsCount: wheel.slots?.length || 0
-    });
-
-    // Verify the wheel's company is active
-    if (!wheel.company || !wheel.company.isActive) {
-      return res.status(403).json({ error: 'Company is not active' });
+    if (play.result !== 'WIN') {
+      return res.status(400).json({ error: 'This play did not result in a prize' });
     }
 
-    // Prepare the response data
-    const responseData = {
-      wheel: {
-        id: wheel.id,
-        name: wheel.name,
-        formSchema: wheel.formSchema,
-        socialNetwork: wheel.socialNetwork,
-        redirectUrl: wheel.redirectUrl,
-        redirectText: wheel.redirectText,
-        playLimit: wheel.playLimit,
-        gameRules: wheel.gameRules,
-        footerText: wheel.footerText,
-        mainTitle: wheel.mainTitle,
-        bannerImage: wheel.bannerImage,
-        backgroundImage: wheel.backgroundImage,
-                  slots: applyStableSorting(wheel.slots).map(slot => ({
-            id: slot.id,
-            label: slot.label,
-            color: slot.color,
-            weight: slot.weight,
-            isWinning: slot.isWinning,
-            position: slot.position
-          }))
+    if (play.redemptionStatus === 'REDEEMED') {
+      return res.status(400).json({
+        error: 'Prize already redeemed',
+        redeemedAt: play.redeemedAt
+      });
+    }
+
+    if (!play.pin) {
+      return res.status(500).json({ error: 'PIN not generated for this play' });
+    }
+
+    // Verify PIN (constant-time comparison)
+    const pinValid = pinGenerator.verify(pin, play.pin);
+
+    if (!pinValid) {
+      console.warn(`❌ Invalid PIN attempt for play ${playId}`);
+      return res.status(401).json({ error: 'Invalid PIN' });
+    }
+
+    // Update redemption status
+    const updatedPlay = await prisma.play.update({
+      where: { id: playId },
+      data: {
+        redemptionStatus: 'REDEEMED',
+        redeemedAt: new Date()
       }
-    };
-
-    // Debug: Log what we're about to return
-    console.log(`Response data being sent:`, {
-      wheelId: responseData.wheel.id,
-      name: responseData.wheel.name,
-      bannerImage: responseData.wheel.bannerImage,
-      backgroundImage: responseData.wheel.backgroundImage,
-      gameRules: responseData.wheel.gameRules,
-      footerText: responseData.wheel.footerText,
-      mainTitle: responseData.wheel.mainTitle,
-      responseKeys: Object.keys(responseData.wheel)
     });
 
-    // Return only necessary data for public view
-    return res.status(200).json(responseData);
+    console.log(`✅ Prize redeemed successfully`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Prize redeemed successfully',
+      prize: {
+        label: play.slot.label,
+        description: play.slot.description
+      },
+      customer: play.leadInfo,
+      redeemedAt: updatedPlay.redeemedAt
+    });
   } catch (error) {
-    console.error('Error fetching company wheel:', error);
+    console.error('Error redeeming prize:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 /**
- * Debug endpoint to check raw wheel data
+ * GET /api/public/plays/:playId
+ * Get play details (for redemption page)
  */
-export const debugWheelData = async (req: Request, res: Response) => {
+export const getPlayDetails = async (req: Request, res: Response) => {
   try {
-    const { wheelId } = req.params;
+    const { playId } = req.params;
 
-    if (!wheelId) {
-      return res.status(400).json({ error: 'Wheel ID is required' });
+    if (!playId) {
+      return res.status(400).json({ error: 'Play ID is required' });
     }
 
-    console.log(`Debug: Fetching raw data for wheel ${wheelId}`);
-
-    // Get raw wheel data
-    const wheel = await prisma.wheel.findUnique({
-      where: { id: wheelId }
-    });
-
-    if (!wheel) {
-      return res.status(404).json({ error: 'Wheel not found' });
-    }
-
-    // Return absolutely everything
-    return res.status(200).json({
-      debug: true,
-      rawWheel: wheel,
-      imageFields: {
-        bannerImage: wheel.bannerImage,
-        backgroundImage: wheel.backgroundImage,
-        bannerImageType: typeof wheel.bannerImage,
-        backgroundImageType: typeof wheel.backgroundImage,
-        bannerImageLength: wheel.bannerImage?.length || 0,
-        backgroundImageLength: wheel.backgroundImage?.length || 0
+    const play = await prisma.play.findUnique({
+      where: { id: playId },
+      include: {
+        slot: {
+          select: {
+            label: true,
+            description: true
+          }
+        }
       }
     });
-  } catch (error) {
-    console.error('Error in debug endpoint:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+
+    if (!play) {
+      return res.status(404).json({ error: 'Play not found' });
+    }
+
+    return res.status(200).json({
+      id: play.id,
+      result: play.result,
+      prize: play.result === 'WIN' ? {
+        label: play.slot.label,
+        description: play.slot.description
+      } : null,
+      redemptionStatus: play.redemptionStatus,
+      claimedAt: play.claimedAt,
+      redeemedAt: play.redeemedAt,
+      leadInfo: play.leadInfo
     });
+  } catch (error) {
+    console.error('Error fetching play details:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-// Export sendPrizeEmail for testing
-export { sendPrizeEmail };
-
-/**
- * Apply stable sorting to slots - matches frontend logic exactly
- * When positions are equal, uses slot ID as tiebreaker for consistent ordering
- */
-// Use the imported applyStableSorting function from slot-utils
-const applyStableSorting = importedApplyStableSorting; 
