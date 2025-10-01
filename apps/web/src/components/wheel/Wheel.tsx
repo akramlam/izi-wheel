@@ -301,10 +301,12 @@ const Wheel: React.FC<WheelProps> = ({
       const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
 
+      // REMOVED BOGUS OFFSET CORRECTION - it was causing misalignment!
+      // The computeAlignmentRotation function already handles proper alignment
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
         prizeIndex,
-        pointerAngleDeg: pointerAngle,
+        pointerAngleDeg: pointerAngle, // Use raw pointer angle, no correction needed
         biasDeg
       });
 
