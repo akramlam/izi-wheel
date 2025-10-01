@@ -142,12 +142,13 @@ function computeAlignmentRotation({
 
 // Helper function to handle long text in wheel segments
 function formatTextForWheel(text: string, maxCharsPerLine: number = 12, maxLines: number = 2): string[] {
-  if (!text || text.length <= maxCharsPerLine) {
-    return [text || ''];
+  const safeText = text || '';
+  if (safeText.length <= maxCharsPerLine) {
+    return [safeText];
   }
   
   // Split by words first
-  const words = text.split(' ');
+  const words = safeText.split(' ');
   const lines: string[] = [];
   let currentLine = '';
   
@@ -195,6 +196,17 @@ const Wheel: React.FC<WheelProps> = ({
   onSpinStart,
   onSpinComplete,
 }) => {
+  // Error boundary for wheel rendering
+  if (!config || !config.segments || config.segments.length === 0) {
+    console.error('Wheel component received invalid config:', config);
+    return (
+      <div className="w-full max-w-lg mx-auto flex flex-col items-center justify-center">
+        <div className="text-center text-red-600">
+          <p>Error: Invalid wheel configuration</p>
+        </div>
+      </div>
+    );
+  }
   // State for animation and interaction
   const [rotation, setRotation] = useState(0);
   const [pointerDropped, setPointerDropped] = useState(false);
@@ -206,14 +218,24 @@ const Wheel: React.FC<WheelProps> = ({
   const pointerRef = useRef<HTMLDivElement>(null);
   const segmentRefs = useRef<(SVGPathElement | null)[]>([]);
   
-  // Add default segments if segments are empty or invalid
-  const segments = (!config.segments || config.segments.length === 0) 
-    ? [
+  // Validate and sanitize segments
+  const segments = React.useMemo(() => {
+    if (!config.segments || config.segments.length === 0) {
+      return [
         { label: 'Prix 1', color: '#FF6384', isWinning: true },
         { label: 'Prix 2', color: '#36A2EB', isWinning: false },
         { label: 'Prix 3', color: '#FFCE56', isWinning: false }
-      ] 
-    : config.segments;
+      ];
+    }
+
+    return config.segments.map(segment => ({
+      id: segment.id || `segment-${Math.random()}`,
+      label: segment.label || 'Prize',
+      color: segment.color || '#FF6384',
+      isWinning: segment.isWinning || false,
+      position: segment.position
+    }));
+  }, [config.segments]);
     
   // Calculate segment angle and prepare refs array
   const segAngle = 360 / segments.length;
@@ -706,7 +728,7 @@ const Wheel: React.FC<WheelProps> = ({
                 >
                   {textLines.map((line, lineIndex) => (
                     <tspan key={`${index}-${lineIndex}`} x="0" y={lineIndex * 18} dy={lineIndex > 0 ? "0.7em" : "0"}>
-                      {line}
+                      {line || ''}
                     </tspan>
                   ))}
                 </text>

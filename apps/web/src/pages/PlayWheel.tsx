@@ -158,18 +158,35 @@ export default function PlayWheel() {
     );
   }
 
-  if (!wheelResponse || !wheelResponse.wheel || !wheelResponse.slots) {
+  if (!wheelResponse || !wheelResponse.wheel || !wheelResponse.slots || !Array.isArray(wheelResponse.slots)) {
+    console.log('[DEBUG] Wheel response structure:', wheelResponse);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
         <div className="bg-white rounded-lg p-6 max-w-md text-center">
           <h2 className="text-xl font-bold text-gray-800 mb-2">Wheel not found</h2>
           <p className="text-gray-600">This wheel does not exist or is no longer available.</p>
+          <p className="text-sm text-gray-500 mt-2">
+            Debug: wheelResponse exists: {!!wheelResponse}, has wheel: {!!wheelResponse?.wheel}, has slots: {!!wheelResponse?.slots}
+          </p>
         </div>
       </div>
     );
   }
 
   const { wheel, slots } = wheelResponse as { wheel: WheelData; slots: Slot[] };
+
+  // Ensure we have valid slots
+  if (!slots || slots.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
+        <div className="bg-white rounded-lg p-6 max-w-md text-center">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Wheel has no segments</h2>
+          <p className="text-gray-600">This wheel doesn't have any prizes configured.</p>
+        </div>
+      </div>
+    );
+  }
+
   const sortedSlots = useMemo(() => sortSlots(slots), [slots]);
 
   useEffect(() => {
@@ -181,12 +198,12 @@ export default function PlayWheel() {
     console.log('🎯 Frontend sorted slots order:', debugOrder);
   }, [sortedSlots]);
 
-  // Build wheel config
+  // Build wheel config with proper null checks
   const wheelConfig: WheelConfig = {
     segments: sortedSlots.map(slot => ({
-      id: slot.id,
-      label: slot.label,
-      color: slot.color,
+      id: slot.id || `slot-${Math.random()}`, // Fallback ID if missing
+      label: slot.label || 'Prize', // Fallback label if missing
+      color: slot.color || '#FF6384', // Fallback color if missing
       position: slot.position
     })),
     spinDurationMin: 3,
