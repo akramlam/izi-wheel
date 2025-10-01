@@ -23,6 +23,7 @@ import EmailTracking from './pages/EmailTracking';
 import ActivityTracking from './pages/ActivityTracking';
 import PlayWheel from './pages/PlayWheel';
 import RedeemPrize from './pages/RedeemPrize';
+import PrizeValidation from './pages/PrizeValidation';
 
 // Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
@@ -119,6 +120,7 @@ function App() {
         <Route path="statistiques" element={<Statistiques />} />
         <Route path="emails" element={<EmailTracking />} />
         <Route path="activity" element={<ActivityTracking />} />
+        <Route path="prizes" element={<PrizeValidation />} />
         <Route path="profile" element={<Profile />} />
         <Route path="account-settings" element={<AccountSettings />} />
         

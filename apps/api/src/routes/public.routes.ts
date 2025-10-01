@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Router as RouterType } from 'express';
 import {
   getPublicWheel,
   spinWheel,
@@ -8,7 +9,7 @@ import {
 } from '../controllers/public.controller';
 import rateLimit from 'express-rate-limit';
 
-const router = Router();
+const router: RouterType = Router();
 
 /**
  * Rate limiter for spin endpoint (prevent spam)
