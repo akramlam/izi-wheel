@@ -51,6 +51,12 @@ const TEXT_RECT_MIN_WIDTH = 40;
 const TEXT_RECT_MAX_WIDTH = 120;
 const TEXT_RECT_HEIGHT = 34;
 
+const FALLBACK_SEGMENTS: WheelConfig['segments'] = [
+  { label: 'Prix 1', color: '#FF6384', isWinning: true },
+  { label: 'Prix 2', color: '#36A2EB', isWinning: false },
+  { label: 'Prix 3', color: '#FFCE56', isWinning: false }
+];
+
 // Default brand colors
 const DEFAULT_COLORS = {
   primaryGradient: '#a25afd',   // Violet
@@ -205,23 +211,53 @@ const Wheel: React.FC<WheelProps> = ({
   const wheelRef = useRef<SVGSVGElement>(null);
   const pointerRef = useRef<HTMLDivElement>(null);
   const segmentRefs = useRef<(SVGPathElement | null)[]>([]);
-  
+
   // Add default segments if segments are empty or invalid
-  const segments = (!config.segments || config.segments.length === 0) 
-    ? [
-        { label: 'Prix 1', color: '#FF6384', isWinning: true },
-        { label: 'Prix 2', color: '#36A2EB', isWinning: false },
-        { label: 'Prix 3', color: '#FFCE56', isWinning: false }
-      ] 
-    : config.segments;
+  const segments = config.segments && config.segments.length > 0
+    ? config.segments
+    : FALLBACK_SEGMENTS;
+
+  const clampedPrizeIndex = segments.length
+    ? Math.min(Math.max(prizeIndex, 0), segments.length - 1)
+    : 0;
     
   // Calculate segment angle and prepare refs array
   const segAngle = 360 / segments.length;
-  
+
   // Initialize sound system
   useEffect(() => {
     soundUtils.init();
   }, []);
+
+  // Debug logging to verify frontend slot ordering and pointer target mapping
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const segmentDebug = segments.map((segment, index) => {
+      const position = (segment as any)?.position ?? 'n/a';
+      const id = (segment as any)?.id ?? 'no-id';
+      return `[${index}] pos=${position} label="${segment.label ?? 'UNKNOWN'}" id=${id}`;
+    });
+
+    console.log('🎯 Wheel segments order (normalized):', segmentDebug);
+  }, [segments]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const targetSegment = segments[clampedPrizeIndex];
+    console.log('🎯 Wheel prize index received:', {
+      prizeIndex,
+      clampedPrizeIndex,
+      segmentCount: segments.length,
+      targetLabel: targetSegment?.label ?? 'UNKNOWN',
+      targetId: (targetSegment as any)?.id ?? 'no-id'
+    });
+  }, [clampedPrizeIndex, prizeIndex, segments]);
   
   // Add responsive wheel size state
   const [wheelDisplaySize, setWheelDisplaySize] = useState(getWheelSize());
@@ -270,15 +306,10 @@ const Wheel: React.FC<WheelProps> = ({
       const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
 
-      // POTENTIAL FIX: Try an offset correction to account for visual/calculation mismatch
-      // If segments are visually offset from calculation, adjust here
-      // Based on observation: wheel lands 1 segment clockwise from expected
-      const offsetCorrection = segAngle; // Try +1 segment offset (120 degrees for 3 segments)
-
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
-        prizeIndex,
-        pointerAngleDeg: pointerAngle + offsetCorrection,
+        prizeIndex: clampedPrizeIndex,
+        pointerAngleDeg: pointerAngle,
         biasDeg
       });
 
@@ -291,14 +322,14 @@ const Wheel: React.FC<WheelProps> = ({
         prizeIndex,
         segAngle,
         segmentCount: segments.length,
-        pointerAngle: 0,
+        pointerAngle,
         biasDeg,
         alignmentRotation,
         totalRotations: rotations,
         finalRotation: target,
         segmentLabels: segments.map((s, i) => `${i}: ${s.label}`),
-        targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN',
-        targetSegmentId: segments[prizeIndex]?.id || 'NO_ID',
+        targetSegmentLabel: segments[clampedPrizeIndex]?.label || 'UNKNOWN',
+        targetSegmentId: segments[clampedPrizeIndex]?.id || 'NO_ID',
         // Debug segment positions
         segmentPositions: segments.map((s, i) => ({
           index: i,
@@ -369,7 +400,7 @@ const Wheel: React.FC<WheelProps> = ({
         // Safety correction: verify final alignment and micro-correct if needed
           const finalRotation = target % 360;
           const segmentUnderPointer = Math.floor(((360 - (finalRotation - pointerAngle) + 360) % 360) / segAngle);
-          const expectedSegment = prizeIndex;
+          const expectedSegment = clampedPrizeIndex;
           const biasDegDev = segAngle * 0.1;
           const wanted = computeAlignmentRotation({
             segmentCount: segments.length,
@@ -402,7 +433,7 @@ const Wheel: React.FC<WheelProps> = ({
 
 
         // Play win/lose sound - Handle case where segments might be empty
-        const winningSegment = segments.length > prizeIndex ? segments[prizeIndex] : null;
+        const winningSegment = segments.length > clampedPrizeIndex ? segments[clampedPrizeIndex] : null;
         if (winningSegment?.isWinning) {
           soundUtils.play('win', 0.8);
         } else {
@@ -426,24 +457,24 @@ const Wheel: React.FC<WheelProps> = ({
           const rawPointerIndex = segments.length > 0
             ? Math.floor(((360 - (finalRotation - pointerAngleDeg) + 360) % 360) / segAngle)
             : 0;
-          const clampedPointerIndex = Math.min(Math.max(rawPointerIndex, 0), Math.max(segments.length - 1, 0));
-          const clampedExpectedIndex = Math.min(Math.max(prizeIndex, 0), Math.max(segments.length - 1, 0));
-
+          const clampedPointerIndex = segments.length > 0
+            ? Math.min(Math.max(rawPointerIndex, 0), segments.length - 1)
+            : 0;
           const summary: WheelSpinResult = {
             pointerIndex: clampedPointerIndex,
-            expectedIndex: clampedExpectedIndex,
-            isAligned: clampedPointerIndex === clampedExpectedIndex,
+            expectedIndex: clampedPrizeIndex,
+            isAligned: clampedPointerIndex === clampedPrizeIndex,
           };
 
           // 🔥 RUNTIME VERIFICATION: Check final alignment
           if (process.env.NODE_ENV !== 'production') {
             const segmentUnderPointer = Math.floor((360 - finalRotation + 360) % 360 / segAngle);
-            const expectedSegment = prizeIndex;
+            const expectedSegment = clampedPrizeIndex;
 
             console.log('🎯 ALIGNMENT VERIFICATION:', {
               finalRotation,
               segmentUnderPointer,
-              expectedSegment: prizeIndex,
+              expectedSegment: clampedPrizeIndex,
               isAligned: segmentUnderPointer === expectedSegment,
               segmentAngle: segAngle,
               totalSegments: segments.length
@@ -497,8 +528,8 @@ const Wheel: React.FC<WheelProps> = ({
       // Stop all sounds when component unmounts or when isSpinning changes
       soundUtils.stop();
     };
-  }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning, 
-      config.hapticFeedback, segments, config.sounds]);
+  }, [isSpinning, prizeIndex, clampedPrizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning,
+      config.hapticFeedback, config.pointerAngleDeg, segments, config.sounds]);
   
   // Additional cleanup effect to ensure all resources are freed when component unmounts
   useEffect(() => {
