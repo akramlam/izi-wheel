@@ -270,15 +270,12 @@ const Wheel: React.FC<WheelProps> = ({
       const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
 
-      // POTENTIAL FIX: Try an offset correction to account for visual/calculation mismatch
-      // If segments are visually offset from calculation, adjust here
-      // Based on observation: wheel lands 1 segment clockwise from expected
-      const offsetCorrection = segAngle; // Try +1 segment offset (120 degrees for 3 segments)
-
+      // REMOVED BOGUS OFFSET CORRECTION - it was causing misalignment!
+      // The computeAlignmentRotation function already handles proper alignment
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
         prizeIndex,
-        pointerAngleDeg: pointerAngle + offsetCorrection,
+        pointerAngleDeg: pointerAngle, // Use raw pointer angle, no correction needed
         biasDeg
       });
 
