@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import type { WheelConfig, WheelSpinResult } from './types';
 import soundUtils from '../../lib/sound';
 
@@ -207,21 +207,52 @@ const Wheel: React.FC<WheelProps> = ({
   const segmentRefs = useRef<(SVGPathElement | null)[]>([]);
   
   // Add default segments if segments are empty or invalid
-  const segments = (!config.segments || config.segments.length === 0) 
-    ? [
-        { label: 'Prix 1', color: '#FF6384', isWinning: true },
-        { label: 'Prix 2', color: '#36A2EB', isWinning: false },
-        { label: 'Prix 3', color: '#FFCE56', isWinning: false }
-      ] 
-    : config.segments;
+  const segments = useMemo(() => {
+    return (!config.segments || config.segments.length === 0)
+      ? [
+          { label: 'Prix 1', color: '#FF6384', isWinning: true },
+          { label: 'Prix 2', color: '#36A2EB', isWinning: false },
+          { label: 'Prix 3', color: '#FFCE56', isWinning: false }
+        ]
+      : config.segments;
+  }, [config.segments]);
     
   // Calculate segment angle and prepare refs array
   const segAngle = 360 / segments.length;
-  
+
   // Initialize sound system
   useEffect(() => {
     soundUtils.init();
   }, []);
+
+  // Debug logging to verify frontend slot ordering and pointer target mapping
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const segmentDebug = segments.map((segment, index) => {
+      const position = (segment as any)?.position ?? 'n/a';
+      const id = (segment as any)?.id ?? 'no-id';
+      return `[${index}] pos=${position} label="${segment.label ?? 'UNKNOWN'}" id=${id}`;
+    });
+
+    console.log('🎯 Wheel segments order (normalized):', segmentDebug);
+  }, [segments]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const targetSegment = segments[prizeIndex];
+    console.log('🎯 Wheel prize index received:', {
+      prizeIndex,
+      segmentCount: segments.length,
+      targetLabel: targetSegment?.label ?? 'UNKNOWN',
+      targetId: (targetSegment as any)?.id ?? 'no-id'
+    });
+  }, [prizeIndex, segments]);
   
   // Add responsive wheel size state
   const [wheelDisplaySize, setWheelDisplaySize] = useState(getWheelSize());
@@ -270,15 +301,10 @@ const Wheel: React.FC<WheelProps> = ({
       const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
       const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
 
-      // POTENTIAL FIX: Try an offset correction to account for visual/calculation mismatch
-      // If segments are visually offset from calculation, adjust here
-      // Based on observation: wheel lands 1 segment clockwise from expected
-      const offsetCorrection = segAngle; // Try +1 segment offset (120 degrees for 3 segments)
-
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
         prizeIndex,
-        pointerAngleDeg: pointerAngle + offsetCorrection,
+        pointerAngleDeg: pointerAngle,
         biasDeg
       });
 

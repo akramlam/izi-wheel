@@ -159,6 +159,8 @@ export const spinWheel = async (req: Request, res: Response) => {
     // Sort slots for consistent ordering
     const sortedSlots = sortSlots(wheel.slots);
 
+    console.log('🎯 Backend sorted slots order:', sortedSlots.map((slot, index) => `[#${index}] pos=${slot.position} label="${slot.label}" id=${slot.id}`));
+
     // Select prize based on wheel mode
     let selectedSlot;
     let prizeIndex;
@@ -213,6 +215,13 @@ export const spinWheel = async (req: Request, res: Response) => {
         // Continue without QR code - PIN still works
       }
     }
+
+    console.log('🎯 Backend prize alignment data:', {
+      prizeIndex,
+      selectedSlotId: selectedSlot.id,
+      selectedSlotLabel: selectedSlot.label,
+      segmentCount: sortedSlots.length
+    });
 
     console.log(`✅ Play created: ${play.id}, result: ${play.result}, prizeIndex: ${prizeIndex}`);
 
