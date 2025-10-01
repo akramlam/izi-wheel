@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -170,7 +170,16 @@ export default function PlayWheel() {
   }
 
   const { wheel, slots } = wheelResponse as { wheel: WheelData; slots: Slot[] };
-  const sortedSlots = sortSlots(slots);
+  const sortedSlots = useMemo(() => sortSlots(slots), [slots]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || !sortedSlots.length) {
+      return;
+    }
+
+    const debugOrder = sortedSlots.map((slot, index) => `[#${index}] pos=${slot.position} label="${slot.label}" id=${slot.id}`);
+    console.log('🎯 Frontend sorted slots order:', debugOrder);
+  }, [sortedSlots]);
 
   // Build wheel config
   const wheelConfig: WheelConfig = {
@@ -188,6 +197,12 @@ export default function PlayWheel() {
     },
     hapticFeedback: true
   };
+
+  if (process.env.NODE_ENV !== 'production') {
+    const configOrder = wheelConfig.segments.map((segment, index) => `[#${index}] pos=${segment.position ?? 'n/a'} label="${segment.label}" id=${segment.id ?? 'no-id'}`);
+    console.log('🎯 Wheel config segments:', configOrder);
+    console.log('🎯 Current prizeIndex state:', prizeIndex);
+  }
 
   const backgroundStyle = wheel.backgroundImage
     ? {
