@@ -58,6 +58,16 @@ export default function PlayWheel() {
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
 
+  // Debug effect to track state changes
+  useEffect(() => {
+    console.log('📊 State changed:', {
+      isSpinning,
+      showResultModal,
+      hasSpinResult: !!spinResult,
+      spinResultData: spinResult
+    });
+  }, [isSpinning, showResultModal, spinResult]);
+
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
     queryKey: ['publicWheel', wheelId],
@@ -107,8 +117,14 @@ export default function PlayWheel() {
   // Handle spin complete
   const handleSpinComplete = (result: WheelSpinResult) => {
     console.log('✅ Spin animation complete:', result);
+    console.log('🎯 Current spinResult:', spinResult);
+    console.log('🎯 showResultModal before:', showResultModal);
+
     setIsSpinning(false);
     setShowResultModal(true);
+
+    console.log('🎯 showResultModal after setState:', true);
+    console.log('🎯 Modal should appear now!');
   };
 
   // Handle play button click
@@ -267,8 +283,15 @@ export default function PlayWheel() {
       </div>
 
       {/* Result Modal */}
-      {showResultModal && spinResult && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      {console.log('🎨 Rendering modal check:', { showResultModal, hasSpinResult: !!spinResult })}
+      {showResultModal && spinResult ? (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={(e) => {
+          // Prevent closing when clicking inside modal
+          if (e.target === e.currentTarget) {
+            console.log('Clicked backdrop');
+          }
+        }}>
+          {console.log('🎨 MODAL IS RENDERING!')}
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 className="text-2xl font-bold text-center mb-4">
               {spinResult.play.result === 'WIN' ? '🎉 Congratulations!' : 'Result'}
