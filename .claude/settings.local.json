@@ -19,7 +19,8 @@
       "Bash(cd:*)",
       "Bash(rm:*)",
       "WebSearch",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(curl -s \"https://roue.izikado.fr/play/company/d117e589-fbb0-4f69-bfdc-2eb8130c868f\")"
     ],
     "deny": [],
     "ask": []

@@ -94,6 +94,9 @@ function App() {
 
       {/* Public play/redeem routes */}
       <Route path="/play/:wheelId" element={<PlayWheel />} />
+      <Route path="/play/company/:wheelId" element={<PlayWheel />} />
+      <Route path="/play/wheel/:wheelId" element={<PlayWheel />} />
+      <Route path="/play/:companyId/:wheelId" element={<PlayWheel />} />
       <Route path="/redeem/:playId" element={<RedeemPrize />} />
 
       <Route path="/change-password" element={
