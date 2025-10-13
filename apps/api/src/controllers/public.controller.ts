@@ -180,12 +180,31 @@ export const spinWheel = async (req: Request, res: Response) => {
 
       // If weight validation fails, fall back to random selection
       console.warn('⚠️ Weight validation failed, using fallback random selection');
-      const randomIndex = Math.floor(Math.random() * sortedSlots.length);
-      selectedSlot = sortedSlots[randomIndex];
-      prizeIndex = randomIndex;
+
+      if (wheel.mode === 'ALL_WIN') {
+        // For ALL_WIN mode, only select from winning slots
+        const winningSlots = sortedSlots.filter(s => s.isWinning);
+        if (winningSlots.length === 0) {
+          // If no slots marked as winning, treat all slots as winning
+          console.warn('⚠️ No winning slots found in ALL_WIN mode, treating all as winning');
+          const randomIndex = Math.floor(Math.random() * sortedSlots.length);
+          selectedSlot = sortedSlots[randomIndex];
+          prizeIndex = randomIndex;
+        } else {
+          const randomWinningSlot = winningSlots[Math.floor(Math.random() * winningSlots.length)];
+          selectedSlot = randomWinningSlot;
+          prizeIndex = sortedSlots.findIndex(s => s.id === randomWinningSlot.id);
+        }
+      } else {
+        // For RANDOM_WIN mode, select from any slot
+        const randomIndex = Math.floor(Math.random() * sortedSlots.length);
+        selectedSlot = sortedSlots[randomIndex];
+        prizeIndex = randomIndex;
+      }
     }
 
-    const isWin = selectedSlot.isWinning;
+    // In ALL_WIN mode, every slot is a winning slot
+    const isWin = wheel.mode === 'ALL_WIN' ? true : selectedSlot.isWinning;
 
     // Generate PIN and QR code for winning plays
     let pin: string | null = null;

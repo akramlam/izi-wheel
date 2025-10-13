@@ -22,17 +22,43 @@ export class PrizeSelector {
    * Selects a prize using weighted probability
    * @param slots - Array of slots with weights
    * @param seed - Optional seed for deterministic selection (testing)
-   * @returns Selected slot with its index
+   * @param strictMode - If true, requires weights to sum to exactly 100 (default: false)
+   * @returns Selected slot with its index, or null if no prize won
    */
-  selectPrize(slots: Slot[], seed?: string): SelectionResult {
+  selectPrize(slots: Slot[], seed?: string, strictMode: boolean = false): SelectionResult {
     if (!slots || slots.length === 0) {
       throw new Error('No slots available for selection');
     }
 
-    // Validate weights sum to 100
+    // Calculate total weight
     const totalWeight = slots.reduce((sum, s) => sum + s.weight, 0);
-    if (totalWeight !== 100) {
+
+    // In strict mode, require exactly 100
+    if (strictMode && totalWeight !== 100) {
       throw new Error(`Slot weights must sum to 100, got ${totalWeight}`);
+    }
+
+    // Validate total weight doesn't exceed 100
+    if (totalWeight > 100) {
+      throw new Error(`Slot weights cannot exceed 100, got ${totalWeight}`);
+    }
+
+    // Generate random value (0-100)
+    const random = seed
+      ? this.seededRandom(seed) * 100
+      : Math.random() * 100;
+
+    console.log(`🎯 Random value: ${random.toFixed(2)}, Total weight: ${totalWeight}`);
+
+    // If random value exceeds total weight, no prize won
+    if (random > totalWeight) {
+      console.log(`❌ No prize won (${random.toFixed(2)} > ${totalWeight})`);
+      // Return first non-winning slot or first slot
+      const loseSlot = slots.find(s => !s.isWinning) || slots[0];
+      return {
+        slot: loseSlot,
+        index: slots.findIndex(s => s.id === loseSlot.id)
+      };
     }
 
     // Build cumulative distribution array
@@ -43,15 +69,10 @@ export class PrizeSelector {
       cumulative.push(sum);
     }
 
-    // Generate random value (0-100)
-    const random = seed
-      ? this.seededRandom(seed) * 100
-      : Math.random() * 100;
-
     // Binary search for selected slot
     const index = this.binarySearch(cumulative, random);
 
-    console.log(`🎯 Prize Selection: random=${random.toFixed(2)}, index=${index}, slot="${slots[index].label}"`);
+    console.log(`🎯 Prize won: index=${index}, slot="${slots[index].label}"`);
 
     return {
       slot: slots[index],
