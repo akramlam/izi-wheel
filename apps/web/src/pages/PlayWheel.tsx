@@ -120,11 +120,12 @@ export default function PlayWheel() {
     console.log('🎯 Current spinResult:', spinResult);
     console.log('🎯 showResultModal before:', showResultModal);
 
-    setIsSpinning(false);
-    setShowResultModal(true);
-
-    console.log('🎯 showResultModal after setState:', true);
-    console.log('🎯 Modal should appear now!');
+    // Use setTimeout to ensure state updates are processed after the current render cycle
+    setTimeout(() => {
+      setIsSpinning(false);
+      setShowResultModal(true);
+      console.log('🎯 Modal state updated - should show now');
+    }, 100);
   };
 
   // Handle play button click
