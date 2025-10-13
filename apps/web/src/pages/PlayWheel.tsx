@@ -1,13 +1,13 @@
-import { useState, useMemo, useCallback } from 'react';
+"use client";
+
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import Wheel from '../components/wheel/Wheel';
-import { sortSlots } from '../utils/slotSorter';
-import type { WheelConfig, WheelSpinResult } from '../components/wheel/types';
+import { Wheel } from 'react-custom-roulette';
 
 interface Slot {
   id: string;
@@ -21,16 +21,11 @@ interface WheelData {
   id: string;
   name: string;
   mode: string;
-  playLimit: string;
   mainTitle?: string;
   gameRules?: string;
   footerText?: string;
   bannerImage?: string;
   backgroundImage?: string;
-  formSchema?: any;
-  socialNetwork?: string;
-  redirectUrl?: string;
-  redirectText?: string;
 }
 
 interface SpinResult {
@@ -53,11 +48,10 @@ export default function PlayWheel() {
   const { wheelId } = useParams<{ wheelId: string }>();
   const { toast } = useToast();
 
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [prizeIndex, setPrizeIndex] = useState(0);
+  const [mustSpin, setMustSpin] = useState(false);
+  const [prizeNumber, setPrizeNumber] = useState(0);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
-  const [pendingResult, setPendingResult] = useState<SpinResult | null>(null);
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
@@ -81,13 +75,9 @@ export default function PlayWheel() {
     onSuccess: (data: SpinResult) => {
       console.log('🎯 Spin result received:', data);
 
-      // Store the result but don't show modal yet
-      setPendingResult(data);
       setSpinResult(data);
-      setPrizeIndex(data.prizeIndex);
-
-      // Start spinning animation
-      setIsSpinning(true);
+      setPrizeNumber(data.prizeIndex); // Set the winning index
+      setMustSpin(true); // Start the spin animation
     },
     onError: (error: any) => {
       console.error('Spin error:', error);
@@ -110,28 +100,18 @@ export default function PlayWheel() {
     }
   });
 
-  // Handle spin complete - memoized to prevent recreation
-  const handleSpinComplete = useCallback((_result: WheelSpinResult) => {
-    console.log('🎯 Spin animation complete');
-
-    // Stop spinning state
-    setIsSpinning(false);
-
-    // Show modal after a small delay to ensure smooth transition
-    setTimeout(() => {
-      if (pendingResult || spinResult) {
-        setShowResultModal(true);
-      }
-    }, 300);
-  }, [pendingResult, spinResult]);
+  // Handle spin complete
+  const handleStopSpinning = () => {
+    setMustSpin(false);
+    setShowResultModal(true);
+  };
 
   // Handle play button click
   const handlePlay = () => {
-    if (isSpinning || spinMutation.isPending) return;
+    if (mustSpin || spinMutation.isPending) return;
 
     // Reset states
     setShowResultModal(false);
-    setPendingResult(null);
 
     // Initiate spin
     spinMutation.mutate();
@@ -141,31 +121,22 @@ export default function PlayWheel() {
   const handleCloseModal = () => {
     setShowResultModal(false);
     setSpinResult(null);
-    setPendingResult(null);
   };
 
-  // Extract wheel data early for useMemo - hooks must be called in same order every render
   const wheel = wheelResponse?.wheel as WheelData | undefined;
   const slots = (wheelResponse?.slots || []) as Slot[];
 
-  // Compute sorted slots - CRITICAL: must match backend sorting exactly
-  const sortedSlots = useMemo(() => {
-    if (!slots || slots.length === 0) return [];
-
-    // Use the same sorting algorithm as backend
-    const sorted = sortSlots(slots);
-
-    console.log('🎯 Frontend sorted slots:', sorted.map((s, idx) => ({
-      index: idx,
-      id: s.id,
-      label: s.label,
-      position: s.position
-    })));
-
-    return sorted;
+  // Convert slots to wheel data format
+  const wheelData = useMemo(() => {
+    return slots.map(slot => ({
+      option: slot.label,
+      style: {
+        backgroundColor: slot.color || '#FF6384',
+        textColor: '#ffffff'
+      }
+    }));
   }, [slots]);
 
-  // Now handle loading, error, and validation states
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600">
@@ -185,8 +156,7 @@ export default function PlayWheel() {
     );
   }
 
-  // Validation
-  if (!wheelResponse || !wheel || !sortedSlots.length) {
+  if (!wheelResponse || !wheel || !slots.length) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
         <div className="bg-white rounded-lg p-6 max-w-md text-center">
@@ -196,23 +166,6 @@ export default function PlayWheel() {
       </div>
     );
   }
-
-  // Build wheel config
-  const wheelConfig: WheelConfig = {
-    segments: sortedSlots.map((slot) => ({
-      id: slot.id,
-      label: slot.label,
-      color: slot.color || '#FF6384',
-      position: slot.position
-    })),
-    spinDurationMin: 3,
-    spinDurationMax: 6,
-    sounds: {
-      tick: true,
-      win: true
-    },
-    hapticFeedback: true
-  };
 
   const backgroundStyle = wheel.backgroundImage
     ? {
@@ -266,13 +219,26 @@ export default function PlayWheel() {
           {/* Wheel */}
           <div className="mb-6 flex justify-center">
             <div className="w-full max-w-lg">
-              <Wheel
-                config={wheelConfig}
-                isSpinning={isSpinning}
-                prizeIndex={prizeIndex}
-                onSpin={() => {}} // Empty handler, we control spinning state
-                onSpinComplete={handleSpinComplete}
-              />
+              {wheelData.length > 0 && (
+                <Wheel
+                  mustStartSpinning={mustSpin}
+                  prizeNumber={prizeNumber}
+                  data={wheelData}
+                  onStopSpinning={handleStopSpinning}
+                  backgroundColors={['#3e3e3e', '#df3428']}
+                  textColors={['#ffffff']}
+                  fontSize={16}
+                  outerBorderColor="#f2f2f2"
+                  outerBorderWidth={10}
+                  innerBorderColor="#f2f2f2"
+                  innerBorderWidth={0}
+                  innerRadius={0}
+                  radiusLineColor="#f2f2f2"
+                  radiusLineWidth={1}
+                  perpendicularText={false}
+                  textDistance={60}
+                />
+              )}
             </div>
           </div>
 
@@ -280,13 +246,13 @@ export default function PlayWheel() {
           <div className="space-y-4">
             <Button
               onClick={handlePlay}
-              disabled={isSpinning || spinMutation.isPending}
+              disabled={mustSpin || spinMutation.isPending}
               className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-lg"
             >
-              {isSpinning || spinMutation.isPending ? (
+              {mustSpin || spinMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  {isSpinning ? 'Spinning...' : 'Loading...'}
+                  {mustSpin ? 'Spinning...' : 'Loading...'}
                 </>
               ) : (
                 'Spin the Wheel'
