@@ -139,6 +139,27 @@ export default function PlayWheel() {
     setSpinResult(null);
   };
 
+  // Extract wheel data early for useMemo - hooks must be called in same order every render
+  const wheel = wheelResponse?.wheel as WheelData | undefined;
+  const slots = (wheelResponse?.slots || []) as Slot[];
+
+  // Compute sorted slots - this must happen before any conditional returns
+  const sortedSlots = useMemo(() => {
+    if (!slots || slots.length === 0) return [];
+    return sortSlots(slots);
+  }, [slots]);
+
+  // Debug effect for sorted slots
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || !sortedSlots.length) {
+      return;
+    }
+
+    const debugOrder = sortedSlots.map((slot, index) => `[#${index}] pos=${slot.position} label="${slot.label}" id=${slot.id}`);
+    console.log('🎯 Frontend sorted slots order:', debugOrder);
+  }, [sortedSlots]);
+
+  // Now handle loading, error, and validation states
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600">
@@ -158,7 +179,7 @@ export default function PlayWheel() {
     );
   }
 
-  if (!wheelResponse || !wheelResponse.wheel || !wheelResponse.slots || !Array.isArray(wheelResponse.slots)) {
+  if (!wheelResponse || !wheel || !Array.isArray(wheelResponse.slots)) {
     console.log('[DEBUG] Wheel response structure:', wheelResponse);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
@@ -166,14 +187,12 @@ export default function PlayWheel() {
           <h2 className="text-xl font-bold text-gray-800 mb-2">Wheel not found</h2>
           <p className="text-gray-600">This wheel does not exist or is no longer available.</p>
           <p className="text-sm text-gray-500 mt-2">
-            Debug: wheelResponse exists: {!!wheelResponse}, has wheel: {!!wheelResponse?.wheel}, has slots: {!!wheelResponse?.slots}
+            Debug: wheelResponse exists: {!!wheelResponse}, has wheel: {!!wheel}, has slots: {!!wheelResponse?.slots}
           </p>
         </div>
       </div>
     );
   }
-
-  const { wheel, slots } = wheelResponse as { wheel: WheelData; slots: Slot[] };
 
   // Ensure we have valid slots
   if (!slots || slots.length === 0) {
@@ -186,17 +205,6 @@ export default function PlayWheel() {
       </div>
     );
   }
-
-  const sortedSlots = useMemo(() => sortSlots(slots), [slots]);
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production' || !sortedSlots.length) {
-      return;
-    }
-
-    const debugOrder = sortedSlots.map((slot, index) => `[#${index}] pos=${slot.position} label="${slot.label}" id=${slot.id}`);
-    console.log('🎯 Frontend sorted slots order:', debugOrder);
-  }, [sortedSlots]);
 
   // Build wheel config with proper null checks
   const wheelConfig: WheelConfig = {
