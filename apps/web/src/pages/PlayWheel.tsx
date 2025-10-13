@@ -116,15 +116,32 @@ export default function PlayWheel() {
 
   // Handle spin complete
   const handleSpinComplete = (result: WheelSpinResult) => {
-    console.log('✅ Spin animation complete:', result);
-    console.log('🎯 Current spinResult:', spinResult);
-    console.log('🎯 showResultModal before:', showResultModal);
+    console.log('═══════════════════════════════════════════════');
+    console.log('📱 PlayWheel: handleSpinComplete CALLED');
+    console.log('═══════════════════════════════════════════════');
+    console.log('Result from Wheel:', result);
+    console.log('Current state:');
+    console.log(`  - spinResult: ${spinResult ? 'EXISTS' : 'NULL'}`);
+    console.log(`  - showResultModal: ${showResultModal}`);
+    console.log(`  - isSpinning: ${isSpinning}`);
+    console.log('');
+    console.log('Setting state in 100ms...');
 
     // Use setTimeout to ensure state updates are processed after the current render cycle
     setTimeout(() => {
+      console.log('Setting states NOW:');
+      console.log('  - setIsSpinning(false)');
+      console.log('  - setShowResultModal(true)');
+
       setIsSpinning(false);
       setShowResultModal(true);
-      console.log('🎯 Modal state updated - should show now');
+
+      console.log('✅ States set! Modal should appear now.');
+      console.log('Check if modal condition is met:');
+      console.log(`  - showResultModal will be: true`);
+      console.log(`  - spinResult exists: ${!!spinResult}`);
+      console.log(`  - Condition met: ${true && !!spinResult}`);
+      console.log('═══════════════════════════════════════════════');
     }, 100);
   };
 
