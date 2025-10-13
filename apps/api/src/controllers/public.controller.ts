@@ -5,7 +5,7 @@ import { pinGenerator } from '../services/prize/pinGenerator';
 import { qrCodeGenerator } from '../services/prize/qrCodeGenerator';
 import { playLimiter } from '../services/rateLimit/playLimiter';
 import { sortSlots, findPrizeIndex } from '../utils/slotSorter';
-import { sendPrizeEmail } from '../utils/emailNotification';
+import { sendPrizeEmail } from '../utils/mailer';
 
 /**
  * Get real client IP from request
@@ -345,14 +345,13 @@ export const claimPrize = async (req: Request, res: Response) => {
 
     // Send email with PIN
     try {
-      await sendPrizeEmail({
-        recipientEmail: email,
-        recipientName: name,
-        prizeName: play.slot.label,
-        pin: play.pin!,
+      await sendPrizeEmail(
+        email,
+        play.slot.label,
+        play.pin!,
         playId,
-        companyId: play.companyId
-      });
+        play.companyId
+      );
     } catch (emailError) {
       console.error('Failed to send prize email:', emailError);
       // Don't fail the claim if email fails
