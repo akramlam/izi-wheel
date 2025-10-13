@@ -26,6 +26,9 @@ interface WheelData {
   footerText?: string;
   bannerImage?: string;
   backgroundImage?: string;
+  socialNetwork?: string;
+  redirectUrl?: string;
+  redirectText?: string;
 }
 
 interface SpinResult {
@@ -52,6 +55,8 @@ export default function PlayWheel() {
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [hasSocialVerified, setHasSocialVerified] = useState(false);
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
@@ -110,11 +115,26 @@ export default function PlayWheel() {
   const handlePlay = () => {
     if (mustSpin || spinMutation.isPending) return;
 
+    // Check if social media verification is required
+    if (wheel?.socialNetwork && wheel?.redirectUrl && !hasSocialVerified) {
+      setShowSocialModal(true);
+      return;
+    }
+
     // Reset states
     setShowResultModal(false);
 
     // Initiate spin
     spinMutation.mutate();
+  };
+
+  // Handle social media redirect
+  const handleSocialRedirect = () => {
+    if (wheel?.redirectUrl) {
+      window.open(wheel.redirectUrl, '_blank');
+      setHasSocialVerified(true);
+      setShowSocialModal(false);
+    }
   };
 
   // Handle close result modal
@@ -337,6 +357,47 @@ export default function PlayWheel() {
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Social Media Verification Modal */}
+      {showSocialModal && wheel?.socialNetwork && wheel?.redirectUrl && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setShowSocialModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-center mb-4">
+              📱 Follow Us First!
+            </h2>
+
+            <p className="text-center text-gray-700 mb-6">
+              {wheel.redirectText || `To spin the wheel, please follow us on ${wheel.socialNetwork} first!`}
+            </p>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowSocialModal(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSocialRedirect}
+                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+              >
+                Follow on {wheel.socialNetwork}
+              </Button>
+            </div>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              After following, come back and click "Spin the Wheel" again!
+            </p>
           </div>
         </div>
       )}
