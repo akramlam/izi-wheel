@@ -217,8 +217,8 @@ export default function PlayWheel() {
           )}
 
           {/* Wheel */}
-          <div className="mb-6 flex justify-center">
-            <div className="w-full max-w-lg">
+          <div className="mb-6 flex justify-center items-center">
+            <div className="flex justify-center items-center" style={{ width: '500px', height: '500px' }}>
               {wheelData.length > 0 && (
                 <Wheel
                   mustStartSpinning={mustSpin}
