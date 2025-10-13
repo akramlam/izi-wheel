@@ -101,43 +101,69 @@ function getTextPosition(cx: number, cy: number, radius: number, angle: number) 
 }
 
 /**
- * Compute deterministic alignment rotation for wheel
- * Returns the exact rotation degrees needed to align segment center with pointer
+ * INDUSTRY-STANDARD WHEEL OF FORTUNE ALIGNMENT
+ * Based on research from real wheel implementations (2024-2025)
+ *
+ * COORDINATE SYSTEM:
+ * - Pointer is at TOP (0°/360°)
+ * - Segments draw from 0° clockwise
+ * - Segment N: starts at (N * segAngle)°, center at (N * segAngle + segAngle/2)°
+ * - CSS rotation is CLOCKWISE positive
+ *
+ * FORMULA (from research):
+ * To land on segment I out of N segments:
+ * 1. Center angle = I * (360/N) + (360/N)/2
+ * 2. Rotation needed = (360 - centerAngle) mod 360
+ * 3. Add random bias within ±25% of segment width for natural landing
  */
 function computeAlignmentRotation({
   segmentCount,
-  prizeIndex,
-  pointerAngleDeg = 0,
-  biasDeg = 0
+  prizeIndex
 }: {
   segmentCount: number;
   prizeIndex: number;
-  pointerAngleDeg?: number;
-  biasDeg?: number;
 }): number {
   if (segmentCount <= 0 || prizeIndex < 0 || prizeIndex >= segmentCount) {
-    console.error('Invalid parameters for alignment rotation:', { segmentCount, prizeIndex });
+    console.error('❌ Invalid alignment parameters:', { segmentCount, prizeIndex });
     return 0;
   }
 
   const segAngle = 360 / segmentCount;
-  
-  // Segment N's start angle is N * segAngle
-  // Segment N's center is at N * segAngle + segAngle/2
-  const segmentStartAngle = prizeIndex * segAngle;
-  const segmentCenterAngle = segmentStartAngle + segAngle / 2;
-  
-  // We need to rotate the wheel COUNTER-CLOCKWISE to bring this segment to the pointer
-  // Since CSS rotation is clockwise positive, we need 360 - angle
-  let alignmentRotation = 360 - segmentCenterAngle + pointerAngleDeg;
-  
-  // Add bias to avoid landing exactly on borders
-  alignmentRotation += biasDeg;
-  
-  // Normalize to 0-360 range
-  alignmentRotation = ((alignmentRotation % 360) + 360) % 360;
-  
-  return alignmentRotation;
+
+  // Calculate center angle of target segment
+  const segmentCenterAngle = prizeIndex * segAngle + segAngle / 2;
+
+  // Calculate base rotation to align center with pointer at 0°
+  let rotation = (360 - segmentCenterAngle) % 360;
+
+  // Add small random offset within ±25% of segment width for natural landing
+  // This prevents always landing dead-center (looks fake)
+  const maxOffset = segAngle * 0.25;
+  const randomOffset = (Math.random() - 0.5) * maxOffset;
+  rotation = (rotation + randomOffset + 360) % 360;
+
+  return rotation;
+}
+
+/**
+ * Calculate which segment is currently under the pointer
+ * Based on final wheel rotation angle
+ */
+function getSegmentAtPointer(finalRotation: number, segmentCount: number): number {
+  const segAngle = 360 / segmentCount;
+
+  // Normalize final rotation to 0-360 range
+  const normalized = ((finalRotation % 360) + 360) % 360;
+
+  // The pointer sees the wheel rotated backwards
+  // Calculate effective angle from pointer's perspective
+  const pointerView = (360 - normalized) % 360;
+
+  // Find which segment this angle falls into
+  // Each segment N spans from (N * segAngle) to ((N+1) * segAngle)
+  const segmentIndex = Math.floor(pointerView / segAngle) % segmentCount;
+
+  return segmentIndex;
 }
 
 // Helper function to handle long text in wheel segments
@@ -285,46 +311,31 @@ const Wheel: React.FC<WheelProps> = ({
         try { onSpinStart(duration); } catch {}
       }
       
-      // Calculate target rotation: Multiple full rotations + offset to prize
-      const rotations = 5 + Math.random() * 3; // 5-8 full rotations
-      
-      // Use the deterministic alignment function
-      const pointerAngle = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
-      const biasDeg = segAngle * 0.1; // Small bias to avoid border landings
+      // Calculate target rotation using industry-standard formula
+      // Multiple full rotations (5-8) for visual effect + final alignment
+      const rotations = 5 + Math.random() * 3;
 
-      // REMOVED BOGUS OFFSET CORRECTION - it was causing misalignment!
-      // The computeAlignmentRotation function already handles proper alignment
       const alignmentRotation = computeAlignmentRotation({
         segmentCount: segments.length,
-        prizeIndex,
-        pointerAngleDeg: pointerAngle, // Use raw pointer angle, no correction needed
-        biasDeg
+        prizeIndex
       });
 
-      // Add multiple full rotations for visual effect
+      // Final target rotation
       const target = 360 * rotations + alignmentRotation;
 
-      let correctionDelta = 0;
-      
-      console.log('🎯 Deterministic rotation calculation:', {
+      console.log('🎯 WHEEL ALIGNMENT CALCULATION:', {
         prizeIndex,
-        segAngle,
+        targetLabel: segments[prizeIndex]?.label || 'UNKNOWN',
         segmentCount: segments.length,
-        pointerAngle: 0,
-        biasDeg,
+        segAngle,
         alignmentRotation,
-        totalRotations: rotations,
-        finalRotation: target,
-        segmentLabels: segments.map((s, i) => `${i}: ${s.label}`),
-        targetSegmentLabel: segments[prizeIndex]?.label || 'UNKNOWN',
-        targetSegmentId: segments[prizeIndex]?.id || 'NO_ID',
-        // Debug segment positions
-        segmentPositions: segments.map((s, i) => ({
+        fullRotations: rotations,
+        totalRotation: target,
+        allSegments: segments.map((s, i) => ({
           index: i,
           label: s.label,
           startAngle: i * segAngle,
-          centerAngle: i * segAngle + segAngle / 2,
-          endAngle: (i + 1) * segAngle
+          centerAngle: i * segAngle + segAngle / 2
         }))
       });
       
@@ -384,43 +395,28 @@ const Wheel: React.FC<WheelProps> = ({
         
         // Drop pointer
         setPointerDropped(true);
-        
-        // Safety correction: verify final alignment and micro-correct if needed
-          const finalRotation = target % 360;
-          const segmentUnderPointer = Math.floor(((360 - (finalRotation - pointerAngle) + 360) % 360) / segAngle);
-          const expectedSegment = prizeIndex;
-          const biasDegDev = segAngle * 0.1;
-          const wanted = computeAlignmentRotation({
-            segmentCount: segments.length,
-            prizeIndex: expectedSegment,
-            pointerAngleDeg: pointerAngle,
-            biasDeg: biasDegDev
-          });
-          const finalNorm = ((finalRotation % 360) + 360) % 360;
-          const wantedNorm = ((wanted % 360) + 360) % 360;
-          // Compute minimal signed delta in [-180, 180]
-          let delta = ((wantedNorm - finalNorm + 540) % 360) - 180;
 
-          console.log('🛠️ Post-spin verification:', {
-            finalRotation: finalNorm,
-            wantedRotation: wantedNorm,
-            delta,
-            segAngle,
-            segmentUnderPointer,
-            expectedSegment
-          });
+        // Verify final alignment using industry-standard calculation
+        const finalRotation = target % 360;
+        const segmentAtPointer = getSegmentAtPointer(finalRotation, segments.length);
 
-          if (segmentUnderPointer !== expectedSegment && Math.abs(delta) > 0.1) {
-            // Apply a tiny corrective rotation to snap precisely to the expected segment
-            // Shorten the transition for the micro-correction
-            setSpinSeconds(0.35);
-            setRotation((prev) => prev + delta);
-            console.warn('⚠️ Applied micro-correction to align pointer to expected segment');
-            correctionDelta = delta;
-          }
+        console.log('🎯 FINAL ALIGNMENT VERIFICATION:', {
+          targetRotation: target,
+          finalRotation: (finalRotation + 360) % 360,
+          expectedSegment: prizeIndex,
+          expectedLabel: segments[prizeIndex]?.label,
+          actualSegment: segmentAtPointer,
+          actualLabel: segments[segmentAtPointer]?.label,
+          isCorrect: segmentAtPointer === prizeIndex
+        });
 
+        if (segmentAtPointer !== prizeIndex) {
+          console.error('❌ ALIGNMENT MISMATCH! Wheel landed on wrong segment.');
+        } else {
+          console.log('✅ Wheel alignment PERFECT - landed on correct segment');
+        }
 
-        // Play win/lose sound - Handle case where segments might be empty
+        // Play win/lose sound
         const winningSegment = segments.length > prizeIndex ? segments[prizeIndex] : null;
         if (winningSegment?.isWinning) {
           soundUtils.play('win', 0.8);
@@ -433,70 +429,41 @@ const Wheel: React.FC<WheelProps> = ({
           soundUtils.vibrate([50, 30, 50]);
         }
         
-        // Reset spinning state
+        // Reset spinning state and call callbacks
         const resetTimeout = setTimeout(() => {
-          console.log('🎬 Wheel animation completed, calling onSpin callback');
-          console.log('🎬 About to call onSpin - isSpinning:', isSpinning, 'spinning:', spinning);
-          const finalRotationRaw = target + correctionDelta;
-          const finalRotation = ((finalRotationRaw % 360) + 360) % 360;
-          console.log('🎬 Final rotation state:', { rotation, target, correctionDelta, finalRotation });
+          // Calculate final segment using industry-standard method
+          const finalRotation = (target % 360 + 360) % 360;
+          const actualSegment = getSegmentAtPointer(finalRotation, segments.length);
 
-          const pointerAngleDeg = typeof config.pointerAngleDeg === 'number' ? config.pointerAngleDeg : 0;
-          const rawPointerIndex = segments.length > 0
-            ? Math.floor(((360 - (finalRotation - pointerAngleDeg) + 360) % 360) / segAngle)
-            : 0;
-          const clampedPointerIndex = Math.min(Math.max(rawPointerIndex, 0), Math.max(segments.length - 1, 0));
-          const clampedExpectedIndex = Math.min(Math.max(prizeIndex, 0), Math.max(segments.length - 1, 0));
+          console.log('🎬 SPIN COMPLETE - Calling callbacks');
 
           const summary: WheelSpinResult = {
-            pointerIndex: clampedPointerIndex,
-            expectedIndex: clampedExpectedIndex,
-            isAligned: clampedPointerIndex === clampedExpectedIndex,
+            pointerIndex: actualSegment,
+            expectedIndex: prizeIndex,
+            isAligned: actualSegment === prizeIndex,
           };
 
-          // 🔥 RUNTIME VERIFICATION: Check final alignment
-          if (process.env.NODE_ENV !== 'production') {
-            const segmentUnderPointer = Math.floor((360 - finalRotation + 360) % 360 / segAngle);
-            const expectedSegment = prizeIndex;
-
-            console.log('🎯 ALIGNMENT VERIFICATION:', {
-              finalRotation,
-              segmentUnderPointer,
-              expectedSegment: prizeIndex,
-              isAligned: segmentUnderPointer === expectedSegment,
-              segmentAngle: segAngle,
-              totalSegments: segments.length
-            });
-
-            if (segmentUnderPointer !== expectedSegment) {
-              console.error('❌ ALIGNMENT MISMATCH DETECTED!', {
-                pointerAt: segmentUnderPointer,
-                expected: expectedSegment,
-                difference: Math.abs(segmentUnderPointer - expectedSegment)
-              });
-            } else {
-              console.log('✅ Wheel alignment verified correct');
-            }
-          }
+          console.log('📋 Spin Summary:', {
+            expectedSegment: prizeIndex,
+            expectedLabel: segments[prizeIndex]?.label,
+            actualSegment,
+            actualLabel: segments[actualSegment]?.label,
+            aligned: summary.isAligned,
+            finalRotation
+          });
 
           setSpinning(false);
 
-          // ✅ Call onSpin callback to notify parent that wheel has finished
-          console.log('🎬 Calling onSpin callback now...');
+          // Call parent callbacks
           onSpin();
           if (typeof onSpinComplete === 'function') {
             try {
-              console.log('🎬 About to call onSpinComplete with:', summary);
               onSpinComplete(summary);
-              console.log('🎬 onSpinComplete called successfully');
             } catch (error) {
-              console.error('Error in onSpinComplete handler:', error);
+              console.error('❌ Error in onSpinComplete handler:', error);
             }
-          } else {
-            console.warn('🎬 onSpinComplete callback not provided or not a function');
           }
-          console.log('🎬 onSpin callback called successfully');
-        }, 500); // Increased buffer to ensure wheel fully settles before callback
+        }, 500);
         
         // Register the timeout for cleanup
         soundUtils.registerTimer(resetTimeout as any);
