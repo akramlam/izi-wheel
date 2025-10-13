@@ -57,6 +57,7 @@ export default function PlayWheel() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [hasSocialVerified, setHasSocialVerified] = useState(false);
+  const [showRulesModal, setShowRulesModal] = useState(false);
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
@@ -197,43 +198,26 @@ export default function PlayWheel() {
       };
 
   return (
-    <div className="min-h-screen w-full relative" style={backgroundStyle}>
+    <div className="min-h-screen w-full flex flex-col" style={backgroundStyle}>
       {/* Banner */}
-      {(wheel.bannerImage || wheel.mainTitle) && (
+      {wheel.bannerImage && (
         <div className="w-full h-24 md:h-32 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm flex items-center justify-center">
-          {wheel.bannerImage ? (
-            <img
-              src={wheel.bannerImage}
-              alt="Banner"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <h1 className="text-2xl md:text-4xl font-bold text-white">
-              {wheel.mainTitle || wheel.name}
-            </h1>
-          )}
+          <img
+            src={wheel.bannerImage}
+            alt="Banner"
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex flex-col items-center justify-start py-8 px-4 md:px-8">
+      {/* Main content - flex-grow to push footer down */}
+      <div className="flex-grow flex flex-col items-center justify-start py-8 px-4 md:px-8">
         <div className="w-full max-w-4xl mx-auto text-center">
-          {/* Title if no banner */}
-          {!wheel.bannerImage && (wheel.mainTitle || wheel.name) && (
+          {/* Title - Always show above wheel */}
+          {(wheel.mainTitle || wheel.name) && (
             <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
               {wheel.mainTitle || wheel.name}
             </h1>
-          )}
-
-          {/* Game rules */}
-          {wheel.gameRules && !wheel.gameRules.startsWith('http') && (
-            <div className="mb-6 max-w-2xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-base md:text-lg text-white/95 leading-relaxed">
-                  {wheel.gameRules}
-                </p>
-              </div>
-            </div>
           )}
 
           {/* Wheel */}
@@ -279,19 +263,32 @@ export default function PlayWheel() {
               )}
             </Button>
           </div>
-
-          {/* Footer text */}
-          {wheel.footerText && (
-            <div className="mt-8 max-w-2xl mx-auto">
-              <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-                <p className="text-sm md:text-base text-white/85 leading-relaxed">
-                  {wheel.footerText}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Footer - proper footer at the bottom */}
+      <footer className="w-full bg-black/30 backdrop-blur-sm border-t border-white/10 py-4 px-4 md:px-8">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Footer text */}
+          <div className="text-center md:text-left">
+            {wheel.footerText ? (
+              <p className="text-sm text-white/85">{wheel.footerText}</p>
+            ) : (
+              <p className="text-sm text-white/85">© {new Date().getFullYear()} {wheel.name}</p>
+            )}
+          </div>
+
+          {/* Game rules link */}
+          {wheel.gameRules && !wheel.gameRules.startsWith('http') && (
+            <button
+              onClick={() => setShowRulesModal(true)}
+              className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
+            >
+              Règles du jeu
+            </button>
+          )}
+        </div>
+      </footer>
 
       {/* Result Modal */}
       {showResultModal && spinResult && (
@@ -386,6 +383,37 @@ export default function PlayWheel() {
             <p className="text-xs text-gray-500 text-center mt-4">
               After following, come back and click "Spin the Wheel" again!
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Game Rules Modal */}
+      {showRulesModal && wheel?.gameRules && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setShowRulesModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-center mb-4">
+              📜 Règles du jeu
+            </h2>
+
+            <div className="prose prose-sm max-w-none mb-6">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {wheel.gameRules}
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setShowRulesModal(false)}
+              variant="outline"
+              className="w-full"
+            >
+              Fermer
+            </Button>
           </div>
         </div>
       )}

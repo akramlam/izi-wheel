@@ -99,7 +99,7 @@ export class PrizeSelector {
       weight: (slot.weight / totalWeight) * 100
     }));
 
-    const result = this.selectPrize(normalizedSlots);
+    const result = this.selectPrize(normalizedSlots, undefined, true); // strict mode for ALL_WIN
 
     // Find original index in full slots array
     const originalIndex = slots.findIndex(s => s.id === result.slot.id);
