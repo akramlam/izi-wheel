@@ -361,12 +361,9 @@ export default function PlayWheel() {
         </div>
       )}
 
-      {/* Social Media Verification Modal */}
+      {/* Social Media Verification Modal - Non-dismissible */}
       {showSocialModal && wheel?.socialNetwork && wheel?.redirectUrl && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
-          onClick={() => setShowSocialModal(false)}
-        >
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div
             className="bg-white rounded-lg p-6 max-w-md w-full animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
@@ -379,21 +376,12 @@ export default function PlayWheel() {
               {wheel.redirectText || `To spin the wheel, please follow us on ${wheel.socialNetwork} first!`}
             </p>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowSocialModal(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSocialRedirect}
-                className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-              >
-                Follow on {wheel.socialNetwork}
-              </Button>
-            </div>
+            <Button
+              onClick={handleSocialRedirect}
+              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+            >
+              Follow on {wheel.socialNetwork} →
+            </Button>
 
             <p className="text-xs text-gray-500 text-center mt-4">
               After following, come back and click "Spin the Wheel" again!

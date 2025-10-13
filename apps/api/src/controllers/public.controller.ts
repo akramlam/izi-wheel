@@ -165,14 +165,24 @@ export const spinWheel = async (req: Request, res: Response) => {
     let selectedSlot;
     let prizeIndex;
 
-    if (wheel.mode === 'ALL_WIN') {
-      const result = prizeSelector.selectWinningPrize(sortedSlots);
-      selectedSlot = result.slot;
-      prizeIndex = findPrizeIndex(sortedSlots, selectedSlot.id);
-    } else {
-      const result = prizeSelector.selectPrize(sortedSlots);
-      selectedSlot = result.slot;
-      prizeIndex = result.index;
+    try {
+      if (wheel.mode === 'ALL_WIN') {
+        const result = prizeSelector.selectWinningPrize(sortedSlots);
+        selectedSlot = result.slot;
+        prizeIndex = findPrizeIndex(sortedSlots, selectedSlot.id);
+      } else {
+        const result = prizeSelector.selectPrize(sortedSlots);
+        selectedSlot = result.slot;
+        prizeIndex = result.index;
+      }
+    } catch (prizeError) {
+      console.error('Prize selection error:', prizeError);
+
+      // If weight validation fails, fall back to random selection
+      console.warn('⚠️ Weight validation failed, using fallback random selection');
+      const randomIndex = Math.floor(Math.random() * sortedSlots.length);
+      selectedSlot = sortedSlots[randomIndex];
+      prizeIndex = randomIndex;
     }
 
     const isWin = selectedSlot.isWinning;
