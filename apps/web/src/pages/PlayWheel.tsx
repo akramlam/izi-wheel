@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -57,16 +57,7 @@ export default function PlayWheel() {
   const [prizeIndex, setPrizeIndex] = useState(0);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
-
-  // Debug effect to track state changes
-  useEffect(() => {
-    console.log('📊 State changed:', {
-      isSpinning,
-      showResultModal,
-      hasSpinResult: !!spinResult,
-      spinResultData: spinResult
-    });
-  }, [isSpinning, showResultModal, spinResult]);
+  const [pendingResult, setPendingResult] = useState<SpinResult | null>(null);
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
@@ -88,9 +79,14 @@ export default function PlayWheel() {
       return response.data;
     },
     onSuccess: (data: SpinResult) => {
-      console.log('🎯 Spin result:', data);
+      console.log('🎯 Spin result received:', data);
+
+      // Store the result but don't show modal yet
+      setPendingResult(data);
       setSpinResult(data);
       setPrizeIndex(data.prizeIndex);
+
+      // Start spinning animation
       setIsSpinning(true);
     },
     onError: (error: any) => {
@@ -114,40 +110,30 @@ export default function PlayWheel() {
     }
   });
 
-  // Handle spin complete
-  const handleSpinComplete = (result: WheelSpinResult) => {
-    console.log('═══════════════════════════════════════════════');
-    console.log('📱 PlayWheel: handleSpinComplete CALLED');
-    console.log('═══════════════════════════════════════════════');
-    console.log('Result from Wheel:', result);
-    console.log('Current state:');
-    console.log(`  - spinResult: ${spinResult ? 'EXISTS' : 'NULL'}`);
-    console.log(`  - showResultModal: ${showResultModal}`);
-    console.log(`  - isSpinning: ${isSpinning}`);
-    console.log('');
-    console.log('Setting state in 100ms...');
+  // Handle spin complete - memoized to prevent recreation
+  const handleSpinComplete = useCallback((_result: WheelSpinResult) => {
+    console.log('🎯 Spin animation complete');
 
-    // Use setTimeout to ensure state updates are processed after the current render cycle
+    // Stop spinning state
+    setIsSpinning(false);
+
+    // Show modal after a small delay to ensure smooth transition
     setTimeout(() => {
-      console.log('Setting states NOW:');
-      console.log('  - setIsSpinning(false)');
-      console.log('  - setShowResultModal(true)');
-
-      setIsSpinning(false);
-      setShowResultModal(true);
-
-      console.log('✅ States set! Modal should appear now.');
-      console.log('Check if modal condition is met:');
-      console.log(`  - showResultModal will be: true`);
-      console.log(`  - spinResult exists: ${!!spinResult}`);
-      console.log(`  - Condition met: ${true && !!spinResult}`);
-      console.log('═══════════════════════════════════════════════');
-    }, 100);
-  };
+      if (pendingResult || spinResult) {
+        setShowResultModal(true);
+      }
+    }, 300);
+  }, [pendingResult, spinResult]);
 
   // Handle play button click
   const handlePlay = () => {
     if (isSpinning || spinMutation.isPending) return;
+
+    // Reset states
+    setShowResultModal(false);
+    setPendingResult(null);
+
+    // Initiate spin
     spinMutation.mutate();
   };
 
@@ -155,27 +141,29 @@ export default function PlayWheel() {
   const handleCloseModal = () => {
     setShowResultModal(false);
     setSpinResult(null);
+    setPendingResult(null);
   };
 
   // Extract wheel data early for useMemo - hooks must be called in same order every render
   const wheel = wheelResponse?.wheel as WheelData | undefined;
   const slots = (wheelResponse?.slots || []) as Slot[];
 
-  // Compute sorted slots - this must happen before any conditional returns
+  // Compute sorted slots - CRITICAL: must match backend sorting exactly
   const sortedSlots = useMemo(() => {
     if (!slots || slots.length === 0) return [];
-    return sortSlots(slots);
+
+    // Use the same sorting algorithm as backend
+    const sorted = sortSlots(slots);
+
+    console.log('🎯 Frontend sorted slots:', sorted.map((s, idx) => ({
+      index: idx,
+      id: s.id,
+      label: s.label,
+      position: s.position
+    })));
+
+    return sorted;
   }, [slots]);
-
-  // Debug effect for sorted slots
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production' || !sortedSlots.length) {
-      return;
-    }
-
-    const debugOrder = sortedSlots.map((slot, index) => `[#${index}] pos=${slot.position} label="${slot.label}" id=${slot.id}`);
-    console.log('🎯 Frontend sorted slots order:', debugOrder);
-  }, [sortedSlots]);
 
   // Now handle loading, error, and validation states
   if (isLoading) {
@@ -197,39 +185,24 @@ export default function PlayWheel() {
     );
   }
 
-  if (!wheelResponse || !wheel || !Array.isArray(wheelResponse.slots)) {
-    console.log('[DEBUG] Wheel response structure:', wheelResponse);
+  // Validation
+  if (!wheelResponse || !wheel || !sortedSlots.length) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
         <div className="bg-white rounded-lg p-6 max-w-md text-center">
           <h2 className="text-xl font-bold text-gray-800 mb-2">Wheel not found</h2>
           <p className="text-gray-600">This wheel does not exist or is no longer available.</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Debug: wheelResponse exists: {!!wheelResponse}, has wheel: {!!wheel}, has slots: {!!wheelResponse?.slots}
-          </p>
         </div>
       </div>
     );
   }
 
-  // Ensure we have valid slots
-  if (!slots || slots.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
-        <div className="bg-white rounded-lg p-6 max-w-md text-center">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Wheel has no segments</h2>
-          <p className="text-gray-600">This wheel doesn't have any prizes configured.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Build wheel config with proper null checks
+  // Build wheel config
   const wheelConfig: WheelConfig = {
-    segments: sortedSlots.map(slot => ({
-      id: slot.id || `slot-${Math.random()}`, // Fallback ID if missing
-      label: slot.label || 'Prize', // Fallback label if missing
-      color: slot.color || '#FF6384', // Fallback color if missing
+    segments: sortedSlots.map((slot) => ({
+      id: slot.id,
+      label: slot.label,
+      color: slot.color || '#FF6384',
       position: slot.position
     })),
     spinDurationMin: 3,
@@ -240,12 +213,6 @@ export default function PlayWheel() {
     },
     hapticFeedback: true
   };
-
-  if (process.env.NODE_ENV !== 'production') {
-    const configOrder = wheelConfig.segments.map((segment, index) => `[#${index}] pos=${segment.position ?? 'n/a'} label="${segment.label}" id=${segment.id ?? 'no-id'}`);
-    console.log('🎯 Wheel config segments:', configOrder);
-    console.log('🎯 Current prizeIndex state:', prizeIndex);
-  }
 
   const backgroundStyle = wheel.backgroundImage
     ? {
@@ -303,7 +270,7 @@ export default function PlayWheel() {
                 config={wheelConfig}
                 isSpinning={isSpinning}
                 prizeIndex={prizeIndex}
-                onSpin={() => setIsSpinning(false)}
+                onSpin={() => {}} // Empty handler, we control spinning state
                 onSpinComplete={handleSpinComplete}
               />
             </div>
@@ -342,21 +309,22 @@ export default function PlayWheel() {
 
       {/* Result Modal */}
       {showResultModal && spinResult && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={(e) => {
-          // Prevent closing when clicking inside modal
-          if (e.target === e.currentTarget) {
-            console.log('Clicked backdrop');
-          }
-        }}>
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-2xl font-bold text-center mb-4">
-              {spinResult.play.result === 'WIN' ? '🎉 Congratulations!' : 'Result'}
+              {spinResult.play.result === 'WIN' ? '🎉 Congratulations!' : '😊 Better Luck Next Time!'}
             </h2>
 
             <p className="text-center text-lg mb-6">
               {spinResult.play.result === 'WIN'
-                ? `You won: ${spinResult.slot.label}`
-                : 'Better luck next time!'}
+                ? `You won: ${spinResult.slot.label}!`
+                : 'Thanks for playing!'}
             </p>
 
             {spinResult.play.result === 'WIN' && spinResult.play.prize && (
