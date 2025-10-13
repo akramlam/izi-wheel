@@ -516,8 +516,8 @@ const Wheel: React.FC<WheelProps> = ({
       // Stop all sounds when component unmounts or when isSpinning changes
       soundUtils.stop();
     };
-  }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning, 
-      config.hapticFeedback, segments, config.sounds]);
+  }, [isSpinning, prizeIndex, config.spinDurationMin, config.spinDurationMax, segAngle, spinning,
+      config.hapticFeedback, segments, config.sounds, onSpin, onSpinStart, onSpinComplete]);
   
   // Additional cleanup effect to ensure all resources are freed when component unmounts
   useEffect(() => {
