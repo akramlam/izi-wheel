@@ -172,9 +172,9 @@ export default function RedeemPrize() {
       <div className="container max-w-md mx-auto px-4 py-10">
         <Card className="border-2 border-indigo-100 shadow-lg">
           <CardHeader className="text-center bg-gradient-to-r from-indigo-50 to-pink-50">
-            <CardTitle className="text-2xl text-indigo-700">Claim Your Prize</CardTitle>
+            <CardTitle className="text-2xl text-indigo-700">Reclamez votre Cadeau</CardTitle>
             <CardDescription>
-              Congratulations! You won: <span className="font-bold text-pink-600">{playDetails.prize?.label}</span>
+              Felicitation! Vous avez gagnez : <span className="font-bold text-pink-600">{playDetails.prize?.label}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -211,7 +211,7 @@ export default function RedeemPrize() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone (optional)</Label>
+                  <Label htmlFor="phone">Numero (optionnel)</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -230,10 +230,10 @@ export default function RedeemPrize() {
                   {claimMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      retrait en cours...
+                      Retrait en cours...
                     </>
                   ) : (
-                    'reclamez votre cadeau'
+                    'Reclamez votre cadeau'
                   )}
                 </Button>
               </div>
