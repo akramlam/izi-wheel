@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { Wheel } from 'react-custom-roulette';
+import CompanyAdminManager from './CompanyAdminManager';
 
 interface Slot {
   id: string;
@@ -49,6 +50,7 @@ interface SpinResult {
 
 export default function PlayWheel() {
   const { wheelId } = useParams<{ wheelId: string }>();
+  const { companyId } = useParams<{companyId: string }>();
   const { toast } = useToast();
 
   const [mustSpin, setMustSpin] = useState(false);
@@ -61,10 +63,13 @@ export default function PlayWheel() {
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
-    queryKey: ['publicWheel', wheelId],
+    queryKey: ['publicWheel', wheelId, companyId],
     queryFn: async () => {
       if (!wheelId) throw new Error('Wheel ID is required');
-      const response = await api.getPublicWheel(wheelId);
+      // If companyId is not provided in the URL, use a non-UUID string to trigger the fallback route
+      // This will make the API use /public/wheels/:wheelId instead of /public/companies/:companyId/wheels/:wheelId
+      const actualCompanyId = companyId || 'direct'; // Use 'direct' as a non-UUID string
+      const response = await api.getPublicWheel(actualCompanyId, wheelId);
       return response.data;
     },
     enabled: !!wheelId,
@@ -75,7 +80,8 @@ export default function PlayWheel() {
   const spinMutation = useMutation({
     mutationFn: async () => {
       if (!wheelId) throw new Error('Wheel ID is required');
-      const response = await api.spinWheel(wheelId);
+      const actualCompanyId = companyId || 'direct';
+      const response = await api.spinWheel(actualCompanyId, wheelId, { lead: {} });
       return response.data;
     },
     onSuccess: (data: SpinResult) => {
