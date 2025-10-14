@@ -262,7 +262,7 @@ export default function PlayWheel() {
               {mustSpin || spinMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  {mustSpin ? 'C&abpos;est parti ! Bonne chance...' : 'Préparation...'}
+                  {mustSpin ? 'C\'est parti ! Bonne chance...' : 'Préparation...'}
                 </>
               ) : (
                 'Tourner la roue'
