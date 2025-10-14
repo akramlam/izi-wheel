@@ -262,10 +262,10 @@ export default function PlayWheel() {
               {mustSpin || spinMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  {mustSpin ? 'Spinning...' : 'Loading...'}
+                  {mustSpin ? 'C&abpos;est parti ! Bonne chance...' : 'Préparation...'}
                 </>
               ) : (
-                'tourner la roue'
+                'Tourner la roue'
               )}
             </Button>
           </div>
@@ -372,7 +372,7 @@ export default function PlayWheel() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-center mb-4">
-              📱 Follow Us First!
+              📱 Suivez-nous d&abpos;abord !
             </h2>
 
             <p className="text-center text-gray-700 mb-6">
@@ -383,12 +383,11 @@ export default function PlayWheel() {
               onClick={handleSocialRedirect}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
             >
-              Follow on {wheel.socialNetwork} →
+              Follow   {wheel.socialNetwork} →
             </Button>
 
             <p className="text-xs text-gray-500 text-center mt-4">
-              After following, come back and click "Spin the Wheel" again!
-            </p>
+            Après vous être abonné(e), revenez et cliquez à nouveau sur « Tourner la roue » !</p>
           </div>
         </div>
       )}
