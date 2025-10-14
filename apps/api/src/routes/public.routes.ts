@@ -5,8 +5,10 @@ import {
   spinWheel,
   claimPrize,
   redeemPrize,
-  getPlayDetails
+  getPlayDetails,
+  searchPlays
 } from '../controllers/public.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import rateLimit from 'express-rate-limit';
 
 const router: RouterType = Router();
@@ -69,5 +71,12 @@ router.post('/plays/:playId/claim', claimPrize);
  * Redeem a prize with PIN (merchant validation)
  */
 router.post('/plays/:playId/redeem', redeemRateLimiter, redeemPrize);
+
+/**
+ * GET /api/public/plays/search
+ * Search plays by PIN or email (authenticated - for merchants/admins)
+ * Query params: pin OR email, companyId (optional)
+ */
+router.get('/plays/search', authMiddleware, searchPlays);
 
 export default router;

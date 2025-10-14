@@ -213,6 +213,7 @@ const WheelEdit = () => {
   useEffect(() => {
     const total = wheel.slots.reduce((sum, slot) => sum + (slot.weight || 0), 0);
     setTotalProbability(total);
+    
   }, [wheel.slots]);
 
   // Update redirect URL placeholder and optionally the URL when social network changes

@@ -484,40 +484,15 @@ export const api = {
     return apiClient.get(`/activity/export?${params}`, options);
   },
 
-  // ===== Public Wheel/Play APIs (no auth required) =====
-
   /**
-   * Get public wheel configuration
+   * Search plays by PIN or email (authenticated - for merchants/admins)
    */
-  getPublicWheel: async (wheelId: string) => {
-    return apiClient.get(`/public/wheels/${wheelId}`);
-  },
+  searchPlays: async (params: { pin?: string; email?: string; companyId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params.pin) queryParams.append('pin', params.pin);
+    if (params.email) queryParams.append('email', params.email);
+    if (params.companyId) queryParams.append('companyId', params.companyId);
 
-  /**
-   * Spin the wheel and get result
-   */
-  spinWheel: async (wheelId: string, leadInfo?: any) => {
-    return apiClient.post(`/public/wheels/${wheelId}/spin`, { leadInfo });
-  },
-
-  /**
-   * Get play details for redemption page
-   */
-  getPlayDetails: async (playId: string) => {
-    return apiClient.get(`/public/plays/${playId}`);
-  },
-
-  /**
-   * Claim a prize by submitting contact info
-   */
-  claimPrize: async (playId: string, data: { name: string; email: string; phone?: string; birthDate?: string }) => {
-    return apiClient.post(`/public/plays/${playId}/claim`, data);
-  },
-
-  /**
-   * Redeem a prize with PIN (merchant validation)
-   */
-  redeemPrize: async (playId: string, pin: string) => {
-    return apiClient.post(`/public/plays/${playId}/redeem`, { pin });
+    return apiClient.get(`/public/plays/search?${queryParams.toString()}`);
   },
 }; 

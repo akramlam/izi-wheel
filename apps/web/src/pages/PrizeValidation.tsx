@@ -34,26 +34,40 @@ export default function PrizeValidation() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState<'pin' | 'email'>('pin');
 
-  // Note: This is a placeholder. You'll need to implement the backend endpoint
-  // GET /api/plays/search?pin=XXX or ?email=XXX
   const { data: plays, isLoading, refetch } = useQuery<Play[]>({
     queryKey: ['prizeValidation', searchQuery, searchType],
     queryFn: async () => {
       if (!searchQuery) return [];
 
-      // TODO: Implement backend search endpoint
-      // For now, returning empty array
-      // const response = await api.searchPlays(searchQuery, searchType);
-      // return response.data;
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const companyId = localStorage.getItem('companyId');
 
-      toast({
-        title: 'Not implemented',
-        description: 'Prize search endpoint needs to be implemented in the backend',
-        variant: 'destructive'
-      });
-      return [];
+        const params: { pin?: string; email?: string; companyId?: string } = {};
+
+        if (searchType === 'pin') {
+          params.pin = searchQuery;
+        } else {
+          params.email = searchQuery;
+        }
+
+        // Only add companyId for non-SUPER users
+        if (user.role !== 'SUPER' && companyId) {
+          params.companyId = companyId;
+        }
+
+        const response = await api.searchPlays(params);
+        return response.data;
+      } catch (error: any) {
+        toast({
+          title: 'Erreur',
+          description: error.response?.data?.error || 'Impossible de rechercher les cadeaux',
+          variant: 'destructive'
+        });
+        return [];
+      }
     },
-    enabled: false // Disabled until backend is ready
+    enabled: false // Only execute when explicitly called
   });
 
   const handleSearch = () => {
@@ -70,15 +84,12 @@ export default function PrizeValidation() {
 
   const handleValidate = async (playId: string) => {
     try {
-      // This would use the existing redeem endpoint
-      toast({
-        title: 'Validation en cours',
-        description: 'Cette fonctionnalité nécessite le code PIN du client'
-      });
+      // Redirect to the redemption page for this play
+      window.location.href = `/redeem/${playId}?admin=true`;
     } catch (error) {
       toast({
         title: 'Erreur',
-        description: 'Impossible de valider le cadeau',
+        description: 'Impossible d\'ouvrir la page de validation',
         variant: 'destructive'
       });
     }
@@ -140,34 +151,7 @@ export default function PrizeValidation() {
         </CardContent>
       </Card>
 
-      {/* Info Card - Backend Not Implemented */}
-      <Card className="mb-6 border-amber-200 bg-amber-50">
-        <CardContent className="pt-6">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <Clock className="h-6 w-6 text-amber-600" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-amber-800">
-                Fonctionnalité en développement
-              </h3>
-              <p className="mt-2 text-sm text-amber-700">
-                Cette page nécessite l'implémentation d'endpoints backend supplémentaires :
-              </p>
-              <ul className="mt-2 text-sm text-amber-700 list-disc list-inside">
-                <li>GET /api/plays/search - Pour rechercher les cadeaux</li>
-                <li>Backend devra filtrer par PIN ou email</li>
-                <li>Intégrer avec le système de validation existant</li>
-              </ul>
-              <p className="mt-2 text-sm text-amber-700">
-                En attendant, utilisez le lien direct de récupération : <code className="bg-amber-100 px-1 py-0.5 rounded">/redeem/:playId?admin=true</code>
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alternative: QR Code Scanner Info */}
+      {/* QR Code Scanner Info */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">

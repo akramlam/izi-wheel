@@ -499,3 +499,89 @@ export const getPlayDetails = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+/**
+ * GET /api/public/plays/search
+ * Search plays by PIN or email (authenticated - for merchants/admins)
+ * Query params: pin OR email, companyId (optional)
+ */
+export const searchPlays = async (req: Request, res: Response) => {
+  try {
+    const { pin, email, companyId } = req.query;
+
+    // Require either PIN or email
+    if (!pin && !email) {
+      return res.status(400).json({ error: 'Either PIN or email is required for search' });
+    }
+
+    console.log(`🔍 Play search request - PIN: ${pin ? 'provided' : 'none'}, Email: ${email || 'none'}, CompanyId: ${companyId || 'none'}`);
+
+    // Build search query
+    const where: any = {
+      result: 'WIN', // Only search winning plays
+    };
+
+    if (pin) {
+      where.pin = pin as string;
+    }
+
+    if (email) {
+      where.leadInfo = {
+        path: ['email'],
+        equals: email as string
+      };
+    }
+
+    if (companyId) {
+      where.companyId = companyId as string;
+    }
+
+    // Search plays
+    const plays = await prisma.play.findMany({
+      where,
+      include: {
+        slot: {
+          select: {
+            label: true,
+            description: true
+          }
+        },
+        wheel: {
+          select: {
+            name: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20 // Limit results
+    });
+
+    console.log(`✅ Found ${plays.length} plays`);
+
+    // Format response
+    const formattedPlays = plays.map(play => ({
+      id: play.id,
+      result: play.result,
+      createdAt: play.createdAt,
+      claimedAt: play.claimedAt,
+      redeemedAt: play.redeemedAt,
+      redemptionStatus: play.redemptionStatus,
+      pin: play.pin,
+      slot: {
+        label: play.slot.label,
+        description: play.slot.description
+      },
+      wheel: {
+        name: play.wheel.name
+      },
+      leadInfo: play.leadInfo
+    }));
+
+    return res.status(200).json(formattedPlays);
+  } catch (error) {
+    console.error('Error searching plays:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
