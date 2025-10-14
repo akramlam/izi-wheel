@@ -187,11 +187,11 @@ export default function RedeemPrize() {
             <form onSubmit={handleClaimSubmit}>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">Nom complet *</Label>
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Your full name"
+                    placeholder="Votre Nom complet"
                     value={claimData.name}
                     onChange={(e) => setClaimData({ ...claimData, name: e.target.value })}
                     required
@@ -203,7 +203,7 @@ export default function RedeemPrize() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="votre@email.com"
                     value={claimData.email}
                     onChange={(e) => setClaimData({ ...claimData, email: e.target.value })}
                     required
@@ -215,21 +215,12 @@ export default function RedeemPrize() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="Your phone number"
+                    placeholder="Votre numero de telephone"
                     value={claimData.phone}
                     onChange={(e) => setClaimData({ ...claimData, phone: e.target.value })}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate">Birth Date (optional)</Label>
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={claimData.birthDate}
-                    onChange={(e) => setClaimData({ ...claimData, birthDate: e.target.value })}
-                  />
-                </div>
 
                 <Button
                   type="submit"
@@ -239,10 +230,10 @@ export default function RedeemPrize() {
                   {claimMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Claiming...
+                      retrait en cours...
                     </>
                   ) : (
-                    'Claim Prize'
+                    'reclamez votre cadeau'
                   )}
                 </Button>
               </div>
