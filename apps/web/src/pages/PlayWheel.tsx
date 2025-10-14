@@ -301,23 +301,23 @@ export default function PlayWheel() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-center mb-4">
-              {spinResult.play.result === 'WIN' ? '🎉 Congratulations!' : '😊 Better Luck Next Time!'}
+              {spinResult.play.result === 'WIN' ? '🎉 Félicitation!' : '😊 Meilleure chance la prochaine fois!'}
             </h2>
 
             <p className="text-center text-lg mb-6">
               {spinResult.play.result === 'WIN'
-                ? `You won: ${spinResult.slot.label}!`
-                : 'Thanks for playing!'}
+                ? `Vous avez gagné : ${spinResult.slot.label}!`
+                : 'Merci d&apos;avoir joué!'}
             </p>
 
             {spinResult.play.result === 'WIN' && spinResult.play.prize && (
               <div className="space-y-4 mb-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                {/* <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm font-medium text-green-800 mb-2">Your PIN Code:</p>
                   <p className="text-2xl font-mono font-bold text-green-900 text-center">
                     {spinResult.play.prize.pin}
                   </p>
-                </div>
+                </div> */}
 
                 {spinResult.play.prize.qrCodeData && (
                   <div className="flex justify-center">

@@ -361,6 +361,13 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
       startDate.setHours(0, 0, 0, 0);
     }
 
+    // Get additional play statistics from database
+    const whereClause = companyId ? { companyId } : {};
+    const whereClauseWithDate = {
+      ...whereClause,
+      createdAt: { gte: startDate }
+    };
+
     // TODO: Re-implement activity stats after refactoring
     // Get all data in parallel
     const activityStats = {
@@ -369,15 +376,38 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
       totalLeads: 0,
       conversionRate: 0
     };
-    const recentPlays: any[] = [];
-    const recentActivities: any[] = [];
 
-    // Get additional play statistics from database
-    const whereClause = companyId ? { companyId } : {};
-    const whereClauseWithDate = { 
-      ...whereClause, 
-      createdAt: { gte: startDate } 
-    };
+    // Get recent plays with full details
+    const recentPlays = await prisma.play.findMany({
+      where: whereClauseWithDate,
+      include: {
+        wheel: {
+          select: {
+            name: true,
+            company: {
+              select: {
+                name: true
+              }
+            }
+          }
+        },
+        slot: {
+          select: {
+            label: true,
+            description: true,
+            prizeCode: true,
+            color: true,
+            isWinning: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 10 // Get last 10 plays
+    });
+
+    const recentActivities: any[] = [];
     
     const [
       totalPlays,
@@ -484,8 +514,20 @@ export const getTraceabilityDashboard = async (req: Request, res: Response) => {
           result: play.result,
           redemptionStatus: play.redemptionStatus,
           createdAt: play.createdAt,
-          wheel: play.wheel,
-          slot: play.slot,
+          claimedAt: play.claimedAt,
+          redeemedAt: play.redeemedAt,
+          pin: play.pin,
+          wheel: {
+            name: play.wheel.name,
+            company: play.wheel.company.name
+          },
+          slot: {
+            label: play.slot.label,
+            description: play.slot.description,
+            prizeCode: play.slot.prizeCode,
+            color: play.slot.color,
+            isWinning: play.slot.isWinning
+          },
           leadInfo: play.leadInfo
         })),
         recentActivities,

@@ -55,6 +55,14 @@ router.post('/wheels/:wheelId/spin', spinRateLimiter, spinWheel);
 // ===== Play/Prize Routes =====
 
 /**
+ * GET /api/public/plays/search
+ * Search plays by PIN or email (authenticated - for merchants/admins)
+ * Query params: pin OR email, companyId (optional)
+ * IMPORTANT: This must be defined BEFORE /plays/:playId to avoid route conflicts
+ */
+router.get('/plays/search', authMiddleware, searchPlays);
+
+/**
  * GET /api/public/plays/:playId
  * Get play details for redemption page
  */
@@ -71,12 +79,5 @@ router.post('/plays/:playId/claim', claimPrize);
  * Redeem a prize with PIN (merchant validation)
  */
 router.post('/plays/:playId/redeem', redeemRateLimiter, redeemPrize);
-
-/**
- * GET /api/public/plays/search
- * Search plays by PIN or email (authenticated - for merchants/admins)
- * Query params: pin OR email, companyId (optional)
- */
-router.get('/plays/search', authMiddleware, searchPlays);
 
 export default router;
