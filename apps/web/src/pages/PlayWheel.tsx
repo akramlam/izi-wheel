@@ -259,7 +259,7 @@ export default function PlayWheel() {
                   {mustSpin ? 'Spinning...' : 'Loading...'}
                 </>
               ) : (
-                'Spin the Wheel'
+                'tourner la roue'
               )}
             </Button>
           </div>

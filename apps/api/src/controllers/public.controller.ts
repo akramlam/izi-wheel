@@ -483,6 +483,7 @@ export const getPlayDetails = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       id: play.id,
+      wheelId: play.wheelId,
       result: play.result,
       prize: play.result === 'WIN' ? {
         label: play.slot.label,

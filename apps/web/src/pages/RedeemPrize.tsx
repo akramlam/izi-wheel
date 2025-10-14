@@ -11,6 +11,7 @@ import { useToast } from '../hooks/use-toast';
 
 interface PlayDetails {
   id: string;
+  wheelId: string;
   result: 'WIN' | 'LOSE';
   prize?: {
     label: string;
@@ -160,9 +161,6 @@ export default function RedeemPrize() {
           <p className="text-gray-600 mb-6">
             Unable to find this prize or it may not exist.
           </p>
-          <Button onClick={() => window.location.href = '/'}>
-            Return Home
-          </Button>
         </div>
       </div>
     );
@@ -355,8 +353,8 @@ export default function RedeemPrize() {
           <p className="text-gray-600 mb-6">
             This prize has already been redeemed.
           </p>
-          <Button onClick={() => window.location.href = '/'}>
-            Return Home
+          <Button onClick={() => window.location.href = `/play/${playDetails.wheelId}`}>
+            Retour à la roue
           </Button>
         </div>
       </div>
@@ -372,8 +370,8 @@ export default function RedeemPrize() {
         <p className="text-gray-600 mb-6">
           This play did not result in a prize.
         </p>
-        <Button onClick={() => window.location.href = '/'}>
-          Return Home
+        <Button onClick={() => window.location.href = `/play/${playDetails.wheelId}`}>
+          Retour à la roue
         </Button>
       </div>
     </div>
