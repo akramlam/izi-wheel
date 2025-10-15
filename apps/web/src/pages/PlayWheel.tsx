@@ -123,18 +123,18 @@ export default function PlayWheel() {
   // Handle spin complete
   const handleStopSpinning = () => {
     setMustSpin(false);
-    setShowResultModal(true);
+
+    // Check if social media verification is required and not yet done
+    if (wheel?.socialNetwork && wheel?.redirectUrl && !hasSocialVerified) {
+      setShowSocialModal(true);
+    } else {
+      setShowResultModal(true);
+    }
   };
 
   // Handle play button click
   const handlePlay = () => {
     if (mustSpin || spinMutation.isPending) return;
-
-    // Check if social media verification is required
-    if (wheel?.socialNetwork && wheel?.redirectUrl && !hasSocialVerified) {
-      setShowSocialModal(true);
-      return;
-    }
 
     // Reset states
     setShowResultModal(false);
@@ -143,12 +143,70 @@ export default function PlayWheel() {
     spinMutation.mutate();
   };
 
+  // Get social media action text based on platform
+  const getSocialMediaText = (platform: string | undefined) => {
+    if (!platform) return { title: 'Suivez-nous d\'abord !', action: 'Suivre', buttonText: 'SUIVRE' };
+
+    const platformLower = platform.toLowerCase();
+
+    if (platformLower.includes('instagram')) {
+      return {
+        title: 'Suivez-nous sur Instagram !',
+        action: 'Suivez notre compte Instagram',
+        buttonText: 'INSTAGRAM →'
+      };
+    } else if (platformLower.includes('facebook')) {
+      return {
+        title: 'Suivez-nous sur Facebook !',
+        action: 'Aimez notre page Facebook',
+        buttonText: 'FACEBOOK →'
+      };
+    } else if (platformLower.includes('tiktok')) {
+      return {
+        title: 'Suivez-nous sur TikTok !',
+        action: 'Suivez notre compte TikTok',
+        buttonText: 'TIKTOK →'
+      };
+    } else if (platformLower.includes('twitter') || platformLower.includes('x.com')) {
+      return {
+        title: 'Suivez-nous sur X (Twitter) !',
+        action: 'Suivez notre compte X',
+        buttonText: 'X (TWITTER) →'
+      };
+    } else if (platformLower.includes('youtube')) {
+      return {
+        title: 'Abonnez-vous sur YouTube !',
+        action: 'Abonnez-vous à notre chaîne YouTube',
+        buttonText: 'YOUTUBE →'
+      };
+    } else if (platformLower.includes('linkedin')) {
+      return {
+        title: 'Suivez-nous sur LinkedIn !',
+        action: 'Suivez notre page LinkedIn',
+        buttonText: 'LINKEDIN →'
+      };
+    } else if (platformLower.includes('google')) {
+      return {
+        title: 'Laissez-nous un avis !',
+        action: 'Laissez un avis sur Google',
+        buttonText: 'GOOGLE →'
+      };
+    } else {
+      return {
+        title: 'Suivez-nous d\'abord !',
+        action: 'Visitez notre page',
+        buttonText: platform.toUpperCase() + ' →'
+      };
+    }
+  };
+
   // Handle social media redirect
   const handleSocialRedirect = () => {
     if (wheel?.redirectUrl) {
       window.open(wheel.redirectUrl, '_blank');
       setHasSocialVerified(true);
       setShowSocialModal(false);
+      setShowResultModal(true);
     }
   };
 
@@ -522,33 +580,48 @@ export default function PlayWheel() {
         </div>
       )}
 
-      {/* Social Media Verification Modal - Non-dismissible */}
-      {showSocialModal && wheel?.socialNetwork && wheel?.redirectUrl && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 animate-fadeIn">
+      {/* Social Media Verification Modal - Mandatory (Non-escapable) */}
+      {showSocialModal && wheel?.socialNetwork && wheel?.redirectUrl && (() => {
+        const socialText = getSocialMediaText(wheel.socialNetwork);
+        return (
           <div
-            className="bg-white rounded-lg p-6 max-w-md w-full animate-scaleIn"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fadeIn"
+            style={{ cursor: 'not-allowed' }}
           >
-            <h2 className="text-2xl font-bold text-center mb-4">
-              📱 Suivez-nous d'abord !
-            </h2>
-
-            <p className="text-center text-gray-700 mb-6">
-              {wheel.redirectText || `To spin the wheel, please follow us on ${wheel.socialNetwork} first!`}
-            </p>
-
-            <Button
-              onClick={handleSocialRedirect}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+            <div
+              className="bg-white rounded-lg p-8 max-w-md w-full animate-scaleIn shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              style={{ cursor: 'default' }}
             >
-              {wheel.socialNetwork} →
-            </Button>
+              <div className="text-center mb-6">
+                <div className="text-6xl mb-4">📱</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  {socialText.title}
+                </h2>
+              </div>
 
-            <p className="text-xs text-gray-500 text-center mt-4">
-            Après vous être abonné(e), revenez et cliquez à nouveau sur « Tourner la roue » !</p>
+              <p className="text-center text-gray-700 text-lg mb-6">
+                {wheel.redirectText || `${socialText.action} pour voir votre résultat !`}
+              </p>
+
+              <Button
+                onClick={handleSocialRedirect}
+                className="w-full py-6 text-lg font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:from-pink-600 hover:via-purple-600 hover:to-indigo-600 shadow-lg"
+              >
+                {socialText.buttonText}
+              </Button>
+
+              <p className="text-sm text-gray-500 text-center mt-4 italic">
+                Notez votre expérience
+              </p>
+
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Après vous être abonné(e), revenez et cliquez à nouveau sur « Tourner la roue » !
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Game Rules Modal */}
       {showRulesModal && wheel?.gameRules && (
