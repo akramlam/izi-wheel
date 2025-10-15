@@ -311,7 +311,7 @@ export default function PlayWheel() {
     );
   }
 
-  const backgroundStyle = wheel.backgroundImage
+  const backgroundStyle = (wheel.backgroundImage && wheel.backgroundImage.trim() !== '' && !wheel.backgroundImage.includes('/images/background.png'))
     ? {
         background: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${wheel.backgroundImage}) center/cover no-repeat`,
         backgroundAttachment: 'fixed'
@@ -322,8 +322,8 @@ export default function PlayWheel() {
 
   return (
     <div className="min-h-screen w-full flex flex-col" style={backgroundStyle}>
-      {/* Banner - Only show if bannerImage exists */}
-      {wheel.bannerImage && wheel.bannerImage.trim() !== '' && (
+      {/* Banner - Only show if bannerImage exists and is not the default 404 URL */}
+      {wheel.bannerImage && wheel.bannerImage.trim() !== '' && !wheel.bannerImage.includes('/images/banner.png') && (
         <div className="w-full h-24 md:h-32 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm flex items-center justify-center">
           <img
             src={wheel.bannerImage}
