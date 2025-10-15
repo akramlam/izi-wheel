@@ -536,7 +536,7 @@ export default function PlayWheel() {
               onClick={handleSocialRedirect}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
             >
-              Follow   {wheel.socialNetwork} →
+              {wheel.socialNetwork} →
             </Button>
 
             <p className="text-xs text-gray-500 text-center mt-4">
