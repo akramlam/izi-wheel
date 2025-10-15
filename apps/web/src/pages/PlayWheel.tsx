@@ -480,13 +480,17 @@ export default function PlayWheel() {
                 <Label htmlFor="claim-phone">Numéro</Label>
                 <Input
                   id="claim-phone"
-                  type="number"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="\d{10}"
                   maxLength={10}
-                  max={10}
                   placeholder="Votre numéro de téléphone"
                   value={claimData.phone}
-                  onChange={(e) => setClaimData({ ...claimData, phone: e.target.value })}
+                  onChange={(e) =>{  const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setClaimData({ ...claimData, phone: digitsOnly });
+                  }}
                 />
+                  <p className="text-sm text-gray-500">{claimData.phone.length}/10</p>
               </div>
 
               <div className="flex gap-2 pt-2">
