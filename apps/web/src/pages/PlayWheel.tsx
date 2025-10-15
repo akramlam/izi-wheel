@@ -123,18 +123,18 @@ export default function PlayWheel() {
   // Handle spin complete
   const handleStopSpinning = () => {
     setMustSpin(false);
-
-    // Check if social media verification is required and not yet done
-    if (wheel?.socialNetwork && wheel?.redirectUrl && !hasSocialVerified) {
-      setShowSocialModal(true);
-    } else {
-      setShowResultModal(true);
-    }
+    setShowResultModal(true);
   };
 
   // Handle play button click
   const handlePlay = () => {
     if (mustSpin || spinMutation.isPending) return;
+
+    // Check if social media verification is required BEFORE spinning
+    if (wheel?.socialNetwork && wheel?.redirectUrl && !hasSocialVerified) {
+      setShowSocialModal(true);
+      return;
+    }
 
     // Reset states
     setShowResultModal(false);
@@ -206,7 +206,7 @@ export default function PlayWheel() {
       window.open(wheel.redirectUrl, '_blank');
       setHasSocialVerified(true);
       setShowSocialModal(false);
-      setShowResultModal(true);
+      // Don't show result modal - let user spin the wheel after verification
     }
   };
 
@@ -322,8 +322,8 @@ export default function PlayWheel() {
 
   return (
     <div className="min-h-screen w-full flex flex-col" style={backgroundStyle}>
-      {/* Banner */}
-      {wheel.bannerImage && (
+      {/* Banner - Only show if bannerImage exists */}
+      {wheel.bannerImage && wheel.bannerImage.trim() !== '' && (
         <div className="w-full h-24 md:h-32 bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm flex items-center justify-center">
           <img
             src={wheel.bannerImage}
@@ -336,12 +336,10 @@ export default function PlayWheel() {
       {/* Main content - flex-grow to push footer down */}
       <div className="flex-grow flex flex-col items-center justify-start py-8 px-4 md:px-8">
         <div className="w-full max-w-4xl mx-auto text-center">
-          {/* Title - Always show above wheel */}
-          {(wheel.mainTitle || wheel.name) && (
-            <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
-              {wheel.mainTitle || wheel.name}
-            </h1>
-          )}
+          {/* Title - Always show IZI KADO */}
+          <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
+            {wheel.mainTitle || 'IZI KADO'}
+          </h1>
 
           {/* Wheel */}
           <div className="mb-6 flex justify-center items-center">
@@ -397,7 +395,7 @@ export default function PlayWheel() {
             {wheel.footerText ? (
               <p className="text-sm text-white/85">{wheel.footerText}</p>
             ) : (
-              <p className="text-sm text-white/85">© {new Date().getFullYear()} {wheel.name}</p>
+              <p className="text-sm text-white/85">© {new Date().getFullYear()} IZI KADO</p>
             )}
           </div>
 
