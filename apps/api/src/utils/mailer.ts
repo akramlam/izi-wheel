@@ -77,7 +77,7 @@ const sendViaSmtpComApi = async (mailOptions: any) => {
     channel: 'contact_izitouch_fr', // Your actual channel name from dashboard
     originator: {
       from: {
-        name: process.env.EMAIL_FROM_NAME || 'IZI Kado',
+        name: process.env.EMAIL_FROM_NAME || 'IZI KADO',
         address: mailOptions.from
       }
     },
@@ -299,7 +299,7 @@ export const sendInviteEmail = async (
     emailLogId = await logEmailAttempt({
       type: EmailType.INVITATION,
       recipient: email,
-      subject: `Bienvenue sur IZI Kado - ${companyName}`,
+      subject: `Bienvenue sur IZI KADO - ${companyName}`,
       companyId,
       userId,
       metadata: {
@@ -317,16 +317,16 @@ export const sendInviteEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@izikado.fr',
       to: email,
-      subject: `Bienvenue sur IZI Kado - ${companyName}`,
+      subject: `Bienvenue sur IZI KADO - ${companyName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #4f46e5;">🎯 Bienvenue sur IZI Kado!</h1>
+            <h1 style="color: #4f46e5;">🎯 Bienvenue sur IZI KADO!</h1>
           </div>
           
           <p style="font-size: 16px;">${greeting}</p>
           
-          <p style="font-size: 16px;">Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI Kado.</p>
+          <p style="font-size: 16px;">Vous avez été invité(e) ${invitedBy} à rejoindre <strong>${companyName}</strong> sur la plateforme IZI KADO.</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
             <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🔑 Vos identifiants de connexion :</p>
@@ -353,7 +353,7 @@ export const sendInviteEmail = async (
               <li style="margin-bottom: 5px;">Cliquez sur le bouton ci-dessus</li>
               <li style="margin-bottom: 5px;">Saisissez votre email et mot de passe temporaire</li>
               <li style="margin-bottom: 5px;">Créez votre nouveau mot de passe sécurisé</li>
-              <li>Commencez à utiliser IZI Kado ! 🎉</li>
+              <li>Commencez à utiliser IZI KADO ! 🎉</li>
             </ol>
           </div>
           
@@ -361,7 +361,7 @@ export const sendInviteEmail = async (
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
             Cordialement,<br>
-            <strong>L'équipe IZI Kado</strong><br>
+            <strong>L'équipe IZI KADO</strong><br>
             <small>Plateforme de roues de la fortune digitales</small>
           </p>
         </div>
@@ -426,7 +426,7 @@ export const sendPrizeEmail = async (
     emailLogId = await logEmailAttempt({
       type: EmailType.PRIZE_NOTIFICATION,
       recipient: email,
-      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Kado`,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI KADO`,
       companyId,
       playId,
       metadata: {
@@ -439,7 +439,7 @@ export const sendPrizeEmail = async (
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@iziwheel.com',
       to: email,
-      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI Kado`,
+      subject: `🎉 Félicitations ! Vous avez gagné un prix sur IZI KADO`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
@@ -478,7 +478,7 @@ export const sendPrizeEmail = async (
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
             Merci d'avoir participé !<br>
-            L'équipe IZI Kado
+            L'équipe IZI KADO
           </p>
         </div>
       `,
@@ -575,7 +575,7 @@ export const sendPasswordResetEmail = async (
           
           <p style="font-size: 16px;">${greeting}</p>
           
-          <p style="font-size: 16px;">Vous avez demandé la réinitialisation de votre mot de passe pour votre compte <strong>${companyName}</strong> sur la plateforme IZI Kado.</p>
+          <p style="font-size: 16px;">Vous avez demandé la réinitialisation de votre mot de passe pour votre compte <strong>${companyName}</strong> sur la plateforme IZI KADO.</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
             <p style="margin: 0; font-weight: bold; color: #01579b; font-size: 16px;">🔒 Réinitialisation sécurisée :</p>
@@ -612,7 +612,7 @@ export const sendPasswordResetEmail = async (
           
           <p style="margin-top: 30px; color: #6b7280; font-size: 14px; text-align: center;">
             Cordialement,<br>
-            <strong>L'équipe IZI Kado</strong><br>
+            <strong>L'équipe IZI KADO</strong><br>
             <small>Plateforme de roues de la fortune digitales</small>
           </p>
         </div>

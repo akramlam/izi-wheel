@@ -1543,7 +1543,7 @@ const WheelEdit = () => {
                 <Label htmlFor="mainTitle">Titre principal (optionnel)</Label>
                 <Input
                   id="mainTitle"
-                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI Kado')"
+                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI KADO')"
                   value={wheel.mainTitle || ''}
                   onChange={(e) => setWheel({ ...wheel, mainTitle: e.target.value })}
                 />

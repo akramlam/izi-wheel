@@ -104,7 +104,7 @@ const ChangePassword = () => {
         
         {user?.forcePasswordChange ? (
           <div className="mb-6 rounded-lg bg-blue-50 p-4 text-center">
-            <p className="text-blue-800 font-medium mb-2">🎯 Bienvenue sur IZI Kado !</p>
+            <p className="text-blue-800 font-medium mb-2">🎯 Bienvenue sur IZI KADO !</p>
             <p className="text-blue-700 text-sm">
               Pour des raisons de sécurité, vous devez créer un nouveau mot de passe personnalisé avant d'accéder à la plateforme.
             </p>

@@ -477,7 +477,7 @@ export default function PlayWheel() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="claim-phone">Numéro (optionnel)</Label>
+                <Label htmlFor="claim-phone">Numéro</Label>
                 <Input
                   id="claim-phone"
                   type="tel"
@@ -507,7 +507,7 @@ export default function PlayWheel() {
                       Retrait en cours...
                     </>
                   ) : (
-                    'Réclamez votre cadeau'
+                    'Réclamez votre Cadeau'
                   )}
                 </Button>
               </div>

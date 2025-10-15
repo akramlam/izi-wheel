@@ -23,9 +23,9 @@ const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'IZI Kado API',
+      title: 'IZI KADO API',
       version: '0.1.0',
-      description: 'IZI Kado API documentation',
+      description: 'IZI KADO API documentation',
       contact: {
         name: 'API Support',
         email: 'support@izikado.fr'
@@ -96,7 +96,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 // Routes
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'IZI Kado API',
+    message: 'IZI KADO API',
     documentation: `${req.protocol}://${req.get('host')}/api-docs`
   });
 });

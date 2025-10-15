@@ -108,7 +108,7 @@ const Layout = () => {
               {/* Footer bottom with copyright and social icons */}
               <div className="flex flex-col md:flex-row justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  © {new Date().getFullYear()} Izi kado. Tous droits réservés.
+                  © {new Date().getFullYear()} Izi KADO. Tous droits réservés.
                 </div>
               </div>
             </div>

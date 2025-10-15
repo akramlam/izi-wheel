@@ -83,7 +83,7 @@ const AdminLogin: React.FC = () => {
       <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-start w-full mb-6 sm:mb-8 px-4 sm:px-6 pt-4 sm:pt-6">
         <div className="flex items-center justify-center sm:justify-start">
           <Zap className="h-6 w-6 sm:h-7 sm:w-7 text-purple-600 mr-2" />
-          <span className="text-lg sm:text-xl font-bold text-black">IZI Kado</span>
+          <span className="text-lg sm:text-xl font-bold text-black">IZI KADO</span>
         </div>
         <div className="flex gap-2 sm:gap-3 justify-center sm:justify-end">
           <span
@@ -116,7 +116,7 @@ const AdminLogin: React.FC = () => {
               <div className="flex items-start gap-3">
                 <UserPlus className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-blue-900 text-sm">🎉 Bienvenue sur IZI Kado !</h3>
+                  <h3 className="font-semibold text-blue-900 text-sm">🎉 Bienvenue sur IZI KADO !</h3>
                   <p className="text-blue-700 text-xs mt-1">
                     Connectez-vous avec les identifiants reçus par email. Vous devrez créer un nouveau mot de passe lors de votre première connexion.
                   </p>
@@ -204,7 +204,7 @@ const AdminLogin: React.FC = () => {
 
       {/* Footer - Mobile responsive */}
       <div className="text-center mt-6 sm:mt-8 mb-3 sm:mb-4">
-        <p className="text-gray-400 text-xs">© 2025 IZI Kado - Plateforme d'administration</p>
+        <p className="text-gray-400 text-xs">© 2025 IZI KADO - Plateforme d'administration</p>
       </div>
       
       {/* Animation keyframes for fade/slide in */}

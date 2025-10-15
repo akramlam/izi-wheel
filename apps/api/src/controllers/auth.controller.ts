@@ -451,7 +451,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
       await sendPasswordResetEmail(
         user.email, 
         resetToken, 
-        user.company?.name || 'IZI Kado',
+        user.company?.name || 'IZI KADO',
         user.name
       );
     } catch (emailError) {
