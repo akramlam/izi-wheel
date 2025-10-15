@@ -441,7 +441,7 @@ export default function PlayWheel() {
               Félicitation! Vous avez gagné : <span className="font-bold text-pink-600">{spinResult.slot.label}</span>
             </p>
 
-            {spinResult.play.prize?.qrCodeData && (
+            {/* {spinResult.play.prize?.qrCodeData && (
               <div className="flex justify-center mb-4">
                 <img
                   src={spinResult.play.prize.qrCodeData}
@@ -449,7 +449,7 @@ export default function PlayWheel() {
                   className="w-32 h-32"
                 />
               </div>
-            )}
+            )} */}
 
             <form onSubmit={handleClaimSubmit} className="space-y-4">
               <div className="space-y-2">

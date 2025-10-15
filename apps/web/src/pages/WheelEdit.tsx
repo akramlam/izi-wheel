@@ -1194,7 +1194,7 @@ const WheelEdit = () => {
             <CardTitle>Aperçu</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center items-center p-4">
-            <div className="w-full flex items-center justify-center" style={{ maxWidth: '300px', height: '300px' }}>
+            <div className="w-full flex items-center justify-center" style={{ maxWidth: '280px', height: '250px' }}>
               <Wheel
                 mustStartSpinning={false}
                 prizeNumber={0}
