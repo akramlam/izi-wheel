@@ -384,7 +384,7 @@ export default function PlayWheel() {
                   </p>
                 </div> */}
 
-                {spinResult.play.prize.qrCodeData && (
+                {/* {spinResult.play.prize.qrCodeData && (
                   <div className="flex justify-center">
                     <img
                       src={spinResult.play.prize.qrCodeData}
@@ -392,10 +392,10 @@ export default function PlayWheel() {
                       className="w-48 h-48"
                     />
                   </div>
-                )}
+                )} */}
 
                 <p className="text-sm text-gray-600 text-center">
-                Réclamer mon prix ou scannez le Code QR
+                Réclamez votre prix en cliquant sur le bouton ci-dessous
                 </p>
               </div>
             )}
@@ -482,6 +482,7 @@ export default function PlayWheel() {
                   id="claim-phone"
                   type="number"
                   maxLength={10}
+                  max={10}
                   placeholder="Votre numéro de téléphone"
                   value={claimData.phone}
                   onChange={(e) => setClaimData({ ...claimData, phone: e.target.value })}

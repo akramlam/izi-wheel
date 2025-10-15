@@ -843,7 +843,7 @@ const Roues: React.FC = () => {
       <Dialog open={!!selectedWheelForQR} onOpenChange={(open) => !open && setSelectedWheelForQR(null)}>
         <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogClose>
+            <DialogClose asChild>
               <Button variant="ghost" size="sm" className="absolute top-2 right-2">
                 <X className="h-4 w-4" />
               </Button>

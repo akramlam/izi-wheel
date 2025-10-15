@@ -41,7 +41,7 @@ export default function RedeemPrize() {
     queryKey: ['playDetails', playId],
     queryFn: async () => {
       if (!playId) throw new Error('Play ID is required');
-      const response = await api.getPlayDetails(playId);
+      const response = await api.getPrizeDetails(playId);
       return response.data;
     },
     enabled: !!playId,
@@ -75,7 +75,7 @@ export default function RedeemPrize() {
   const redeemMutation = useMutation({
     mutationFn: async () => {
       if (!playId || !pinCode) throw new Error('Play ID and PIN are required');
-      const response = await api.redeemPrize(playId, pinCode);
+      const response = await api.redeemPrize(playId, { pin: pinCode });
       return response.data;
     },
     onSuccess: () => {

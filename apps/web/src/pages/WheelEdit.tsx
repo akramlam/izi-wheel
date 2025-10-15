@@ -132,7 +132,7 @@ const WheelEdit = () => {
     redirectText: '',
     playLimit: 'ONCE_PER_DAY',
     gameRules: '',
-    footerText: '',
+    footerText: 'IZI KADO',
     mainTitle: '',
     bannerImage: '',
     backgroundImage: '',
@@ -221,12 +221,12 @@ const WheelEdit = () => {
       const placeholder = SOCIAL_NETWORK_URLS[wheel.socialNetwork] || "https://www.example.com";
       setRedirectUrlPlaceholder(placeholder);
       // Optionally, if you want to auto-fill the URL when a network is selected and URL is empty:
-      // if (!wheel.redirectUrl && wheel.socialNetwork !== 'OTHER') {
-      //   setWheel(prev => ({
-      //     ...prev,
-      //     redirectUrl: placeholder.includes('YOUR_') ? '' : placeholder, // Don't fill if it's a template
-      //   }));
-      // }
+      if (!wheel.redirectUrl && wheel.socialNetwork !== 'OTHER') {
+        setWheel(prev => ({
+          ...prev,
+          redirectUrl: placeholder.includes('YOUR_') ? '' : placeholder, // Don't fill if it's a template
+        }));
+      } 
     } else {
       setRedirectUrlPlaceholder("https://www.example.com");
     }
