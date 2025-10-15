@@ -436,6 +436,10 @@ const Roues: React.FC = () => {
     setSelectedWheelForQR(id)
   }
 
+  const handleCloseQRModal = () => {
+    setSelectedWheelForQR(null)
+  }
+
   const handleCopyLink = (id: string) => {
     // Create the link to the wheel
     const wheelLink = `https://roue.izikado.fr/play/company/${id}`
@@ -840,14 +844,18 @@ const Roues: React.FC = () => {
       )}
 
       {/* QR Code Dialog - Mobile responsive */}
-      <Dialog open={!!selectedWheelForQR} onOpenChange={(open) => !open && setSelectedWheelForQR(null)}>
+      <Dialog open={!!selectedWheelForQR} onOpenChange={handleCloseQRModal}>
         <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCloseQRModal}
+            className="absolute top-2 right-2 z-10"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </Button>
           <DialogHeader>
-            <DialogClose asChild>
-              <Button variant="ghost" size="sm" className="absolute top-2 right-2">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
             <DialogTitle className="text-lg sm:text-xl">QR Code</DialogTitle>
             <DialogDescription className="text-sm sm:text-base">
               Scannez ce QR code ou partagez-le pour accéder à votre roue.

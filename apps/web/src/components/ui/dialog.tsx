@@ -34,29 +34,22 @@ interface DialogFooterProps {
 interface DialogCloseProps {
   children: React.ReactNode;
   className?: string;
+  asChild?: boolean;
 }
+
+// Create a context to share the onOpenChange function
+const DialogContext = React.createContext<{ onOpenChange: (open: boolean) => void } | null>(null);
 
 export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
   if (!open) return null;
 
+  const handleBackdropClick = () => {
+    onOpenChange(false);
+  };
+
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: 50,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      {/* Backdrop - Ensure full viewport coverage with inline styles */}
-      <div 
+    <DialogContext.Provider value={{ onOpenChange }}>
+      <div
         style={{
           position: 'fixed',
           top: 0,
@@ -65,16 +58,33 @@ export const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) 
           bottom: 0,
           width: '100vw',
           height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
-        onClick={() => onOpenChange(false)}
-      />
-      {/* Dialog content */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        {children}
+      >
+        {/* Backdrop - Ensure full viewport coverage with inline styles */}
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1
+          }}
+          onClick={handleBackdropClick}
+        />
+        {/* Dialog content */}
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          {children}
+        </div>
       </div>
-    </div>
+    </DialogContext.Provider>
   );
 };
 
@@ -118,10 +128,39 @@ export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className 
   );
 }; 
 
-export const DialogClose: React.FC<DialogCloseProps> = ({ children, className = '' }) => {
+export const DialogClose: React.FC<DialogCloseProps> = ({ children, className = '', asChild = false }) => {
+  const context = React.useContext(DialogContext);
+
+  if (!context) {
+    console.error('DialogClose must be used within a Dialog component');
+    return <>{children}</>;
+  }
+
+  const handleClick = () => {
+    context.onOpenChange(false);
+  };
+
+  if (asChild && React.isValidElement(children)) {
+    // Clone the child element and merge the onClick handler
+    return React.cloneElement(children as React.ReactElement<any>, {
+      onClick: (e: React.MouseEvent) => {
+        // Call the original onClick if it exists
+        if ((children as any).props.onClick) {
+          (children as any).props.onClick(e);
+        }
+        handleClick();
+      }
+    });
+  }
+
+  // Default behavior: wrap children in a button
   return (
-    <div className={`absolute top-2 right-2 ${className}`}>
+    <button
+      type="button"
+      onClick={handleClick}
+      className={className}
+    >
       {children}
-    </div>
+    </button>
   );
 };
