@@ -480,7 +480,8 @@ export default function PlayWheel() {
                 <Label htmlFor="claim-phone">Numéro</Label>
                 <Input
                   id="claim-phone"
-                  type="tel"
+                  type="number"
+                  maxLength={10}
                   placeholder="Votre numéro de téléphone"
                   value={claimData.phone}
                   onChange={(e) => setClaimData({ ...claimData, phone: e.target.value })}
