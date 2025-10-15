@@ -524,7 +524,7 @@ export default function PlayWheel() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-center mb-4">
-              📱 Suivez-nous d&abpos;abord !
+              📱 Suivez-nous d'abord !
             </h2>
 
             <p className="text-center text-gray-700 mb-6">
