@@ -12,7 +12,15 @@ const slotSchema = z.object({
 });
 
 // Validation schema for bulk slot creation/update
-const bulkSlotSchema = z.array(slotSchema).min(2);
+// Includes additional fields that frontend sends
+const bulkSlotSchema = z.array(z.object({
+  label: z.string().min(1).max(100),
+  weight: z.number().int().min(0).max(100),
+  prizeCode: z.string().min(1).max(50),
+  color: z.string().optional(),
+  position: z.number().int().min(0).optional(),
+  isWinning: z.boolean().optional(),
+})).min(2);
 
 /**
  * @openapi

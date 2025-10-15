@@ -57,15 +57,15 @@ export default function RedeemPrize() {
     },
     onSuccess: () => {
       toast({
-        title: 'Success!',
-        description: 'Prize claimed! Check your email for the PIN.',
+        title: 'Succès!',
+        description: 'Prix réclamé! Vérifiez votre email pour le PIN.',
       });
       refetch();
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.response?.data?.error || 'Failed to claim prize',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Échec de la réclamation du prix',
         variant: 'destructive'
       });
     }
@@ -80,15 +80,15 @@ export default function RedeemPrize() {
     },
     onSuccess: () => {
       toast({
-        title: 'Success!',
-        description: 'Prize redeemed successfully!',
+        title: 'Succès!',
+        description: 'Prix échangé avec succès!',
       });
       refetch();
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.response?.data?.error || 'Failed to redeem prize',
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Échec de l\'échange du prix',
         variant: 'destructive'
       });
     }
@@ -99,8 +99,8 @@ export default function RedeemPrize() {
 
     if (!claimData.name || !claimData.email) {
       toast({
-        title: 'Missing information',
-        description: 'Please provide at least name and email',
+        title: 'Informations manquantes',
+        description: 'Veuillez fournir au moins le nom et l\'email',
         variant: 'destructive'
       });
       return;
@@ -110,8 +110,8 @@ export default function RedeemPrize() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(claimData.email)) {
       toast({
-        title: 'Invalid email',
-        description: 'Please enter a valid email address',
+        title: 'Email invalide',
+        description: 'Veuillez entrer une adresse email valide',
         variant: 'destructive'
       });
       return;
@@ -125,8 +125,8 @@ export default function RedeemPrize() {
 
     if (!pinCode || pinCode.length !== 8) {
       toast({
-        title: 'Invalid PIN',
-        description: 'Please enter an 8-digit PIN',
+        title: 'PIN invalide',
+        description: 'Veuillez entrer un PIN à 8 chiffres',
         variant: 'destructive'
       });
       return;
@@ -134,8 +134,8 @@ export default function RedeemPrize() {
 
     if (!/^\d{8}$/.test(pinCode)) {
       toast({
-        title: 'Invalid format',
-        description: 'PIN must contain only digits',
+        title: 'Format invalide',
+        description: 'Le PIN ne doit contenir que des chiffres',
         variant: 'destructive'
       });
       return;
@@ -153,13 +153,17 @@ export default function RedeemPrize() {
   }
 
   if (error || !playDetails) {
+    console.error('Error loading play details:', error);
     return (
       <div className="flex h-screen items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="mb-4 h-16 w-16 text-red-500 mx-auto" />
-          <h1 className="mb-4 text-2xl font-bold text-red-600">Prize Not Found</h1>
+          <h1 className="mb-4 text-2xl font-bold text-red-600">Prix introuvable</h1>
           <p className="text-gray-600 mb-6">
-            Unable to find this prize or it may not exist.
+            Impossible de trouver ce prix ou il n'existe peut-être pas.
+          </p>
+          <p className="text-sm text-gray-500">
+            ID du jeu: {playId}
           </p>
         </div>
       </div>
@@ -250,18 +254,18 @@ export default function RedeemPrize() {
       <div className="container max-w-md mx-auto px-4 py-10">
         <Card className="border-2 border-green-100 shadow-lg">
           <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50">
-            <CardTitle className="text-2xl text-green-700">🎉 Prize Claimed!</CardTitle>
+            <CardTitle className="text-2xl text-green-700">🎉 Prix Réclamé!</CardTitle>
             <CardDescription>
-              Your prize: <span className="font-bold text-emerald-600">{playDetails.prize?.label}</span>
+              Votre prix: <span className="font-bold text-emerald-600">{playDetails.prize?.label}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800 text-center font-medium">
-                ✅ Your prize has been claimed successfully!
+                ✅ Votre prix a été réclamé avec succès!
               </p>
               <p className="text-sm text-green-700 text-center mt-2">
-                You should have received an email with your PIN.
+                Vous devriez avoir reçu un email avec votre PIN.
               </p>
             </div>
 
@@ -275,19 +279,19 @@ export default function RedeemPrize() {
 
             <div className="space-y-4">
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <h3 className="font-medium text-amber-800 mb-2 text-center">📍 How to redeem:</h3>
+                <h3 className="font-medium text-amber-800 mb-2 text-center">📍 Comment échanger:</h3>
                 <ol className="text-sm text-amber-700 space-y-1">
-                  <li>1. Visit the store</li>
-                  <li>2. Show this screen or your email</li>
-                  <li>3. Give your PIN to the merchant</li>
-                  <li>4. Enjoy your prize! 🎉</li>
+                  <li>1. Visitez le magasin</li>
+                  <li>2. Montrez cet écran ou votre email</li>
+                  <li>3. Donnez votre PIN au commerçant</li>
+                  <li>4. Profitez de votre prix! 🎉</li>
                 </ol>
               </div>
 
               <form onSubmit={handleRedeemSubmit}>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pin">Enter PIN to Redeem (8 digits)</Label>
+                    <Label htmlFor="pin">Entrez le PIN pour échanger (8 chiffres)</Label>
                     <Input
                       id="pin"
                       type="text"
@@ -311,10 +315,10 @@ export default function RedeemPrize() {
                     {redeemMutation.isPending ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Redeeming...
+                        Échange en cours...
                       </>
                     ) : (
-                      'Redeem Prize'
+                      'Échanger le prix'
                     )}
                   </Button>
                 </div>
@@ -332,17 +336,17 @@ export default function RedeemPrize() {
       <div className="flex h-screen items-center justify-center p-4">
         <div className="text-center">
           <CheckCircle className="mb-4 h-16 w-16 text-green-500 mx-auto" />
-          <h1 className="mb-4 text-2xl font-bold text-green-600">Prize Redeemed!</h1>
+          <h1 className="mb-4 text-2xl font-bold text-green-600">Prix Échangé!</h1>
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg max-w-md">
             <p className="text-green-800 font-medium">{playDetails.prize?.label}</p>
             {playDetails.redeemedAt && (
               <p className="text-green-700 text-sm mt-2">
-                Redeemed on: {new Date(playDetails.redeemedAt).toLocaleDateString()}
+                Échangé le: {new Date(playDetails.redeemedAt).toLocaleDateString('fr-FR')}
               </p>
             )}
           </div>
           <p className="text-gray-600 mb-6">
-            This prize has already been redeemed.
+            Ce prix a déjà été échangé.
           </p>
           <Button onClick={() => window.location.href = `/play/${playDetails.wheelId}`}>
             Retour à la roue
@@ -357,9 +361,9 @@ export default function RedeemPrize() {
     <div className="flex h-screen items-center justify-center p-4">
       <div className="text-center">
         <AlertCircle className="mb-4 h-16 w-16 text-gray-400 mx-auto" />
-        <h1 className="mb-4 text-2xl font-bold text-gray-700">No Prize</h1>
+        <h1 className="mb-4 text-2xl font-bold text-gray-700">Pas de Prix</h1>
         <p className="text-gray-600 mb-6">
-          This play did not result in a prize.
+          Ce jeu n'a pas donné de prix.
         </p>
         <Button onClick={() => window.location.href = `/play/${playDetails.wheelId}`}>
           Retour à la roue

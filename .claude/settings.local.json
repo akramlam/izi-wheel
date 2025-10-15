@@ -26,5 +26,7 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "outputStyle": "default",
+  "spinnerTipsEnabled": false
 }

@@ -14,8 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { ImageUpload } from '../components/ui/ImageUpload';
 import { AuthContext } from '../contexts/AuthContext';
-import Wheel from '../components/wheel/Wheel';
-import type { WheelConfig } from '../components/wheel/types';
+import { Wheel } from 'react-custom-roulette';
 
 // Predefined colors for slots
 const PRESET_COLORS = [
@@ -1189,40 +1188,42 @@ const WheelEdit = () => {
           </CardContent>
         </Card>
 
-        {/* Preview card - render the same Wheel component used in gameplay for parity */}
+        {/* Preview card - use the same wheel component as PlayWheel.tsx */}
         <Card>
           <CardHeader>
             <CardTitle>Aperçu</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center items-center p-4">
-            <div className="w-full flex items-center justify-center">
+            <div className="w-full flex items-center justify-center" style={{ maxWidth: '300px', height: '300px' }}>
               <Wheel
-                config={{
-                  segments: (wheel.slots && wheel.slots.length > 0
-                    ? wheel.slots
-                    : [
-                        { label: 'Lot 1', color: PRESET_COLORS[0], isWinning: true },
-                        { label: 'Lot 2', color: PRESET_COLORS[1], isWinning: false },
-                        { label: 'Lot 3', color: PRESET_COLORS[2], isWinning: false },
-                      ]
-                  ).map((s) => ({
-                    label: s.label,
-                    color: s.color,
-                    isWinning: wheel.type === 'ALL_WIN' ? true : (s as Slot).weight > 0,
-                  })),
-                  spinDurationMin: 3,
-                  spinDurationMax: 6,
-                  hapticFeedback: false,
-                  colors: {
-                    primaryGradient: '#a25afd',
-                    secondaryGradient: '#6366f1',
-                  },
-                  sounds: { tick: false, win: false },
-                } as WheelConfig}
-                isSpinning={false}
-                prizeIndex={0}
-                onSpin={() => {}}
-                showSpinButton={false}
+                mustStartSpinning={false}
+                prizeNumber={0}
+                data={(wheel.slots && wheel.slots.length > 0
+                  ? wheel.slots
+                  : [
+                      { label: 'Lot 1', color: PRESET_COLORS[0] },
+                      { label: 'Lot 2', color: PRESET_COLORS[1] },
+                      { label: 'Lot 3', color: PRESET_COLORS[2] },
+                    ]
+                ).map((slot) => ({
+                  option: slot.label,
+                  style: {
+                    backgroundColor: slot.color || '#FF6384',
+                    textColor: '#ffffff'
+                  }
+                }))}
+                backgroundColors={['#3e3e3e', '#df3428']}
+                textColors={['#ffffff']}
+                fontSize={14}
+                outerBorderColor="#f2f2f2"
+                outerBorderWidth={8}
+                innerBorderColor="#f2f2f2"
+                innerBorderWidth={0}
+                innerRadius={0}
+                radiusLineColor="#f2f2f2"
+                radiusLineWidth={1}
+                perpendicularText={false}
+                textDistance={55}
               />
             </div>
           </CardContent>

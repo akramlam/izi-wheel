@@ -5,7 +5,9 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { Wheel } from 'react-custom-roulette';
 import CompanyAdminManager from './CompanyAdminManager';
@@ -60,6 +62,12 @@ export default function PlayWheel() {
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [hasSocialVerified, setHasSocialVerified] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimData, setClaimData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+  });
 
   // Fetch wheel data
   const { data: wheelResponse, isLoading, error } = useQuery({
@@ -148,6 +156,57 @@ export default function PlayWheel() {
   const handleCloseModal = () => {
     setShowResultModal(false);
     setSpinResult(null);
+  };
+
+  // Claim prize mutation
+  const claimMutation = useMutation({
+    mutationFn: async () => {
+      if (!spinResult?.play.id) throw new Error('Play ID is required');
+      const response = await api.claimPrize(spinResult.play.id, claimData);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Succès!',
+        description: 'Prix réclamé! Vérifiez votre email pour le PIN.',
+      });
+      setShowClaimModal(false);
+      setShowResultModal(false);
+      setClaimData({ name: '', email: '', phone: '' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Échec de la réclamation du prix',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleClaimSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!claimData.name || !claimData.email) {
+      toast({
+        title: 'Informations manquantes',
+        description: 'Veuillez fournir au moins le nom et l\'email',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(claimData.email)) {
+      toast({
+        title: 'Email invalide',
+        description: 'Veuillez entrer une adresse email valide',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    claimMutation.mutate();
   };
 
   const wheel = wheelResponse?.wheel as WheelData | undefined;
@@ -313,7 +372,7 @@ export default function PlayWheel() {
             <p className="text-center text-lg mb-6">
               {spinResult.play.result === 'WIN'
                 ? `Vous avez gagné : ${spinResult.slot.label}!`
-                : 'Merci d&apos;avoir joué!'}
+                : 'Merci d\'avoir joué!'}
             </p>
 
             {spinResult.play.result === 'WIN' && spinResult.play.prize && (
@@ -336,7 +395,7 @@ export default function PlayWheel() {
                 )}
 
                 <p className="text-sm text-gray-600 text-center">
-                  Save this PIN or scan the QR code to redeem your prize!
+                Réclamer mon prix ou scannez le Code QR
                 </p>
               </div>
             )}
@@ -347,19 +406,112 @@ export default function PlayWheel() {
                 variant="outline"
                 className="flex-1"
               >
-                Close
+                Fermer
               </Button>
               {spinResult.play.result === 'WIN' && (
                 <Button
                   onClick={() => {
-                    window.open(`/redeem/${spinResult.play.id}`, '_blank');
+                    setShowResultModal(false);
+                    setShowClaimModal(true);
                   }}
                   className="flex-1"
                 >
-                  Redeem Now
+                  Réclamer mon prix
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Claim Prize Modal */}
+      {showClaimModal && spinResult && spinResult.play.result === 'WIN' && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setShowClaimModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-center mb-4 text-indigo-700">
+              Réclamez votre Cadeau
+            </h2>
+            <p className="text-center text-gray-700 mb-4">
+              Félicitation! Vous avez gagné : <span className="font-bold text-pink-600">{spinResult.slot.label}</span>
+            </p>
+
+            {spinResult.play.prize?.qrCodeData && (
+              <div className="flex justify-center mb-4">
+                <img
+                  src={spinResult.play.prize.qrCodeData}
+                  alt="QR Code"
+                  className="w-32 h-32"
+                />
+              </div>
+            )}
+
+            <form onSubmit={handleClaimSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="claim-name">Nom complet *</Label>
+                <Input
+                  id="claim-name"
+                  type="text"
+                  placeholder="Votre Nom complet"
+                  value={claimData.name}
+                  onChange={(e) => setClaimData({ ...claimData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="claim-email">Email *</Label>
+                <Input
+                  id="claim-email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={claimData.email}
+                  onChange={(e) => setClaimData({ ...claimData, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="claim-phone">Numéro (optionnel)</Label>
+                <Input
+                  id="claim-phone"
+                  type="tel"
+                  placeholder="Votre numéro de téléphone"
+                  value={claimData.phone}
+                  onChange={(e) => setClaimData({ ...claimData, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setShowClaimModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-indigo-500 to-pink-500"
+                  disabled={claimMutation.isPending}
+                >
+                  {claimMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Retrait en cours...
+                    </>
+                  ) : (
+                    'Réclamez votre cadeau'
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
