@@ -1194,7 +1194,7 @@ const WheelEdit = () => {
             <CardTitle>Aperçu</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center items-center p-4">
-            <div className="w-full flex items-center justify-center" style={{ maxWidth: '280px', height: '250px' }}>
+            <div className="w-full flex items-center justify-center" style={{ maxWidth: '200px', height: '200px' }}>
               <Wheel
                 mustStartSpinning={false}
                 prizeNumber={0}
@@ -1557,7 +1557,7 @@ const WheelEdit = () => {
                 imageType="banner"
                 title="Image de bannière (optionnel)"
                 description="Image de bannière à afficher en haut de la page (optionnel)"
-                recommendedSize="1200x300px"
+                recommendedSize="1200x300px et pour mobile 600x150px"
               />
               
               {/* Background Image */}
@@ -1567,7 +1567,7 @@ const WheelEdit = () => {
                 imageType="background"
                 title="Image de fond (optionnel)"
                 description="Image de fond pour personnaliser l'arrière-plan de la page (optionnel)"
-                recommendedSize="1920x1080px"
+                recommendedSize="1920x1080px et pour mobile 1080x1920px"
               />
               
               {/* Only show game rules for super admins */}
