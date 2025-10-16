@@ -338,7 +338,7 @@ export default function PlayWheel() {
         <div className="w-full max-w-4xl mx-auto text-center">
           {/* Title - Always show IZI KADO */}
           <h1 className="text-2xl md:text-4xl font-bold text-white mb-6 drop-shadow-lg">
-            {wheel.mainTitle || 'IZI KADO'}
+            {wheel.mainTitle}
           </h1>
 
           {/* Wheel */}
