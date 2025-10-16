@@ -836,44 +836,21 @@ const WheelEdit = () => {
       formSchema: {},
     };
 
-    // Only include play limit if it's different from default
-    if (wheel.playLimit && wheel.playLimit !== 'ONCE_PER_DAY') {
-      payload.playLimit = wheel.playLimit;
-    }
+    // Always include play limit (use default if not set)
+    payload.playLimit = wheel.playLimit || 'ONCE_PER_DAY';
 
-    // Only include optional customization fields if they have values
-    if (wheel.mainTitle && wheel.mainTitle.trim() !== '') {
-      payload.mainTitle = wheel.mainTitle.trim();
-    }
+    // Always include customization fields, even if empty (to allow clearing them)
+    // The backend will handle empty strings appropriately
+    payload.mainTitle = wheel.mainTitle?.trim() || '';
+    payload.bannerImage = wheel.bannerImage?.trim() || '';
+    payload.backgroundImage = wheel.backgroundImage?.trim() || '';
+    payload.gameRules = wheel.gameRules?.trim() || '';
+    payload.footerText = wheel.footerText?.trim() || '';
 
-    if (wheel.bannerImage && wheel.bannerImage.trim() !== '') {
-      payload.bannerImage = wheel.bannerImage.trim();
-    }
-
-    if (wheel.backgroundImage && wheel.backgroundImage.trim() !== '') {
-      payload.backgroundImage = wheel.backgroundImage.trim();
-    }
-
-    if (wheel.gameRules && wheel.gameRules.trim() !== '') {
-      payload.gameRules = wheel.gameRules.trim();
-    }
-
-    if (wheel.footerText && wheel.footerText.trim() !== '') {
-      payload.footerText = wheel.footerText.trim();
-    }
-
-    // Conditionally add social network fields
-    if (wheel.socialNetwork && wheel.socialNetwork.trim() !== '' && wheel.socialNetwork !== 'NONE') {
-      payload.socialNetwork = wheel.socialNetwork;
-      
-      if (wheel.redirectUrl && wheel.redirectUrl.trim() !== '') {
-        payload.redirectUrl = wheel.redirectUrl.trim();
-      }
-      
-      if (wheel.redirectText && wheel.redirectText.trim() !== '') {
-        payload.redirectText = wheel.redirectText.trim();
-      }
-    }
+    // Always include social network fields (to allow clearing them)
+    payload.socialNetwork = (wheel.socialNetwork && wheel.socialNetwork !== 'NONE') ? wheel.socialNetwork : undefined;
+    payload.redirectUrl = wheel.redirectUrl?.trim() || '';
+    payload.redirectText = wheel.redirectText?.trim() || '';
 
     // Log the final payload before sending
 

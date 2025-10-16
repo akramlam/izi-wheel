@@ -15,7 +15,7 @@ const wheelSchema = z.object({
   probability: z.number().optional(),
   // New fields for social media redirection
   socialNetwork: z.nativeEnum(SocialNetwork).optional(),
-  redirectUrl: z.string().url().optional(),
+  redirectUrl: z.union([z.string().url(), z.literal('')]).optional(),
   redirectText: z.string().max(500).optional(),
   // New field for play limit
   playLimit: z.nativeEnum(PlayLimit).optional().default(PlayLimit.ONCE_PER_DAY),
@@ -24,8 +24,8 @@ const wheelSchema = z.object({
   footerText: z.string().max(500).optional(),
   mainTitle: z.string().max(100).optional(),
   // New fields for visual customization
-  bannerImage: z.string().url().optional(),
-  backgroundImage: z.string().url().optional(),
+  bannerImage: z.union([z.string().url(), z.literal('')]).optional(),
+  backgroundImage: z.union([z.string().url(), z.literal('')]).optional(),
 });
 
 /**
@@ -646,15 +646,31 @@ export const updateWheel = async (req: Request, res: Response) => {
     try {
       console.log('About to update wheel in database with ID:', wheelId);
       console.log('Update data keys:', Object.keys(wheelDataForDb));
-      
-      // Ensure image fields are properly formatted
+
+      // Convert empty strings to undefined for optional fields (allows clearing them)
+      // Prisma will then set these to null in the database
       if (wheelDataForDb.bannerImage === '') {
         wheelDataForDb.bannerImage = undefined;
       }
       if (wheelDataForDb.backgroundImage === '') {
         wheelDataForDb.backgroundImage = undefined;
       }
-      
+      if (wheelDataForDb.mainTitle === '') {
+        wheelDataForDb.mainTitle = undefined;
+      }
+      if (wheelDataForDb.gameRules === '') {
+        wheelDataForDb.gameRules = undefined;
+      }
+      if (wheelDataForDb.footerText === '') {
+        wheelDataForDb.footerText = undefined;
+      }
+      if (wheelDataForDb.redirectUrl === '') {
+        wheelDataForDb.redirectUrl = undefined;
+      }
+      if (wheelDataForDb.redirectText === '') {
+        wheelDataForDb.redirectText = undefined;
+      }
+
       console.log('Final data for DB update:', JSON.stringify(wheelDataForDb, null, 2));
       
       const wheel = await prisma.wheel.update({
