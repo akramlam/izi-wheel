@@ -934,6 +934,7 @@ const WheelEdit = () => {
             
             // Prepare bulk slot data
             const bulkSlotData = slotsToProcess.map((slot: Slot, index: number) => ({
+              id: slot.id, // Include slot ID to preserve play history
               label: slot.label,
               weight: slot.weight,
               prizeCode: slot.prizeCode,

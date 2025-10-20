@@ -14,6 +14,7 @@ const slotSchema = z.object({
 // Validation schema for bulk slot creation/update
 // Includes additional fields that frontend sends
 const bulkSlotSchema = z.array(z.object({
+  id: z.string().uuid().optional(), // Optional ID for existing slots
   label: z.string().min(1).max(100),
   weight: z.number().int().min(0).max(100),
   prizeCode: z.string().min(1).max(50),
@@ -736,30 +737,57 @@ export const bulkUpdateSlots = async (req: Request, res: Response) => {
     const existingSlots = await prisma.slot.findMany({
       where: { wheelId },
     });
-    
+
+    // Separate slots into update vs create
+    const slotsToUpdate = validatedData.filter(slot => slot.id);
+    const slotsToCreate = validatedData.filter(slot => !slot.id);
+
+    // Find slots to delete (existing slots not in the new list)
+    const newSlotIds = slotsToUpdate.map(s => s.id);
+    const slotsToDelete = existingSlots.filter(
+      existing => !newSlotIds.includes(existing.id)
+    );
+
     // Start a transaction to ensure atomic updates
     const result = await prisma.$transaction(async (tx) => {
-      // Delete all existing slots
-      if (existingSlots.length > 0) {
-        await tx.slot.deleteMany({
-          where: { wheelId },
-        });
-      }
-      
-      // Create new slots, always set isActive: true
-      const newSlots = await Promise.all(
-        validatedData.map(slotData =>
-          tx.slot.create({
+      // Update existing slots (preserves play history)
+      const updatedSlots = await Promise.all(
+        slotsToUpdate.map(slotData => {
+          const { id, ...updateData } = slotData;
+          return tx.slot.update({
+            where: { id },
             data: {
-              ...slotData,
+              ...updateData,
+              isActive: true,
+            },
+          });
+        })
+      );
+
+      // Create new slots
+      const createdSlots = await Promise.all(
+        slotsToCreate.map(slotData => {
+          const { id, ...createData } = slotData; // Remove id if present
+          return tx.slot.create({
+            data: {
+              ...createData,
               isActive: true,
               wheelId,
             },
-          })
-        )
+          });
+        })
       );
-      
-      return newSlots;
+
+      // Delete only orphaned slots (those no longer in the list)
+      if (slotsToDelete.length > 0) {
+        await tx.slot.deleteMany({
+          where: {
+            id: { in: slotsToDelete.map(s => s.id) },
+          },
+        });
+      }
+
+      return [...updatedSlots, ...createdSlots];
     });
     
     res.status(200).json({ 
