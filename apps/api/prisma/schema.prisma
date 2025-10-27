@@ -23,6 +23,9 @@ model Company {
   isActive      Boolean    @default(true)
   deletedAt     DateTime?
   createdAt     DateTime   @default(now())
+  // Custom text for modals (managed by SUPER admin)
+  contactText   String?    @db.Text // Custom contact information
+  rulesText     String?    @db.Text // Custom rules/regulations text
 }
 
 model User {
