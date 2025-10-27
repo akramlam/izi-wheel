@@ -23,7 +23,13 @@
       "Bash(curl -s \"https://roue.izikado.fr/play/company/d117e589-fbb0-4f69-bfdc-2eb8130c868f\")",
       "Bash(curl -s \"https://api.izikado.fr/public/wheels/b28ea222-a7f2-4a1d-af20-bbc47c3316cd/spin\" -X POST -H \"Content-Type: application/json\")",
       "Bash(curl -s \"https://api.izikado.fr/public/wheels/b28ea222-a7f2-4a1d-af20-bbc47c3316cd\")",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ssh ubuntu@152.228.173.81 \"cd /var/www/iziwheel && git pull origin main\":*)",
+      "Bash(ssh ubuntu@152.228.173.81 \"cd /var/www/iziwheel && git pull origin main && cd apps/api && npx prisma migrate deploy && npx prisma generate\")",
+      "Bash(ssh ubuntu@152.228.173.81 \"cd /var/www/iziwheel/apps/api && npx prisma migrate dev --name add_company_contact_rules_text\")",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(ssh ubuntu@152.228.173.81 \"cd /var/www/iziwheel && git pull origin main && cd apps/api && pnpm install && pnpm run build\")",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []
