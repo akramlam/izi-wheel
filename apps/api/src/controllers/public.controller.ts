@@ -46,7 +46,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
           select: {
             id: true,
             name: true,
-            isActive: true
+            isActive: true,
+            contactText: true,
+            rulesText: true
           }
         },
         slots: {
@@ -88,7 +90,9 @@ export const getPublicWheel = async (req: Request, res: Response) => {
         formSchema: wheel.formSchema,
         socialNetwork: wheel.socialNetwork,
         redirectUrl: wheel.redirectUrl,
-        redirectText: wheel.redirectText
+        redirectText: wheel.redirectText,
+        contactText: wheel.company.contactText,
+        rulesText: wheel.company.rulesText
       },
       slots: sortedSlots
     });

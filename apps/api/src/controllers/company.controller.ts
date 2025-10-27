@@ -812,4 +812,47 @@ export const getCompany = async (req: Request, res: Response) => {
     console.error('Get company error:', error);
     res.status(500).json({ error: 'Failed to fetch company' });
   }
-};  
+};
+
+/**
+ * Update company contact and rules text (SUPER admin only)
+ */
+export const updateCompanyTexts = async (req: Request, res: Response) => {
+  try {
+    const { companyId } = req.params;
+    const { contactText, rulesText } = req.body;
+
+    // Validate that at least one field is provided
+    if (contactText === undefined && rulesText === undefined) {
+      return res.status(400).json({
+        error: 'At least one field (contactText or rulesText) must be provided'
+      });
+    }
+
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+
+    // Update the company with new texts
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        ...(contactText !== undefined && { contactText }),
+        ...(rulesText !== undefined && { rulesText }),
+      },
+    });
+
+    res.json({
+      company: updatedCompany,
+      message: 'Company texts updated successfully'
+    });
+  } catch (error) {
+    console.error('Update company texts error:', error);
+    res.status(500).json({ error: 'Failed to update company texts' });
+  }
+};

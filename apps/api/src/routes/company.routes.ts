@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authMiddleware, roleGuard } from '../middlewares/auth.middleware';
 import { Role } from '@prisma/client';
 import wheelRoutes from './wheel.routes';
-import { getCompanies, createCompany, deleteCompany, updateCompany, getCompanyStatistics, validateSuperAdminAccess, getCompany } from '../controllers/company.controller';
+import { getCompanies, createCompany, deleteCompany, updateCompany, getCompanyStatistics, validateSuperAdminAccess, getCompany, updateCompanyTexts } from '../controllers/company.controller';
 import { getCompanyUsers, inviteUser, updateUser, deleteUser, resetUserPassword } from '../controllers/user.controller';
 
 // Add type annotation for router
@@ -37,7 +37,8 @@ router.get('/:companyId', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), g
 router.put('/:companyId', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), updateCompany);
 router.delete('/:companyId', authMiddleware, roleGuard([Role.SUPER, Role.ADMIN]), deleteCompany);
 
-// TODO: Add company CRUD operations in future milestone
+// Update company texts (contact and rules) - SUPER admin only
+router.patch('/:companyId/texts', authMiddleware, roleGuard([Role.SUPER]), updateCompanyTexts);
 
 
 export default router; 
