@@ -32,6 +32,8 @@ interface WheelData {
   socialNetwork?: string;
   redirectUrl?: string;
   redirectText?: string;
+  contactText?: string;
+  rulesText?: string;
 }
 
 interface SpinResult {
@@ -63,6 +65,8 @@ export default function PlayWheel() {
   const [hasSocialVerified, setHasSocialVerified] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showReglementModal, setShowReglementModal] = useState(false);
   const [claimData, setClaimData] = useState({
     name: '',
     email: '',
@@ -399,15 +403,38 @@ export default function PlayWheel() {
             )}
           </div>
 
-          {/* Game rules link */}
-          {wheel.gameRules && !wheel.gameRules.startsWith('http') && (
-            <button
-              onClick={() => setShowRulesModal(true)}
-              className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
-            >
-              Règles du jeu
-            </button>
-          )}
+          {/* Footer links */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {/* Game rules link */}
+            {wheel.gameRules && !wheel.gameRules.startsWith('http') && (
+              <button
+                onClick={() => setShowRulesModal(true)}
+                className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
+              >
+                Règles du jeu
+              </button>
+            )}
+
+            {/* Règlement link */}
+            {wheel.rulesText && (
+              <button
+                onClick={() => setShowReglementModal(true)}
+                className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
+              >
+                Règlement
+              </button>
+            )}
+
+            {/* Contact link */}
+            {wheel.contactText && (
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
+              >
+                Contact
+              </button>
+            )}
+          </div>
         </div>
       </footer>
 
@@ -645,6 +672,82 @@ export default function PlayWheel() {
               onClick={() => setShowRulesModal(false)}
               variant="outline"
               className="w-full"
+            >
+              Fermer
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Règlement Modal */}
+      {showReglementModal && wheel?.rulesText && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setShowReglementModal(false)}
+        >
+          <div
+            className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-scaleIn shadow-2xl border-2 border-amber-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-amber-900">
+                📋 Règlement
+              </h2>
+              <button
+                onClick={() => setShowReglementModal(false)}
+                className="text-amber-600 hover:text-amber-800 transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
+
+            <div className="prose prose-sm max-w-none mb-6 bg-white/60 rounded-lg p-4">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {wheel.rulesText}
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setShowReglementModal(false)}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+            >
+              Fermer
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Modal */}
+      {showContactModal && wheel?.contactText && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
+          onClick={() => setShowContactModal(false)}
+        >
+          <div
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-scaleIn shadow-2xl border-2 border-blue-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-indigo-900">
+                📞 Contact
+              </h2>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
+
+            <div className="prose prose-sm max-w-none mb-6 bg-white/60 rounded-lg p-4">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {wheel.contactText}
+              </p>
+            </div>
+
+            <Button
+              onClick={() => setShowContactModal(false)}
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
             >
               Fermer
             </Button>

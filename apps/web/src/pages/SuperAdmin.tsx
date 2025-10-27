@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
-import { useToast } from '../hooks/use-toast';
+import { Plus, Pencil, Trash2, Check, X, UserPlus, FileText } from 'lucide-react';
 import { Plus, Pencil, Trash2, Check, X, UserPlus } from 'lucide-react';
 import { EnhancedConfirmationDialog } from '../components/ui/enhanced-confirmation-dialog';
+import { CompanyTextsModal } from '../components/CompanyTextsModal';
 
 type Company = {
   id: string;
@@ -13,6 +14,8 @@ type Company = {
   createdAt: string;
   updatedAt: string;
   adminCount?: number;
+  contactText?: string;
+  rulesText?: string;
 };
 
 type AdminInvite = {
@@ -49,6 +52,7 @@ const SuperAdmin = () => {
     adminsCount: 0,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [textsModal, setTextsModal] = useState<{ isOpen: boolean; companyId: string | null; companyName: string; contactText?: string; rulesText?: string }>({ isOpen: false, companyId: null, companyName: '', contactText: '', rulesText: '' });
 
   // Fetch all companies on component mount
   useEffect(() => {
@@ -148,6 +152,28 @@ const SuperAdmin = () => {
         variant: 'destructive',
         title: 'Erreur',
         description: errorMessage
+      });
+    }
+  };
+
+
+  const handleEditTexts = async (companyId: string) => {
+    try {
+      const response = await api.getCompany(companyId);
+      const company = response.data.company;
+      setTextsModal({
+        isOpen: true,
+        companyId: company.id,
+        companyName: company.name,
+        contactText: company.contactText || '',
+        rulesText: company.rulesText || ''
+      });
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de charger les données de l\'entreprise'
       });
     }
   };
@@ -597,6 +623,13 @@ const SuperAdmin = () => {
                             <Pencil className="h-5 w-5" />
                           </button>
                           <button
+                            onClick={() => handleEditTexts(company.id)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Modifier Contact et Règlement"
+                          >
+                            <FileText className="h-5 w-5" />
+                          </button>
+                          <button
                             onClick={() => handleDeleteCompany(company.id)}
                             className="text-red-600 hover:text-red-900"
                           >
@@ -628,6 +661,16 @@ const SuperAdmin = () => {
         itemName={deleteConfirmation.companyName}
         activeWheelsCount={deleteConfirmation.activeWheelsCount}
         adminsCount={deleteConfirmation.adminsCount}
+      />
+
+      {/* Company Texts Modal */}
+      <CompanyTextsModal
+        isOpen={textsModal.isOpen}
+        onClose={() => setTextsModal({ isOpen: false, companyId: null, companyName: '', contactText: '', rulesText: '' })}
+        companyId={textsModal.companyId || ''}
+        companyName={textsModal.companyName}
+        initialContactText={textsModal.contactText}
+        initialRulesText={textsModal.rulesText}
       />
     </div>
   );

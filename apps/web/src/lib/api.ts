@@ -205,9 +205,13 @@ export const api = {
   updateCompany: async (companyId: string, data: any) => {
     return apiClient.put(`/companies/${companyId}`, data);
   },
-  
+
+  updateCompanyTexts: async (companyId: string, data: { contactText?: string | null; rulesText?: string | null }) => {
+    return apiClient.patch(`/companies/${companyId}/texts`, data);
+  },
+
   deleteCompany: async (companyId: string, force: boolean = false) => {
-    const url = force 
+    const url = force
       ? `/companies/${companyId}?force=true`
       : `/companies/${companyId}`;
     return apiClient.delete(url);
