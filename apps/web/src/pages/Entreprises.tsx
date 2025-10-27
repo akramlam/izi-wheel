@@ -10,10 +10,11 @@ import { Switch } from "../components/ui/switch" // Added Switch
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select" // Added Select components
 import { ConfirmationDialog } from '../components/ui/confirmation-dialog';
 import { EnhancedConfirmationDialog } from '../components/ui/enhanced-confirmation-dialog';
+import { CompanyTextsModal } from '../components/CompanyTextsModal';
 
 import { api } from '../lib/api' // Fixed import path
 import { useToast } from '../hooks/use-toast' // Fixed import path
-import { Plus, Search, Filter, ArrowUpDown, TrendingUp, TrendingDown, Pencil, Trash2, Check, X, UserPlus, Users } from "lucide-react"
+import { Plus, Search, Filter, ArrowUpDown, TrendingUp, TrendingDown, Pencil, Trash2, Check, X, UserPlus, Users, FileText } from "lucide-react"
 import { number } from "framer-motion"
 
 // More comprehensive company type based on SuperAdmin.tsx
@@ -26,6 +27,8 @@ interface Company {
   createdAt: string
   updatedAt: string
   adminCount?: number
+  contactText?: string
+  rulesText?: string
   // Fields from existing companys.tsx if they are still relevant and returned by backend
   logo?: string       // Kept from original companys.tsx
   metric?: number     // Kept from original companys.tsx, might be part of stats, not core company data
@@ -73,6 +76,13 @@ const Entreprises: React.FC = () => {
     adminsCount: 0,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [textsModal, setTextsModal] = useState<{ isOpen: boolean; companyId: string | null; companyName: string; contactText?: string; rulesText?: string }>({
+    isOpen: false,
+    companyId: null,
+    companyName: '',
+    contactText: '',
+    rulesText: ''
+  });
 
   const navigate = useNavigate();
 
@@ -168,6 +178,27 @@ const Entreprises: React.FC = () => {
     setAdminsToInvite(prevAdmins => 
       prevAdmins.map((admin, i) => i === index ? { ...admin, [field]: value } : admin)
     );
+  };
+
+  const handleEditTexts = async (companyId: string) => {
+    try {
+      const response = await api.getCompany(companyId);
+      const company = response.data.company;
+      setTextsModal({
+        isOpen: true,
+        companyId: company.id,
+        companyName: company.name,
+        contactText: company.contactText || '',
+        rulesText: company.rulesText || ''
+      });
+    } catch (error) {
+      console.error('Error fetching company data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible de charger les données de l\'entreprise'
+      });
+    }
   };
 
   // CRUD operations from SuperAdmin.tsx, adapted for companysService
@@ -663,12 +694,22 @@ const Entreprises: React.FC = () => {
                     <Users className="h-4 w-4 mr-2" />
                     Gérer
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => startUpdating(company)} 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditTexts(company.id)}
+                    className="flex-1 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 transition-colors"
+                    title="Modifier Contact et Règlement"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Textes
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => startUpdating(company)}
                     className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                    
+
                   >
                     <Pencil className="h-4 w-4 mr-2" />
                     Modifier
@@ -704,6 +745,16 @@ const Entreprises: React.FC = () => {
         itemName={deleteConfirmation.companyName}
         activeWheelsCount={deleteConfirmation.activeWheelsCount}
         adminsCount={deleteConfirmation.adminsCount}
+      />
+
+      {/* Company Texts Modal */}
+      <CompanyTextsModal
+        isOpen={textsModal.isOpen}
+        onClose={() => setTextsModal({ isOpen: false, companyId: null, companyName: '', contactText: '', rulesText: '' })}
+        companyId={textsModal.companyId || ''}
+        companyName={textsModal.companyName}
+        initialContactText={textsModal.contactText}
+        initialRulesText={textsModal.rulesText}
       />
     </div>
   )
