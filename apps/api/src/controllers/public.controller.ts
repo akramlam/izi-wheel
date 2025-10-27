@@ -353,6 +353,7 @@ export const claimPrize = async (req: Request, res: Response) => {
         email,
         play.slot.label,
         play.pin!,
+        name, // Pass the user's name
         playId,
         play.companyId
       );

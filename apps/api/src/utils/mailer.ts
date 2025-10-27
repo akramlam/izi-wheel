@@ -405,6 +405,7 @@ export const sendInviteEmail = async (
  * @param email Recipient email
  * @param prizeName Name of the prize
  * @param pin PIN code for redemption
+ * @param name Recipient's full name
  * @param playId Play ID for direct redemption link
  * @param companyId Company ID for tracking
  */
@@ -412,6 +413,7 @@ export const sendPrizeEmail = async (
   email: string,
   prizeName: string,
   pin: string,
+  name?: string,
   playId?: string,
   companyId?: string
 ): Promise<void> => {
@@ -443,9 +445,9 @@ export const sendPrizeEmail = async (
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #4f46e5;">🎉 Félicitations !</h1>
+            <h1 style="color: #4f46e5;">🎉 Félicitations${name ? ` ${name}` : ''} !</h1>
           </div>
-          
+
           <p>Vous avez gagné le lot suivant : <strong>${prizeName}</strong>!</p>
           
           <div style="background-color: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0288d1;">
