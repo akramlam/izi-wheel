@@ -86,24 +86,21 @@ export const CompanyTextsModal: React.FC<CompanyTextsModalProps> = ({
 
         {/* Form */}
         <div className="space-y-6">
-          {/* Contact Text */}
+          {/* Contact - Direct Redirect */}
           <div>
-            <Label htmlFor="contactText" className="text-base font-semibold text-gray-900">
+            <Label className="text-base font-semibold text-gray-900">
               📞 Contact
             </Label>
-            {/* <p className="text-sm text-gray-600 mb-2">
-              Ce texte sera affiché dans un modal lorsque les utilisateurs cliquent sur "Contact"
+            <p className="text-sm text-gray-600 mb-3">
+              Le bouton Contact redirige vers https://izikado.fr/
             </p>
-            <Textarea
-              id="contactText"
-              value={contactText}
-              onChange={(e) => setContactText(e.target.value)}
-              placeholder="Ex: Pour nous contacter :&#10;Email: contact@example.com&#10;Téléphone: +33 1 23 45 67 89&#10;Adresse: 123 Rue Exemple, Paris"
-              className="min-h-[150px] font-mono text-sm"
-            /> */}
-            <button onClick={() => (window.location.href = 'https://izikado.fr/')}>
-              
-            </button>
+            <Button
+              onClick={() => window.location.href = 'https://izikado.fr/'}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              Voir la page de contact
+            </Button>
           </div>
 
           {/* Rules Text */}
