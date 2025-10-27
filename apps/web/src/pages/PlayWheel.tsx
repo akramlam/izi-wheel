@@ -65,7 +65,6 @@ export default function PlayWheel() {
   const [hasSocialVerified, setHasSocialVerified] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showContactModal, setShowContactModal] = useState(false);
   const [showReglementModal, setShowReglementModal] = useState(false);
   const [claimData, setClaimData] = useState({
     name: '',
@@ -425,15 +424,13 @@ export default function PlayWheel() {
               </button>
             )}
 
-            {/* Contact link */}
-            {wheel.contactText && (
-              <button
-                onClick={() => setShowContactModal(true)}
-                className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
-              >
-                Contact
-              </button>
-            )}
+            {/* Contact link - Direct redirect to izikado.fr */}
+            <button
+              onClick={() => window.location.href = 'https://izikado.fr/'}
+              className="text-sm text-white/90 hover:text-white underline underline-offset-4 transition-colors"
+            >
+              Contact
+            </button>
           </div>
         </div>
       </footer>
@@ -717,43 +714,6 @@ export default function PlayWheel() {
         </div>
       )}
 
-      {/* Contact Modal */}
-      {showContactModal && wheel?.contactText && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fadeIn"
-          onClick={() => setShowContactModal(false)}
-        >
-          <div
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto animate-scaleIn shadow-2xl border-2 border-blue-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-indigo-900">
-                📞 Contact
-              </h2>
-              <button
-                onClick={() => setShowContactModal(false)}
-                className="text-indigo-600 hover:text-indigo-800 transition-colors"
-              >
-                <span className="text-2xl">×</span>
-              </button>
-            </div>
-
-            <div className="prose prose-sm max-w-none mb-6 bg-white/60 rounded-lg p-4">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {wheel.contactText}
-              </p>
-            </div>
-
-            <Button
-              onClick={() => setShowContactModal(false)}
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-            >
-              Fermer
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
