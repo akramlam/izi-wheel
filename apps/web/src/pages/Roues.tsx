@@ -75,7 +75,8 @@ const Roues: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false)
   const upgradeModalType: 'wheel' | 'play' = 'wheel'
   const [currentPlan, setCurrentPlan] = useState<string>('FREE')
-  
+  const [showLimitDialog, setShowLimitDialog] = useState<boolean>(false)
+
   const navigate = useNavigate()
   const { toast } = useToast()
   const { user } = useAuth()
@@ -388,6 +389,16 @@ const Roues: React.FC = () => {
     navigate(`/roues/edit/${id}`)
   }
 
+  const handleCreateWheel = () => {
+    // Check if limit is reached
+    if (wheelsUsed >= wheelsLimit) {
+      setShowLimitDialog(true)
+      return
+    }
+    // Navigate to create wheel page
+    navigate('/roues/create')
+  }
+
   const confirmDeleteRoue = (id: string) => {
     const roue = roues.find(r => r.id === id);
     setDeleteConfirmation({
@@ -590,10 +601,10 @@ const Roues: React.FC = () => {
               <span className="font-medium">{wheelsUsed}</span> / <span className="font-medium">{wheelsLimit}</span> roues utilisées
             </div>
           )}
-          <Button onClick={() => navigate('/roues/create')}>
+          <Button onClick={handleCreateWheel}>
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle roue
-            </Button>
+          </Button>
           </div>
       </div>
 
@@ -909,6 +920,30 @@ const Roues: React.FC = () => {
         <button className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">Suivant</button>
       </div>
       )}
+
+      {/* Wheel limit reached dialog */}
+      <Dialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600">
+              ⚠️ Nombre maximum de roues atteint
+            </DialogTitle>
+            <DialogDescription className="text-base mt-4">
+              Vous avez atteint la limite de <strong>{wheelsLimit} roue{wheelsLimit > 1 ? 's' : ''}</strong> pour votre compte.
+              <br /><br />
+              Contactez votre référent pour augmenter votre limite.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowLimitDialog(false)}
+            >
+              Fermer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <ConfirmationDialog
