@@ -174,16 +174,6 @@ export default function PrizeValidation() {
               <li>Vérifier le code PIN du client</li>
               <li>Cliquer sur "Valider la récupération du cadeau"</li>
             </ol>
-
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm font-medium text-blue-800 mb-2">
-                💡 Astuce
-              </p>
-              <p className="text-sm text-blue-700">
-                Le lien de validation contient déjà toutes les informations nécessaires.
-                Vous n'avez qu'à scanner le QR code du client et suivre les instructions.
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>

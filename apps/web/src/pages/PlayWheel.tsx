@@ -226,7 +226,7 @@ export default function PlayWheel() {
     onSuccess: () => {
       toast({
         title: 'Succès!',
-        description: 'Prix réclamé! Vérifiez votre email pour le PIN.',
+        description: 'Prix réclamé! Vérifiez vos mails ainsi que vos spams.',
       });
       setShowClaimModal(false);
       setShowResultModal(false);

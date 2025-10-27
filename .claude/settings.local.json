@@ -22,7 +22,8 @@
       "Bash(pnpm add:*)",
       "Bash(curl -s \"https://roue.izikado.fr/play/company/d117e589-fbb0-4f69-bfdc-2eb8130c868f\")",
       "Bash(curl -s \"https://api.izikado.fr/public/wheels/b28ea222-a7f2-4a1d-af20-bbc47c3316cd/spin\" -X POST -H \"Content-Type: application/json\")",
-      "Bash(curl -s \"https://api.izikado.fr/public/wheels/b28ea222-a7f2-4a1d-af20-bbc47c3316cd\")"
+      "Bash(curl -s \"https://api.izikado.fr/public/wheels/b28ea222-a7f2-4a1d-af20-bbc47c3316cd\")",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

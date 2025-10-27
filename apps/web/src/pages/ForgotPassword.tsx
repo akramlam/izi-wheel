@@ -193,7 +193,7 @@ const ForgotPassword: React.FC = () => {
               <div className="flex items-center justify-center space-x-2 text-sm">
                 <span className="text-gray-600">Vous vous souvenez de votre mot de passe ?</span>
                 <Link 
-                  to="/superadmin-login" 
+                  to="/admin-login" 
                   className="text-blue-600 hover:text-blue-500 font-medium"
                 >
                   Se connecter

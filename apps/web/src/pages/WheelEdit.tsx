@@ -1152,7 +1152,6 @@ const WheelEdit = () => {
                 </SelectContent>
               </Select>
               {/* Add debugging info for wheel type */}
-              <div className="text-xs text-gray-500">Mode actuel: {wheel.type}</div>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -1444,11 +1443,7 @@ const WheelEdit = () => {
                   value={wheel.redirectUrl || ''}
                   onChange={(e) => setWheel(prev => ({ ...prev, redirectUrl: e.target.value }))}
                 />
-                 {wheel.socialNetwork && SOCIAL_NETWORK_URLS[wheel.socialNetwork]?.includes('YOUR_') && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    N'oubliez pas de remplacer les parties comme "YOUR_PLACE_ID" par vos informations.
-                  </p>
-          )}
+                 {wheel.socialNetwork && SOCIAL_NETWORK_URLS[wheel.socialNetwork]?.includes('YOUR_')}
         </div>
 
               <div className="space-y-2">
@@ -1521,7 +1516,7 @@ const WheelEdit = () => {
                 <Label htmlFor="mainTitle">Titre principal (optionnel)</Label>
                 <Input
                   id="mainTitle"
-                  placeholder="Ex: Votre marque, votre événement... (laissez vide pour utiliser 'IZI KADO')"
+                  placeholder="Ex: Votre marque, votre événement..."
                   value={wheel.mainTitle || ''}
                   onChange={(e) => setWheel({ ...wheel, mainTitle: e.target.value })}
                 />

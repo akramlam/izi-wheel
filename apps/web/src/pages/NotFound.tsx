@@ -8,17 +8,18 @@ const NotFound = () => {
         <div className="mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-indigo-100">
           <span className="text-3xl sm:text-4xl font-bold text-indigo-600">404</span>
         </div>
-        <h1 className="mt-4 sm:mt-6 text-xl sm:text-2xl font-bold text-gray-900">Page not found</h1>
+        <h1 className="mt-4 sm:mt-6 text-xl sm:text-2xl font-bold text-gray-900">Oups ! La roue a mal tourné...</h1>
         <p className="mt-2 sm:mt-3 text-sm sm:text-base text-gray-600">
-          Sorry, we couldn't find the page you're looking for.
+          Cette page n'existe pas ou a disparu dans le tourbillon.
+          <span className="block mt-1 text-indigo-600 font-medium">Pas de chance cette fois-ci !</span>
         </p>
         <div className="mt-4 sm:mt-6">
           <Link
-            to="/"
+            to="/admin-login"
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 sm:py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <Home className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Retour au tableau de bord
           </Link>
         </div>
       </div>
@@ -26,4 +27,4 @@ const NotFound = () => {
   );
 };
 
-export default NotFound; 
+export default NotFound;
