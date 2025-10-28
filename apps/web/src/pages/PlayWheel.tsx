@@ -61,6 +61,7 @@ export default function PlayWheel() {
   const [prizeNumber, setPrizeNumber] = useState(0);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [wheelKey, setWheelKey] = useState(0);
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [hasSocialVerified, setHasSocialVerified] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -126,7 +127,10 @@ export default function PlayWheel() {
   // Handle spin complete
   const handleStopSpinning = () => {
     setMustSpin(false);
-    setShowResultModal(true);
+    // Use setTimeout to avoid DOM manipulation conflicts
+    setTimeout(() => {
+      setShowResultModal(true);
+    }, 100);
   };
 
   // Handle play button click
@@ -217,6 +221,8 @@ export default function PlayWheel() {
   const handleCloseModal = () => {
     setShowResultModal(false);
     setSpinResult(null);
+    // Force wheel remount to avoid DOM conflicts
+    setWheelKey(prev => prev + 1);
   };
 
   // Claim prize mutation
@@ -349,6 +355,7 @@ export default function PlayWheel() {
             <div className="flex justify-center items-center" style={{ width: '500px', height: '500px' }}>
               {wheelData.length > 0 && (
                 <Wheel
+                  key={wheelKey}
                   mustStartSpinning={mustSpin}
                   prizeNumber={prizeNumber}
                   data={wheelData}
