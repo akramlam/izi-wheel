@@ -302,8 +302,8 @@ export default function PlayWheel() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 p-4">
         <div className="bg-white rounded-lg p-6 max-w-md text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2>
-          <p className="text-gray-700">Unable to load wheel. Please try again.</p>
+          <h2 className="text-xl font-bold text-red-600 mb-2">Erreur</h2>
+          <p className="text-gray-700">Impossible de charger la roue. Veuillez réessayer.</p>
         </div>
       </div>
     );
